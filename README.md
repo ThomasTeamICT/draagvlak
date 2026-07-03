@@ -24,7 +24,9 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 | [docs/functioneel-ontwerp/regelparameters.md](docs/functioneel-ontwerp/regelparameters.md) | Decretale drempels en termijnen als configuratie (TADD, deadlines, telregels) |
 | [docs/functioneel-ontwerp/datamodel.md](docs/functioneel-ontwerp/datamodel.md) | Conceptueel datamodel MVP met multi-tenant-scoping en audittrail |
 | [docs/functioneel-ontwerp/wireframes.md](docs/functioneel-ontwerp/wireframes.md) | Low-fi wireframes van de zes kernflows, met validatievragen voor de pilootscholen |
+| [docs/functioneel-ontwerp/testcases-telregels.md](docs/functioneel-ontwerp/testcases-telregels.md) | Testcasusset voor de TADD-telregels: het levende contract tussen regelgeving en code |
 | [docs/dpia/dpia-aanzet.md](docs/dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) |
+| [prototype/](prototype/README.md) | Klikbaar validatie-prototype van de zes kernflows (één HTML-bestand, geen installatie) |
 
 ## Kernprincipes (samengevat)
 
