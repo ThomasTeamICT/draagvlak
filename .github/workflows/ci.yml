@@ -8,6 +8,26 @@ on:
 jobs:
   verifieer:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: draagvlak
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/draagvlak
+      DATABASE_URL: postgres://draagvlak_app:dev-only-wachtwoord@localhost:5432/draagvlak
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,8 +41,11 @@ jobs:
       - name: Installeer afhankelijkheden
         run: pnpm install --frozen-lockfile
 
+      - name: Bouw (topologische volgorde)
+        run: pnpm build
+
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Tests (incl. testcontract telregels)
+      - name: Tests (testcontract telregels + integratie met RLS)
         run: pnpm test

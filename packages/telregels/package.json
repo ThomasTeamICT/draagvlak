@@ -5,9 +5,16 @@
   "type": "module",
   "description": "Pure domeinlogica voor dienstanciënniteitstellers (TADD), drempeldetectie en vervolgtrajecten — 100% regelgebaseerd en reproduceerbaar",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

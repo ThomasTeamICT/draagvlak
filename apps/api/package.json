@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Draagvlak API — modulaire monoliet (Fastify), zie docs/adr/0001-stackkeuze.md",
+  "description": "Draagvlak API — modulaire monoliet (Fastify), zie docs/adr/0001-stackkeuze.md en 0002-datatoegang.md",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -11,7 +11,9 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "fastify": "^5.0.0"
+    "@draagvlak/telregels": "workspace:*",
+    "fastify": "^5.0.0",
+    "postgres": "^3.4.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
