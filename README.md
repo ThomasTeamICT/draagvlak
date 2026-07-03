@@ -26,7 +26,20 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 | [docs/functioneel-ontwerp/wireframes.md](docs/functioneel-ontwerp/wireframes.md) | Low-fi wireframes van de zes kernflows, met validatievragen voor de pilootscholen |
 | [docs/functioneel-ontwerp/testcases-telregels.md](docs/functioneel-ontwerp/testcases-telregels.md) | Testcasusset voor de TADD-telregels: het levende contract tussen regelgeving en code |
 | [docs/dpia/dpia-aanzet.md](docs/dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) |
+| [docs/adr/](docs/adr/README.md) | Architectuurbeslissingen (ADR-0001: stackkeuze, status "voorgesteld") |
 | [prototype/](prototype/README.md) | Klikbaar validatie-prototype van de zes kernflows (één HTML-bestand, geen installatie) |
+
+## Repostructuur (code)
+
+```
+packages/telregels   pure domeinlogica: TADD-tellers, drempeldetectie, vervolgtrajecten
+                     — testcases-telregels.md als geautomatiseerde suite (⚠-casussen als todo)
+apps/api             API-skelet (Fastify, modulaire monoliet)
+db/                  SQL-migraties met row-level security als eerste-klas ontwerp
+prototype/           wegwerp-validatieprototype (Fase 0)
+```
+
+Ontwikkelen: `pnpm install`, daarna `pnpm typecheck` en `pnpm test`. Lokale databank: zie [db/README.md](db/README.md). De stackkeuze staat gemotiveerd in [ADR-0001](docs/adr/0001-stackkeuze.md) en wacht op bekrachtiging door de stuurgroep.
 
 ## Kernprincipes (samengevat)
 

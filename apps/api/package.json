@@ -1,0 +1,21 @@
+{
+  "name": "@draagvlak/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Draagvlak API — modulaire monoliet (Fastify), zie docs/adr/0001-stackkeuze.md",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
