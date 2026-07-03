@@ -8,11 +8,23 @@ Draagvlak is een webplatform voor schoolbesturen, scholengroepen en directies in
 
 ## Status
 
-Dit project bevindt zich in de blauwdrukfase. Het centrale document is:
+Dit project bevindt zich in de ontwerpfase. Het centrale document is:
 
 **[📘 Blauwdruk versie 1.0 (werkdocument, juli 2026)](docs/blauwdruk.md)**
 
 De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 2026, TALIS, wetenschappelijke kaders), de ontwerpprincipes, de tien functionele modules, het juridische kader (AVG, AI Act, welzijns- en onderwijsregelgeving), de architectuur, de AI-laag met stoplichtmodel, en het implementatieplan in fases.
+
+## Documentatie
+
+| Document | Inhoud |
+|---|---|
+| [docs/blauwdruk.md](docs/blauwdruk.md) | De volledige blauwdruk (versie 1.0) |
+| [docs/functioneel-ontwerp/](docs/functioneel-ontwerp/README.md) | Functioneel ontwerp Fase 0-1: scope en leeswijzer |
+| [docs/functioneel-ontwerp/toegangsmatrix.md](docs/functioneel-ontwerp/toegangsmatrix.md) | Toegangsmatrix per rol en gegevensobject, met harde ontwerpregels |
+| [docs/functioneel-ontwerp/regelparameters.md](docs/functioneel-ontwerp/regelparameters.md) | Decretale drempels en termijnen als configuratie (TADD, deadlines, telregels) |
+| [docs/functioneel-ontwerp/datamodel.md](docs/functioneel-ontwerp/datamodel.md) | Conceptueel datamodel MVP met multi-tenant-scoping en audittrail |
+| [docs/functioneel-ontwerp/wireframes.md](docs/functioneel-ontwerp/wireframes.md) | Low-fi wireframes van de zes kernflows, met validatievragen voor de pilootscholen |
+| [docs/dpia/dpia-aanzet.md](docs/dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) |
 
 ## Kernprincipes (samengevat)
 
