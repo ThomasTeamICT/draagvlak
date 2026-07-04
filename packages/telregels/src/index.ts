@@ -16,3 +16,10 @@ export { PERS_2019_03, resolveerParameters } from './parameters.js'
 export { berekenPerAmbt, berekenTeller } from './teller.js'
 export { evalueerDrempel, prognosePeildatum } from './drempel.js'
 export { berekenVervolgtraject } from './vervolgtraject.js'
+export {
+  bepaalEscalatie,
+  NIVEAU_VERSTREKEN,
+  STANDAARD_TRAPPEN,
+  type EscalatieStand,
+  type EscalatieTrap,
+} from './escalatie.js'

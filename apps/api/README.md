@@ -8,6 +8,8 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 |---|---|
 | `GET /health`, `GET /version` | Liveness en identificatie |
 | `GET /api/v1/personen/:persoonId/tellers?peildatum=JJJJ-MM-DD` | Dienstanciënniteitstellers per ambt, met drempelevaluatie (TADD-deadlines) en volledige verantwoording. Zonder `peildatum`: prognose op 30 juni van het lopende schooljaar |
+| `POST /api/v1/deadlines/herbereken` | Deadline-engine: idempotente drempeldetectie over alle personen van de tenant; maakt deadlines aan, actualiseert escalatieniveaus en trekt vervallen signalen in (status, nooit delete). Body optioneel `{ "vandaag": "JJJJ-MM-DD" }` voor reproduceerbare escalatie |
+| `GET /api/v1/deadlines?status=open` | Werkvoorraad voor startscherm en startersdashboard: deadlines met naam, type, datum, escalatieniveau en de berekening erachter |
 
 **⚠ Tijdelijk, tot de OIDC-authenticatielaag er is:** de tenant-context komt uit de header `x-tenant-id`. De API is daarom uitsluitend voor lokale ontwikkeling en CI en wordt niet extern ontsloten (ADR-0002).
 

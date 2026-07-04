@@ -6,9 +6,11 @@ PostgreSQL 16 met row-level security als afdwinging van de toegangsmatrix (ADR-0
 
 ```bash
 docker compose up -d db
-# rollen (eenmalig), daarna migraties in volgorde
+# rollen (eenmalig), daarna alle migraties in volgorde
 docker compose exec -T db psql -U draagvlak -d draagvlak < db/bootstrap/rollen.sql
-docker compose exec -T db psql -U draagvlak -d draagvlak < db/migrations/0001_init.sql
+for migratie in db/migrations/*.sql; do
+  docker compose exec -T db psql -v ON_ERROR_STOP=1 -U draagvlak -d draagvlak < "$migratie"
+done
 ```
 
 ## Het RLS-patroon (geldt voor elke latere tabel)

@@ -1,0 +1,163 @@
+/**
+ * Integratietest deadline-engine: drempeldetectie, escalatie, idempotentie en
+ * het intrekken van signalen (casus D3) — tegen echte migraties, als draagvlak_app.
+ * Draait alleen met DATABASE_ADMIN_URL + DATABASE_URL (zie apps/api/README.md).
+ */
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+import postgres from 'postgres'
+import type { FastifyInstance } from 'fastify'
+import { buildApp } from '../src/app.js'
+
+const ADMIN_URL = process.env['DATABASE_ADMIN_URL']
+const APP_URL = process.env['DATABASE_URL']
+
+const TENANT_A = 'aaaaaaaa-1111-1111-1111-111111111111'
+const TENANT_B = 'bbbbbbbb-2222-2222-2222-222222222222'
+const SCHOOL_A = 'aaaaaaaa-3333-3333-3333-333333333333'
+const JONAS = 'aaaaaaaa-4444-4444-4444-444444444444' // D1: 308/295 → drempel bereikt
+const SOFIE = 'aaaaaaaa-5555-5555-5555-555555555555' // D2: 288 → onder de drempel
+
+const repoWortel = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..')
+
+describe.skipIf(ADMIN_URL === undefined || APP_URL === undefined)(
+  'deadline-engine (integratie)',
+  () => {
+    let admin: postgres.Sql
+    let app: FastifyInstance
+
+    const herbereken = (vandaag: string, tenant = TENANT_A) =>
+      app.inject({
+        method: 'POST',
+        url: '/api/v1/deadlines/herbereken',
+        headers: { 'x-tenant-id': tenant, 'content-type': 'application/json' },
+        payload: { vandaag },
+      })
+
+    const overzicht = (status = 'open', tenant = TENANT_A) =>
+      app.inject({
+        method: 'GET',
+        url: `/api/v1/deadlines?status=${status}`,
+        headers: { 'x-tenant-id': tenant },
+      })
+
+    beforeAll(async () => {
+      admin = postgres(ADMIN_URL as string, { max: 1, onnotice: () => {} })
+
+      await admin.unsafe('drop schema if exists core cascade')
+      await admin.file(join(repoWortel, 'db', 'bootstrap', 'rollen.sql'), { cache: false })
+      for (const migratie of ['0001_init.sql', '0002_personeel.sql', '0003_deadlines.sql']) {
+        await admin.file(join(repoWortel, 'db', 'migrations', migratie), { cache: false })
+      }
+
+      await admin.unsafe(`
+        insert into core.tenant (id, naam) values
+          ('${TENANT_A}', 'Scholengroep A'),
+          ('${TENANT_B}', 'Scholengroep B');
+        insert into core.school (id, tenant_id, instellingsnummer, naam) values
+          ('${SCHOOL_A}', '${TENANT_A}', '012345', 'Basisschool De Regenboog');
+        insert into core.persoon (id, tenant_id, idp_subject, naam, email) values
+          ('${JONAS}', '${TENANT_A}', 'idp|jonas', 'Jonas Dierckx', 'jonas@voorbeeld.be'),
+          ('${SOFIE}', '${TENANT_A}', 'idp|sofie', 'Sofie Peeters', 'sofie@voorbeeld.be');
+        insert into core.aanstelling (tenant_id, persoon_id, school_id, ambt, statuut, start, einde) values
+          ('${TENANT_A}', '${JONAS}', '${SCHOOL_A}', 'leraar', 'TABD', '2025-02-24', '2025-06-30'),
+          ('${TENANT_A}', '${JONAS}', '${SCHOOL_A}', 'leraar', 'TABD', '2026-01-01', '2026-06-30'),
+          ('${TENANT_A}', '${SOFIE}', '${SCHOOL_A}', 'leraar', 'TABD', '2025-09-16', '2026-06-30');
+        insert into core.afwezigheid (tenant_id, persoon_id, code, start, einde) values
+          ('${TENANT_A}', '${JONAS}', 'ziekte', '2025-03-17', '2025-03-19'),
+          ('${TENANT_A}', '${JONAS}', 'ziekte', '2026-02-09', '2026-02-18');
+      `)
+
+      app = buildApp({ databaseUrl: APP_URL as string })
+      await app.ready()
+    })
+
+    afterAll(async () => {
+      await app?.close()
+      await admin?.end()
+    })
+
+    it('detecteert de drempel en maakt beide deadlines aan — alleen voor wie ze bereikt', async () => {
+      const antwoord = await herbereken('2026-03-01')
+      expect(antwoord.statusCode).toBe(200)
+      expect(antwoord.json()).toMatchObject({
+        peildatum: '2026-06-30',
+        personenVerwerkt: 2,
+        aangemaakt: 2,
+        bijgewerkt: 0,
+        vervallen: 0,
+      })
+
+      const lijst = overzicht()
+      const lichaam = (await lijst).json()
+      expect(lichaam.deadlines).toHaveLength(2)
+      expect(lichaam.deadlines.map((d: { type: string; datum: string }) => [d.type, d.datum])).toEqual([
+        ['TADD_kandidaatstelling', '2026-06-15'],
+        ['TADD_beoordeling', '2026-06-30'],
+      ])
+      const eerste = lichaam.deadlines[0]
+      expect(eerste.naam).toBe('Jonas Dierckx')
+      expect(eerste.escalatieniveau).toBe(0)
+      expect(eerste.berekening).toMatchObject({ dagenTotaal: 308, dagenEffectief: 295 })
+    })
+
+    it('is idempotent: opnieuw draaien wijzigt niets', async () => {
+      const antwoord = await herbereken('2026-03-01')
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 0, bijgewerkt: 0, vervallen: 0 })
+    })
+
+    it('actualiseert escalatieniveaus naarmate de deadline nadert', async () => {
+      const antwoord = await herbereken('2026-06-10')
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 0, bijgewerkt: 2, vervallen: 0 })
+
+      const lichaam = (await overzicht()).json()
+      const perType = Object.fromEntries(
+        lichaam.deadlines.map((d: { type: string; escalatieniveau: number }) => [
+          d.type,
+          d.escalatieniveau,
+        ]),
+      )
+      // 15/6 over 5 dagen → AD/bestuur (4); 30/6 over 20 dagen → herhaling eigenaar (2)
+      expect(perType).toEqual({ TADD_kandidaatstelling: 4, TADD_beoordeling: 2 })
+    })
+
+    it('trekt signalen in wanneer de drempel wegvalt (casus D3), mét audit-spoor', async () => {
+      // 97 extra ziektedagen duwen Jonas' effectief van 295 naar 198 (< 200)
+      await admin.unsafe(`
+        insert into core.afwezigheid (tenant_id, persoon_id, code, start, einde) values
+          ('${TENANT_A}', '${JONAS}', 'ziekte', '2026-03-01', '2026-06-05');
+      `)
+
+      const antwoord = await herbereken('2026-06-10')
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 0, vervallen: 2 })
+
+      expect((await overzicht('open')).json().deadlines).toHaveLength(0)
+      const vervallen = (await overzicht('vervallen')).json().deadlines
+      expect(vervallen).toHaveLength(2)
+      expect(vervallen[0].berekening).toMatchObject({ dagenEffectief: 198 })
+
+      const [audit] = await admin`
+        select count(*)::int as aantal from core.audit_log
+        where object_type = 'deadline' and context ->> 'reden' like 'deadline ingetrokken%'`
+      expect(audit?.['aantal']).toBe(2)
+    })
+
+    it('heropent een vervallen deadline wanneer de drempel opnieuw bereikt wordt', async () => {
+      await admin.unsafe(`
+        delete from core.afwezigheid
+        where persoon_id = '${JONAS}' and start = '2026-03-01';
+      `)
+
+      const antwoord = await herbereken('2026-06-10')
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 0, bijgewerkt: 2, vervallen: 0 })
+      expect((await overzicht('open')).json().deadlines).toHaveLength(2)
+    })
+
+    it('tenant-afscherming: tenant B verwerkt en ziet niets', async () => {
+      const antwoord = await herbereken('2026-06-10', TENANT_B)
+      expect(antwoord.json()).toMatchObject({ personenVerwerkt: 0, aangemaakt: 0 })
+      expect((await overzicht('open', TENANT_B)).json().deadlines).toHaveLength(0)
+    })
+  },
+)

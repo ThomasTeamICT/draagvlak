@@ -63,6 +63,7 @@ Tellers en deadlines worden altijd berekend met de parameterversie die gold **op
 | `STARTER_MIN_FEEDBACKMOMENTEN` | Minimum feedbackmomenten vóór een TADD-beoordeling | 3 | ⚠ TE VALIDEREN, configureerbaar per school |
 | `STILLE_STARTER_SIGNAAL` | Signaal bij traject zonder activiteit gedurende | 30 kalenderdagen | voorstel |
 | `DEKKING_GESPREK_NORM` | Norm dekkingsmonitor: elk personeelslid een gesprek binnen | 2 jaar | voorstel (spiegelt succesindicator § 14) |
+| `ESCALATIETRAPPEN` | Escalatieladder deadline-engine (dagen vóór deadline → doelgroep) | 42 eigenaar · 21 herhaling · 14 directeur · 7 AD/bestuur · verstreken = hoogste niveau | voorstel, geïmplementeerd als platformstandaard (`@draagvlak/telregels`, `STANDAARD_TRAPPEN`); ⚠ TE VALIDEREN in lokaal comité |
 
 ## 3. Deadline-engine
 
