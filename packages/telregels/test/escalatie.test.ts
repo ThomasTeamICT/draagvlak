@@ -42,4 +42,15 @@ describe('escalatieladder deadline-engine', () => {
     ])
     expect(stand).toMatchObject({ niveau: 1, doelgroep: 'eigenaar' })
   })
+
+  it('verstreken met eigen trappen: doelgroep volgt de hoogste eigen trap', () => {
+    const stand = bepaalEscalatie('2026-06-15', '2026-06-20', [
+      { dagenVoorDeadline: 10, niveau: 1, doelgroep: 'eigenaar' },
+    ])
+    expect(stand).toMatchObject({
+      niveau: NIVEAU_VERSTREKEN,
+      doelgroep: 'eigenaar',
+      verstreken: true,
+    })
+  })
 })

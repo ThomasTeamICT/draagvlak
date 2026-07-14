@@ -69,7 +69,9 @@ describe.skipIf(ADMIN_URL === undefined || APP_URL === undefined)(
           ('${TENANT_A}', '${JONAS}', 'ziekte', '2026-02-09', '2026-02-18');
       `)
 
-      app = buildApp({ databaseUrl: APP_URL as string })
+      // ruim venster: de suite injecteert vaste datums die anders ooit buiten
+      // het plausibiliteitsvenster rond de systeemdatum zouden vallen
+      app = buildApp({ databaseUrl: APP_URL as string, herberekenVensterDagen: 36500 })
       await app.ready()
     })
 
@@ -158,6 +160,94 @@ describe.skipIf(ADMIN_URL === undefined || APP_URL === undefined)(
       const antwoord = await herbereken('2026-06-10', TENANT_B)
       expect(antwoord.json()).toMatchObject({ personenVerwerkt: 0, aangemaakt: 0 })
       expect((await overzicht('open', TENANT_B)).json().deadlines).toHaveLength(0)
+    })
+
+    it('schooljaar-rollover: oude open deadlines blijven staan en escaleren tot "verstreken" — nooit stil intrekken', async () => {
+      const antwoord = await herbereken('2026-09-15')
+      // nieuwe 2027-deadlines erbij (drempel blijft bereikt); de nooit
+      // geregistreerde 2026-deadlines blijven open en escaleren naar niveau 5
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 2, bijgewerkt: 2, vervallen: 0 })
+
+      const open = (await overzicht('open')).json().deadlines
+      expect(open).toHaveLength(4)
+      const perDatum = Object.fromEntries(
+        open.map((d: { datum: string; escalatieniveau: number }) => [d.datum, d.escalatieniveau]),
+      )
+      expect(perDatum).toEqual({
+        '2026-06-15': 5,
+        '2026-06-30': 5,
+        '2027-06-15': 0,
+        '2027-06-30': 0,
+      })
+
+      const [audit] = await admin`
+        select count(*)::int as aantal from core.audit_log
+        where object_type = 'deadline' and context ->> 'reden' like 'escalatieniveau%verstreken%'`
+      expect(audit?.['aantal']).toBe(2)
+    })
+
+    it("status 'geregistreerd' wordt door herberekening nooit aangeraakt", async () => {
+      await admin.unsafe(`
+        update core.deadline set status = 'geregistreerd'
+        where persoon_id = '${JONAS}' and datum = '2026-06-15';
+      `)
+
+      const antwoord = await herbereken('2026-09-15')
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 0, bijgewerkt: 0, vervallen: 0 })
+
+      const geregistreerd = (await overzicht('geregistreerd')).json().deadlines
+      expect(geregistreerd).toHaveLength(1)
+      expect(geregistreerd[0]).toMatchObject({ datum: '2026-06-15', escalatieniveau: 5 })
+    })
+
+    it('verdwenen ambt: achtergebleven open deadlines worden ingetrokken met waarheidsgetrouwe reden', async () => {
+      await admin.unsafe(`
+        update core.aanstelling set ambt = 'kleuteronderwijzer'
+        where persoon_id = '${JONAS}';
+      `)
+
+      const antwoord = await herbereken('2026-09-15')
+      // nieuw ambt haalt de drempel (zelfde dagen) → 2 nieuwe deadlines;
+      // de 3 open 'leraar'-deadlines (2026-06-30 + beide 2027) vervallen
+      expect(antwoord.json()).toMatchObject({ aangemaakt: 2, vervallen: 3 })
+
+      const open = (await overzicht('open')).json().deadlines
+      expect(open).toHaveLength(2)
+      expect(open.every((d: { ambt: string }) => d.ambt === 'kleuteronderwijzer')).toBe(true)
+
+      const [audit] = await admin`
+        select count(*)::int as aantal from core.audit_log
+        where object_type = 'deadline'
+          and context ->> 'reden' like 'deadline ingetrokken%dienstanciënniteit 0 dagen%'`
+      expect(audit?.['aantal']).toBe(3)
+
+      // de geregistreerde 'leraar'-deadline blijft ook nu onaangeroerd
+      expect((await overzicht('geregistreerd')).json().deadlines).toHaveLength(1)
+    })
+
+    it('weigert een onmogelijke kalenderdatum met 400 (geen 500)', async () => {
+      const antwoord = await herbereken('2026-02-30')
+      expect(antwoord.statusCode).toBe(400)
+      expect(antwoord.json().fout).toContain('ongeldige kalenderdatum')
+    })
+
+    it('weigert een peildatum buiten het plausibiliteitsvenster (tikfout in jaartal)', async () => {
+      const strikt = buildApp({ databaseUrl: APP_URL as string })
+      await strikt.ready()
+      try {
+        const antwoord = await strikt.inject({
+          method: 'POST',
+          url: '/api/v1/deadlines/herbereken',
+          headers: { 'x-tenant-id': TENANT_A, 'content-type': 'application/json' },
+          payload: { vandaag: '2020-06-10' },
+        })
+        expect(antwoord.statusCode).toBe(400)
+        expect(antwoord.json().fout).toContain('herberekening geweigerd')
+        // niets ingetrokken door de geweigerde aanroep
+        expect((await overzicht('open')).json().deadlines).toHaveLength(2)
+      } finally {
+        await strikt.close()
+      }
     })
   },
 )

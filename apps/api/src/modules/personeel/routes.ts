@@ -1,7 +1,9 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
 import {
   berekenPerAmbt,
+  dagenTussen,
   evalueerDrempel,
+  isGeldigeKalenderdatum,
   PERS_2019_03,
   prognosePeildatum,
   type Aanstelling,
@@ -9,6 +11,11 @@ import {
 } from '@draagvlak/telregels'
 import { metTenantContext, type Db } from '../../db.js'
 import { herberekenDeadlines } from './deadlines.js'
+
+/** Vandaag in Belgische tijd — toISOString() zou tussen middernacht en 2u de vorige dag geven. */
+function vandaagBrussel(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Brussels' })
+}
 
 const UUID_PATROON =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
@@ -25,6 +32,15 @@ const TENANT_HEADER = {
  */
 const PARAMETERS = [PERS_2019_03]
 
+export interface PersoneelOpties {
+  /**
+   * Plausibiliteitsvenster (in dagen rond de systeemdatum) voor de injecteerbare
+   * `vandaag` van de herberekening: een tikfout in het jaartal zou anders in één
+   * POST alle open deadlines van de tenant intrekken.
+   */
+  vensterDagen?: number
+}
+
 /**
  * Module B — personeel: tellers per ambt met verantwoording en drempelevaluatie.
  *
@@ -32,7 +48,8 @@ const PARAMETERS = [PERS_2019_03]
  * Dit is een expliciete plaatshouder tot de OIDC-authenticatielaag er is; de API
  * wordt niet extern ontsloten vóór die er is.
  */
-export function personeelModule(db: Db): FastifyPluginAsync {
+export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPluginAsync {
+  const vensterDagen = opties.vensterDagen ?? 400
   return async function (app: FastifyInstance) {
     app.get(
       '/api/v1/personen/:persoonId/tellers',
@@ -55,8 +72,10 @@ export function personeelModule(db: Db): FastifyPluginAsync {
         const { persoonId } = verzoek.params as { persoonId: string }
         const query = verzoek.query as { peildatum?: string }
         const tenantId = verzoek.headers['x-tenant-id'] as string
-        const peildatum =
-          query.peildatum ?? prognosePeildatum(new Date().toISOString().slice(0, 10))
+        if (query.peildatum !== undefined && !isGeldigeKalenderdatum(query.peildatum)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${query.peildatum}` })
+        }
+        const peildatum = query.peildatum ?? prognosePeildatum(vandaagBrussel())
 
         const gegevens = await metTenantContext(db, tenantId, async (trx) => {
           const personen = await trx`select id from core.persoon where id = ${persoonId}`
@@ -127,10 +146,21 @@ export function personeelModule(db: Db): FastifyPluginAsync {
           },
         },
       },
-      async (verzoek) => {
+      async (verzoek, antwoord) => {
         const tenantId = verzoek.headers['x-tenant-id'] as string
         const lichaam = (verzoek.body ?? {}) as { vandaag?: string }
-        const vandaag = lichaam.vandaag ?? new Date().toISOString().slice(0, 10)
+        const systeemdatum = vandaagBrussel()
+        const vandaag = lichaam.vandaag ?? systeemdatum
+
+        if (!isGeldigeKalenderdatum(vandaag)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${vandaag}` })
+        }
+        if (Math.abs(dagenTussen(systeemdatum, vandaag)) > vensterDagen) {
+          return antwoord.code(400).send({
+            fout: `peildatum ${vandaag} ligt meer dan ${vensterDagen} dagen van vandaag (${systeemdatum}) — herberekening geweigerd om massale foutieve intrekking te voorkomen`,
+          })
+        }
+
         return herberekenDeadlines(db, tenantId, vandaag)
       },
     )

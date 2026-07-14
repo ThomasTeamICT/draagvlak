@@ -1,12 +1,14 @@
 import {
   bepaalEscalatie,
   berekenPerAmbt,
+  berekenTeller,
   evalueerDrempel,
   PERS_2019_03,
   prognosePeildatum,
   type Aanstelling,
   type Afwezigheid,
   type ISODatum,
+  type TellerResultaat,
 } from '@draagvlak/telregels'
 import { metTenantContext, type Db, type Trx } from '../../db.js'
 
@@ -22,6 +24,7 @@ export interface HerberekenResultaat {
 
 interface DeadlineRij {
   id: string
+  ambt: string
   type: string
   datum: string
   status: string
@@ -32,15 +35,24 @@ interface DeadlineRij {
  * Drempeldetectie over alle personen van de tenant (deadline-engine,
  * regelparameters.md § 3): idempotent herberekenen van de TADD-deadlines.
  *
- * - drempel (prognose 30/6) bereikt → deadlines aanmaken of heropenen,
- *   escalatieniveau actualiseren op basis van `vandaag`;
+ * Invarianten (aangescherpt na de adversariële review van deze module):
+ * - drempel (prognose 30/6) bereikt → deadlines van het lopende schooljaar
+ *   aanmaken of heropenen; bestaande open deadlines van eerdere schooljaren
+ *   blijven ONAANGEROERD open en escaleren door tot "verstreken" — deadlines
+ *   verstrijken nooit stil, ook niet over een schooljaargrens heen;
  * - drempel niet (meer) bereikt → open deadlines intrekken (status
- *   'vervallen', casus D3) — nooit verwijderen;
- * - status 'geregistreerd' wordt in geen enkele richting aangeraakt.
+ *   'vervallen', casus D3) met een waarheidsgetrouwe reden — dit is het
+ *   ENIGE pad naar 'vervallen', dus de auditreden klopt altijd;
+ * - ook ambten die alleen nog in bestaande deadlines voorkomen (hernoemd of
+ *   verwijderd in de aanstellingen) worden gereconcilieerd;
+ * - status 'geregistreerd' wordt in geen enkele richting aangeraakt;
+ * - elke statusovergang én elke escalatieniveau-wijziging krijgt een
+ *   audittrail-regel;
+ * - gelijktijdige runs voor dezelfde tenant serialiseren via een
+ *   advisory lock — geen unique-constraint-botsingen.
  *
- * Elke aanmaak, heropening en intrekking krijgt een audittrail-regel.
- * De aanroep gebeurt nu via het admin-endpoint; een geplande job (scheduler)
- * volgt in een eigen ADR.
+ * De aanroep gebeurt nu via het admin-endpoint; een geplande job volgt in
+ * een eigen ADR.
  */
 export async function herberekenDeadlines(
   db: Db,
@@ -50,6 +62,8 @@ export async function herberekenDeadlines(
   const peildatum = prognosePeildatum(vandaag)
 
   return metTenantContext(db, tenantId, async (trx) => {
+    await trx`select pg_advisory_xact_lock(hashtext(${'deadlines:' + tenantId}))`
+
     const resultaat: HerberekenResultaat = {
       peildatum,
       personenVerwerkt: 0,
@@ -80,9 +94,20 @@ export async function herberekenDeadlines(
         where persoon_id = ${persoon.id}
         order by start`) as unknown as Afwezigheid[]
 
+      const bestaandeAlle = (await trx`
+        select id, ambt, type, to_char(datum, 'YYYY-MM-DD') as datum, status, escalatieniveau
+        from core.deadline
+        where persoon_id = ${persoon.id}`) as unknown as DeadlineRij[]
+
       const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters: PARAMETERS, peildatum })
 
-      for (const [ambt, teller] of perAmbt) {
+      // reconcilieer ook ambten die alleen nog in deadlines bestaan (verdwenen ambt)
+      const ambten = new Set<string>([...perAmbt.keys(), ...bestaandeAlle.map((b) => b.ambt)])
+
+      for (const ambt of ambten) {
+        const teller: TellerResultaat =
+          perAmbt.get(ambt) ??
+          berekenTeller({ aanstellingen: [], afwezigheden, parameters: PARAMETERS, peildatum })
         const drempel = evalueerDrempel(teller, PARAMETERS)
         const gewenst =
           drempel.deadlines !== undefined
@@ -92,18 +117,14 @@ export async function herberekenDeadlines(
               ]
             : []
 
-        const bestaande = (await trx`
-          select id, type, to_char(datum, 'YYYY-MM-DD') as datum, status, escalatieniveau
-          from core.deadline
-          where persoon_id = ${persoon.id} and ambt = ${ambt}`) as unknown as DeadlineRij[]
-
+        const bestaande = bestaandeAlle.filter((b) => b.ambt === ambt)
+        const schoolId = aanstellingen.filter((a) => a.ambt === ambt).at(-1)?.school_id ?? null
         const berekening = {
           peildatum,
           dagenTotaal: teller.dagenTotaal,
           dagenEffectief: teller.dagenEffectief,
           parameterbronnen: teller.verantwoording.parameterbronnen,
         }
-        const schoolId = aanstellingen.at(-1)?.school_id ?? null
 
         for (const w of gewenst) {
           const escalatie = bepaalEscalatie(w.datum, vandaag)
@@ -119,7 +140,7 @@ export async function herberekenDeadlines(
           } else if (match.status === 'vervallen') {
             await trx`
               update core.deadline
-              set status = 'open', escalatieniveau = ${escalatie.niveau},
+              set status = 'open', escalatieniveau = ${escalatie.niveau}, school_id = ${schoolId},
                   berekening = ${trx.json(berekening)}, bijgewerkt_op = now()
               where id = ${match.id}`
             await schrijfAudit(trx, tenantId, match.id, 'deadline heropend (drempel opnieuw bereikt)')
@@ -129,13 +150,39 @@ export async function herberekenDeadlines(
               update core.deadline
               set escalatieniveau = ${escalatie.niveau}, bijgewerkt_op = now()
               where id = ${match.id}`
+            await schrijfAudit(
+              trx,
+              tenantId,
+              match.id,
+              `escalatieniveau ${match.escalatieniveau} → ${escalatie.niveau} (${escalatie.dagenResterend} dagen tot deadline)`,
+            )
             resultaat.bijgewerkt += 1
           }
+          // status 'geregistreerd': nooit aanraken
         }
 
         for (const b of bestaande) {
-          const nogGewenst = gewenst.some((w) => w.type === b.type && w.datum === b.datum)
-          if (b.status === 'open' && !nogGewenst) {
+          if (b.status !== 'open') continue
+          if (gewenst.some((w) => w.type === b.type && w.datum === b.datum)) continue
+
+          if (drempel.drempelBereikt) {
+            // deadline van een eerder schooljaar terwijl de drempel nog geldt:
+            // blijft open en escaleert door (tot "verstreken") — nooit stil intrekken
+            const escalatie = bepaalEscalatie(b.datum, vandaag)
+            if (escalatie.niveau !== b.escalatieniveau) {
+              await trx`
+                update core.deadline
+                set escalatieniveau = ${escalatie.niveau}, bijgewerkt_op = now()
+                where id = ${b.id}`
+              await schrijfAudit(
+                trx,
+                tenantId,
+                b.id,
+                `escalatieniveau ${b.escalatieniveau} → ${escalatie.niveau} (${escalatie.dagenResterend} dagen tot deadline${escalatie.verstreken ? ' — verstreken' : ''})`,
+              )
+              resultaat.bijgewerkt += 1
+            }
+          } else {
             await trx`
               update core.deadline
               set status = 'vervallen', berekening = ${trx.json(berekening)}, bijgewerkt_op = now()
@@ -144,7 +191,7 @@ export async function herberekenDeadlines(
               trx,
               tenantId,
               b.id,
-              `deadline ingetrokken: drempel niet meer bereikt (${drempel.redenen.join('; ')})`,
+              `deadline ingetrokken (${drempel.redenen.join('; ')})`,
             )
             resultaat.vervallen += 1
           }

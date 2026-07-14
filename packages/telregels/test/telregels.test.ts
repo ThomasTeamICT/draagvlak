@@ -337,6 +337,14 @@ describe('Randgevallen buiten het testcontract (regressiebescherming)', () => {
     )
   })
 
+  it('kalenderhulpen: isGeldigeKalenderdatum en dagenTussen', async () => {
+    const { isGeldigeKalenderdatum, dagenTussen } = await import('../src/index.js')
+    expect(isGeldigeKalenderdatum('2026-02-28')).toBe(true)
+    expect(isGeldigeKalenderdatum('2026-02-30')).toBe(false)
+    expect(dagenTussen('2026-06-10', '2026-06-15')).toBe(5)
+    expect(dagenTussen('2026-06-15', '2026-06-10')).toBe(-5)
+  })
+
   it('peildatum vóór de aanstelling → nul dagen', () => {
     const r = teller({
       aanstellingen: [aanstelling('2026-09-01', '2027-06-30')],

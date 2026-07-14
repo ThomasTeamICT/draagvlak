@@ -20,6 +20,21 @@ export function* dagenIn(start: ISODatum, einde: ISODatum): Generator<ISODatum> 
   for (let t = naarUtc(start); t <= naarUtc(einde); t += DAG_MS) yield naarIso(t)
 }
 
+/** true voor een bestaande kalenderdag (verwerpt bv. '2026-02-30'). */
+export function isGeldigeKalenderdatum(datum: string): boolean {
+  try {
+    naarUtc(datum)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Aantal kalenderdagen van `van` tot `tot` (negatief wanneer `tot` eerder valt). */
+export function dagenTussen(van: ISODatum, tot: ISODatum): number {
+  return Math.round((naarUtc(tot) - naarUtc(van)) / DAG_MS)
+}
+
 export function isWeekend(datum: ISODatum): boolean {
   const dag = new Date(naarUtc(datum)).getUTCDay()
   return dag === 0 || dag === 6

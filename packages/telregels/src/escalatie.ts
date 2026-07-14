@@ -41,9 +41,14 @@ export function bepaalEscalatie(
   const dagenResterend = Math.round((naarUtc(deadline) - naarUtc(vandaag)) / DAG_MS)
 
   if (dagenResterend < 0) {
+    // verstreken: hoogste trap van de (eventueel eigen) ladder blijft de doelgroep
+    const hoogste = trappen.reduce<EscalatieTrap | undefined>(
+      (a, t) => (a === undefined || t.niveau > a.niveau ? t : a),
+      undefined,
+    )
     return {
       niveau: NIVEAU_VERSTREKEN,
-      doelgroep: 'algemeen directeur / bestuur',
+      doelgroep: hoogste?.doelgroep ?? 'algemeen directeur / bestuur',
       dagenResterend,
       verstreken: true,
     }

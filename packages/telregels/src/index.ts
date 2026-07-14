@@ -11,7 +11,15 @@ export type {
   Verantwoording,
   VervolgtrajectStand,
 } from './types.js'
-export { dagenIn, isWeekend, isZomermaand, juniJaarVan, schooljaarVan } from './kalender.js'
+export {
+  dagenIn,
+  dagenTussen,
+  isGeldigeKalenderdatum,
+  isWeekend,
+  isZomermaand,
+  juniJaarVan,
+  schooljaarVan,
+} from './kalender.js'
 export { PERS_2019_03, resolveerParameters } from './parameters.js'
 export { berekenPerAmbt, berekenTeller } from './teller.js'
 export { evalueerDrempel, prognosePeildatum } from './drempel.js'
