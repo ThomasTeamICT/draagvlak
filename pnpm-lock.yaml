@@ -16,6 +16,9 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.9.0
+      jose:
+        specifier: ^5.9.0
+        version: 5.10.0
       postgres:
         specifier: ^3.4.0
         version: 3.4.9
@@ -515,6 +518,9 @@ packages:
   ipaddr.js@2.4.0:
     resolution: {integrity: sha512-9VGk3HGanVE6JoZXHiCpnGy5X0jYDnN4EA4lntFPj+1vIWlFhIylq2CrrCOJH9EAhc5CYhq18F2Av2tgoAPsYQ==}
     engines: {node: '>= 10'}
+
+  jose@5.10.0:
+    resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
   js-tokens@9.0.1:
     resolution: {integrity: sha512-mxa9E9ITFOt0ban3j6L5MpjwegGz6lBQmM1IJkWeBZGcMxto50+eWdjC/52xDbS2vy0k7vIMK0Fe2wfL9OQSpQ==}
@@ -1145,6 +1151,8 @@ snapshots:
     optional: true
 
   ipaddr.js@2.4.0: {}
+
+  jose@5.10.0: {}
 
   js-tokens@9.0.1: {}
 

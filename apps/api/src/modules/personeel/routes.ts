@@ -10,6 +10,7 @@ import {
   type Afwezigheid,
 } from '@draagvlak/telregels'
 import { metTenantContext, type Db } from '../../db.js'
+import { heeftRol, maakAuthHandler, type AuthContext } from '../../auth/plugin.js'
 import { herberekenDeadlines } from './deadlines.js'
 
 /** Vandaag in Belgische tijd — toISOString() zou tussen middernacht en 2u de vorige dag geven. */
@@ -19,12 +20,6 @@ function vandaagBrussel(): string {
 
 const UUID_PATROON =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-
-const TENANT_HEADER = {
-  type: 'object',
-  required: ['x-tenant-id'],
-  properties: { 'x-tenant-id': { type: 'string', pattern: UUID_PATROON } },
-} as const
 
 /**
  * Tot de regelparameters per tenant in de databank staan (REGELPARAMETER,
@@ -42,15 +37,22 @@ export interface PersoneelOpties {
 }
 
 /**
- * Module B — personeel: tellers per ambt met verantwoording en drempelevaluatie.
+ * Module B — personeel: tellers, drempeldetectie en de deadline-engine.
  *
- * LET OP (ADR-0002): de tenant-context komt tijdelijk uit de x-tenant-id-header.
- * Dit is een expliciete plaatshouder tot de OIDC-authenticatielaag er is; de API
- * wordt niet extern ontsloten vóór die er is.
+ * Authenticatie: OIDC-Bearer-tokens (ADR-0003); elke route in deze module
+ * vereist een geldig token. Autorisatie volgt de toegangsmatrix, in Fase 1
+ * vereenvoudigd tot rolniveau (school-scoping volgt met de SCIM-sync):
+ * - tellers: het personeelslid zelf, of DIR
+ * - herbereken: BG of DIR
+ * - deadline-overzicht: DIR, AD of BG
  */
 export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPluginAsync {
   const vensterDagen = opties.vensterDagen ?? 400
+  const authHandler = maakAuthHandler(db)
+
   return async function (app: FastifyInstance) {
+    app.addHook('preHandler', authHandler)
+
     app.get(
       '/api/v1/personen/:persoonId/tellers',
       {
@@ -65,19 +67,22 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
             properties: { peildatum: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' } },
             additionalProperties: false,
           },
-          headers: TENANT_HEADER,
         },
       },
       async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
         const { persoonId } = verzoek.params as { persoonId: string }
         const query = verzoek.query as { peildatum?: string }
-        const tenantId = verzoek.headers['x-tenant-id'] as string
+
+        if (persoonId !== auth.persoonId && !heeftRol(auth, 'DIR')) {
+          return antwoord.code(403).send({ fout: 'geen toegang tot dit dossier' })
+        }
         if (query.peildatum !== undefined && !isGeldigeKalenderdatum(query.peildatum)) {
           return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${query.peildatum}` })
         }
         const peildatum = query.peildatum ?? prognosePeildatum(vandaagBrussel())
 
-        const gegevens = await metTenantContext(db, tenantId, async (trx) => {
+        const gegevens = await metTenantContext(db, auth.tenantId, async (trx) => {
           const personen = await trx`select id from core.persoon where id = ${persoonId}`
           if (personen.length === 0) return undefined
           const aanstellingen = await trx`
@@ -138,7 +143,6 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
       '/api/v1/deadlines/herbereken',
       {
         schema: {
-          headers: TENANT_HEADER,
           body: {
             type: ['object', 'null'],
             properties: { vandaag: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' } },
@@ -147,7 +151,11 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
         },
       },
       async (verzoek, antwoord) => {
-        const tenantId = verzoek.headers['x-tenant-id'] as string
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'geen toegang tot de deadline-engine' })
+        }
+
         const lichaam = (verzoek.body ?? {}) as { vandaag?: string }
         const systeemdatum = vandaagBrussel()
         const vandaag = lichaam.vandaag ?? systeemdatum
@@ -161,7 +169,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
           })
         }
 
-        return herberekenDeadlines(db, tenantId, vandaag)
+        return herberekenDeadlines(db, auth.tenantId, vandaag, auth.persoonId)
       },
     )
 
@@ -170,7 +178,6 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
       '/api/v1/deadlines',
       {
         schema: {
-          headers: TENANT_HEADER,
           querystring: {
             type: 'object',
             properties: {
@@ -180,11 +187,14 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
           },
         },
       },
-      async (verzoek) => {
-        const tenantId = verzoek.headers['x-tenant-id'] as string
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'DIR', 'AD', 'BG')) {
+          return antwoord.code(403).send({ fout: 'geen toegang tot het deadline-overzicht' })
+        }
         const { status = 'open' } = verzoek.query as { status?: string }
 
-        const deadlines = await metTenantContext(db, tenantId, async (trx) => {
+        const deadlines = await metTenantContext(db, auth.tenantId, async (trx) => {
           return trx`
             select d.id,
                    d.persoon_id as "persoonId",

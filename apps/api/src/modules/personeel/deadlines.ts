@@ -58,6 +58,7 @@ export async function herberekenDeadlines(
   db: Db,
   tenantId: string,
   vandaag: ISODatum,
+  actorId: string | null = null,
 ): Promise<HerberekenResultaat> {
   const peildatum = prognosePeildatum(vandaag)
 
@@ -135,7 +136,7 @@ export async function herberekenDeadlines(
               insert into core.deadline (tenant_id, persoon_id, school_id, ambt, type, datum, escalatieniveau, berekening)
               values (${tenantId}, ${persoon.id}, ${schoolId}, ${ambt}, ${w.type}, ${w.datum}, ${escalatie.niveau}, ${trx.json(berekening)})
               returning id`) as unknown as { id: string }[]
-            await schrijfAudit(trx, tenantId, rij!.id, 'deadline aangemaakt (drempeldetectie)')
+            await schrijfAudit(trx, tenantId, actorId, rij!.id, 'deadline aangemaakt (drempeldetectie)')
             resultaat.aangemaakt += 1
           } else if (match.status === 'vervallen') {
             await trx`
@@ -143,7 +144,7 @@ export async function herberekenDeadlines(
               set status = 'open', escalatieniveau = ${escalatie.niveau}, school_id = ${schoolId},
                   berekening = ${trx.json(berekening)}, bijgewerkt_op = now()
               where id = ${match.id}`
-            await schrijfAudit(trx, tenantId, match.id, 'deadline heropend (drempel opnieuw bereikt)')
+            await schrijfAudit(trx, tenantId, actorId, match.id, 'deadline heropend (drempel opnieuw bereikt)')
             resultaat.bijgewerkt += 1
           } else if (match.status === 'open' && match.escalatieniveau !== escalatie.niveau) {
             await trx`
@@ -153,6 +154,7 @@ export async function herberekenDeadlines(
             await schrijfAudit(
               trx,
               tenantId,
+              actorId,
               match.id,
               `escalatieniveau ${match.escalatieniveau} → ${escalatie.niveau} (${escalatie.dagenResterend} dagen tot deadline)`,
             )
@@ -177,6 +179,7 @@ export async function herberekenDeadlines(
               await schrijfAudit(
                 trx,
                 tenantId,
+                actorId,
                 b.id,
                 `escalatieniveau ${b.escalatieniveau} → ${escalatie.niveau} (${escalatie.dagenResterend} dagen tot deadline${escalatie.verstreken ? ' — verstreken' : ''})`,
               )
@@ -190,6 +193,7 @@ export async function herberekenDeadlines(
             await schrijfAudit(
               trx,
               tenantId,
+              actorId,
               b.id,
               `deadline ingetrokken (${drempel.redenen.join('; ')})`,
             )
@@ -208,10 +212,11 @@ export async function herberekenDeadlines(
 async function schrijfAudit(
   trx: Trx,
   tenantId: string,
+  actorId: string | null,
   deadlineId: string,
   reden: string,
 ): Promise<void> {
   await trx`
     insert into core.audit_log (tenant_id, actor_id, actie, object_type, object_id, context)
-    values (${tenantId}, null, 'schrijf', 'deadline', ${deadlineId}, ${trx.json({ reden, bron: 'deadline-engine' })})`
+    values (${tenantId}, ${actorId}, 'schrijf', 'deadline', ${deadlineId}, ${trx.json({ reden, bron: 'deadline-engine' })})`
 }

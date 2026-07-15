@@ -8,3 +8,4 @@ Statussen: **voorgesteld** (wacht op bekrachtiging door de stuurgroep) → **aan
 |---|---|---|
 | [0001](0001-stackkeuze.md) | Stackkeuze MVP: TypeScript-monorepo, Fastify, PostgreSQL met RLS | voorgesteld |
 | [0002](0002-datatoegang.md) | Datatoegang: postgres.js met RLS-transactiehelper | voorgesteld |
+| [0003](0003-authenticatie.md) | Authenticatie via OIDC-tokens; autorisatie uit de databankrollen | voorgesteld |

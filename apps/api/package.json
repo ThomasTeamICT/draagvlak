@@ -13,6 +13,7 @@
   "dependencies": {
     "@draagvlak/telregels": "workspace:*",
     "fastify": "^5.0.0",
+    "jose": "^5.9.0",
     "postgres": "^3.4.0"
   },
   "devDependencies": {

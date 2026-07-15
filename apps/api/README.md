@@ -11,7 +11,7 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 | `POST /api/v1/deadlines/herbereken` | Deadline-engine: idempotente drempeldetectie over alle personen van de tenant; maakt deadlines aan, actualiseert escalatieniveaus en trekt vervallen signalen in (status, nooit delete). Body optioneel `{ "vandaag": "JJJJ-MM-DD" }` voor reproduceerbare escalatie |
 | `GET /api/v1/deadlines?status=open` | Werkvoorraad voor startscherm en startersdashboard: deadlines met naam, type, datum, escalatieniveau en de berekening erachter |
 
-**⚠ Tijdelijk, tot de OIDC-authenticatielaag er is:** de tenant-context komt uit de header `x-tenant-id`. De API is daarom uitsluitend voor lokale ontwikkeling en CI en wordt niet extern ontsloten (ADR-0002).
+**Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 
 ## Draaien
 
