@@ -48,6 +48,7 @@ export function isZomermaand(datum: ISODatum): boolean {
 
 /** Schooljaar van een datum, bv. '2025-2026' (schooljaar loopt van 1/9 t/m 31/8). */
 export function schooljaarVan(datum: ISODatum): string {
+  naarUtc(datum)
   const j = Number(datum.slice(0, 4))
   const m = Number(datum.slice(5, 7))
   return m >= 9 ? `${j}-${j + 1}` : `${j - 1}-${j}`
@@ -55,6 +56,7 @@ export function schooljaarVan(datum: ISODatum): string {
 
 /** Kalenderjaar waarin juni van het lopende schooljaar valt. */
 export function juniJaarVan(datum: ISODatum): number {
+  naarUtc(datum)
   const j = Number(datum.slice(0, 4))
   const m = Number(datum.slice(5, 7))
   return m >= 9 ? j + 1 : j

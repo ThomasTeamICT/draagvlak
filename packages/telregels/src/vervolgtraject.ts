@@ -1,6 +1,6 @@
 import type { ISODatum, TellerInvoer, VervolgtrajectStand } from './types.js'
-import { dagenIn, isWeekend, isZomermaand, naarIso, naarUtc } from './kalender.js'
-import { resolveerParameters } from './parameters.js'
+import { naarIso, naarUtc } from './kalender.js'
+import { DAG_MS, loopGeteldeDagen, maakParameterResolver } from './telkern.js'
 
 /**
  * Stand van een vervolgtraject na een beoordeling met werkpunten (testcase E1):
@@ -19,41 +19,31 @@ export function berekenVervolgtraject(
   const { aanstellingen, afwezigheden = [], parameters, peildatum } = invoer
   const peil = naarUtc(peildatum)
   const start = naarUtc(startDatum)
+  const resolver = maakParameterResolver(parameters)
 
-  const geteldeDagen = new Set<ISODatum>()
-  for (const a of aanstellingen) {
-    const vanMs = Math.max(naarUtc(a.start), start)
-    const totMs = Math.min(naarUtc(a.einde), peil)
-    if (vanMs > totMs) continue
-    for (const dag of dagenIn(naarIso(vanMs), naarIso(totMs))) {
-      if (geteldeDagen.has(dag)) continue
-      const regels = resolveerParameters(parameters, dag).telregels
-      if (!regels.korteVakantieTeltMee) {
-        throw new Error(
-          'korteVakantieTeltMee=false vereist een vakantiekalender als invoer — nog niet ondersteund (⚠ TE VALIDEREN, testcase B2)',
-        )
-      }
-      if (isZomermaand(dag) && !regels.zomervakantieTeltMee) continue
-      if (isWeekend(dag) && !regels.weekendTeltMee) continue
-      geteldeDagen.add(dag)
+  const bronnen = new Set<string>()
+  const geteldeDagen = new Set<number>()
+  loopGeteldeDagen(aanstellingen, resolver, bronnen, start, peil, geteldeDagen, () => {})
+
+  // effectiviteit per dag (G1) — en een afwezigheid buiten de getelde dagen
+  // (bv. vóór elke parameterversie) is onschadelijk
+  for (const af of afwezigheden) {
+    const einde = naarUtc(af.einde)
+    for (let t = naarUtc(af.start); t <= einde; t += DAG_MS) {
+      if (!geteldeDagen.has(t)) continue
+      if (resolver(t).telregels.effectieveAfwezigheidscodes.includes(af.code)) continue
+      geteldeDagen.delete(t)
     }
   }
 
-  for (const af of afwezigheden) {
-    const teltEffectief = resolveerParameters(parameters, af.start).telregels
-      .effectieveAfwezigheidscodes.includes(af.code)
-    if (teltEffectief) continue
-    for (const dag of dagenIn(af.start, af.einde)) geteldeDagen.delete(dag)
-  }
-
-  const effectieveDagen = [...geteldeDagen].sort()
+  const effectieveDagen = [...geteldeDagen].sort((a, b) => a - b)
   const gepresteerd = effectieveDagen.length
-  const voltooidOp = effectieveDagen[doelEffectief - 1]
+  const voltooidMs = effectieveDagen[doelEffectief - 1]
 
   return {
     doelEffectief,
     gepresteerd,
     resterend: Math.max(0, doelEffectief - gepresteerd),
-    ...(voltooidOp !== undefined ? { voltooidOp } : {}),
+    ...(voltooidMs !== undefined ? { voltooidOp: naarIso(voltooidMs) } : {}),
   }
 }

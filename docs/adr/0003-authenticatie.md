@@ -23,7 +23,22 @@ Omdat de issuer-opzoeking plaatsvindt vóór er een tenant-context bestaat (kip-
 | `POST /deadlines/herbereken` | rol BG of DIR (systeemactie) |
 | `GET /deadlines` | rol DIR, AD of BG |
 
+**Hardening (na de eerste beveiligingsaudit):** tokenverificatie pint het
+algoritme (RS256) en vereist `exp` en `sub`; onbekende issuers worden kort
+negatief gecachet (60 s) zodat verzonnen issuers geen databankroundtrip per
+request kosten; bij een verificatiefout wordt de issuer-cache geleegd zodat
+sleutelrotatie of gewijzigde IdP-config binnen één request opgepikt wordt
+(het intrekkingsvenster is dus maximaal de cache-TTL van 10 minuten); en de
+401 voor een onbekende issuer is identiek aan die voor elk ander ongeldig
+token, zodat niet te enumereren valt welke organisaties klant zijn. De
+applicatierol heeft géén rechten op `core.idp_config` zelf — alleen execute
+op de definer-functie.
+
 ## Bewust nog niet in deze stap
+
+- **Rate limiting**: hoort bij de ontsluitingsstap (gateway of
+  `@fastify/rate-limit`) en staat op de checklist vóór de API extern
+  bereikbaar wordt.
 
 - **JIT-provisioning** (blauwdruk § 9 noemt het als vangnet): een geldig token zonder gekende `idp_subject` geeft 403 — personen ontstaan via SCIM-sync of beheer, niet impliciet.
 - **SCIM-synchronisatie** van personen en rollen: eigen ADR zodra de pilot-tenant vastligt.

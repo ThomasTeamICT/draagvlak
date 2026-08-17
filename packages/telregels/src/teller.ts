@@ -4,8 +4,8 @@ import type {
   TellerInvoer,
   TellerResultaat,
 } from './types.js'
-import { dagenIn, isWeekend, isZomermaand, naarIso, naarUtc, schooljaarVan } from './kalender.js'
-import { resolveerParameters } from './parameters.js'
+import { naarUtc } from './kalender.js'
+import { DAG_MS, loopGeteldeDagen, maakParameterResolver } from './telkern.js'
 
 /**
  * Berekent dienstanciënniteit (totaal en effectief gepresteerd) tot en met de peildatum.
@@ -14,10 +14,14 @@ import { resolveerParameters } from './parameters.js'
  * - elke kalenderdag binnen een aanstellingsperiode telt één keer, ook bij
  *   gelijktijdige aanstellingen in meerdere scholen (F1);
  * - weekends en korte vakanties binnen de periode tellen mee; de zomervakantie
- *   in regel niet (A2, B1); telregels komen uit de parameterversie die op die dag gold (G1);
+ *   in regel niet (A2, B1); telregels komen uit de parameterversie die op die dag gold (G1)
+ *   — óók voor de effectiviteit van een afwezigheid, per dag;
  * - afwezigheden verminderen "effectief gepresteerd", niet het totaal (C1),
- *   tenzij de code op de lijst effectieve codes staat (C3);
- * - per schooljaar geldt een plafond (B3);
+ *   tenzij de code op de lijst effectieve codes staat (C3); een afwezigheid die
+ *   geen enkele getelde dag raakt (bv. vóór elke parameterversie) is onschadelijk
+ *   en crasht de berekening niet;
+ * - per schooljaar geldt een plafond (B3), geresolveerd op de eerste getelde dag
+ *   van dat schooljaar (⚠ TE VALIDEREN: plafondwijziging middenin een schooljaar);
  * - het resultaat bevat de volledige verantwoording en is reproduceerbaar (G2/G3).
  *
  * De functie is puur: geen klok, geen databank, geen configuratie buiten de invoer.
@@ -25,55 +29,60 @@ import { resolveerParameters } from './parameters.js'
 export function berekenTeller(invoer: TellerInvoer): TellerResultaat {
   const { aanstellingen, afwezigheden = [], parameters, peildatum } = invoer
   const peil = naarUtc(peildatum)
+  const resolver = maakParameterResolver(parameters)
 
   const parameterbronnen = new Set<string>()
-  const geteldeDagen = new Set<ISODatum>()
+  const geteldeDagen = new Set<number>()
+  const perJaarRuw = new Map<string, { totaal: number; effectief: number; eersteDag: number }>()
 
-  for (const a of aanstellingen) {
-    const eindeMs = Math.min(naarUtc(a.einde), peil)
-    if (naarUtc(a.start) > eindeMs) continue
-    for (const dag of dagenIn(a.start, naarIso(eindeMs))) {
-      if (geteldeDagen.has(dag)) continue
-      const versie = resolveerParameters(parameters, dag)
-      parameterbronnen.add(versie.bron)
-      const regels = versie.telregels
-      if (!regels.korteVakantieTeltMee) {
-        throw new Error(
-          'korteVakantieTeltMee=false vereist een vakantiekalender als invoer — nog niet ondersteund (⚠ TE VALIDEREN, testcase B2)',
-        )
-      }
-      if (isZomermaand(dag) && !regels.zomervakantieTeltMee) continue
-      if (isWeekend(dag) && !regels.weekendTeltMee) continue
-      geteldeDagen.add(dag)
-    }
-  }
+  let cacheJaar = -1
+  let cacheMaand = -1
+  let cacheTelling: { totaal: number; effectief: number; eersteDag: number } | undefined
 
-  const nietEffectief = new Set<ISODatum>()
-  const afwezigheidsVerantwoording = afwezigheden.map((af) => {
-    const versie = resolveerParameters(parameters, af.start)
-    const teltEffectief = versie.telregels.effectieveAfwezigheidscodes.includes(af.code)
-    if (!teltEffectief) {
-      for (const dag of dagenIn(af.start, af.einde)) {
-        if (geteldeDagen.has(dag)) nietEffectief.add(dag)
+  loopGeteldeDagen(aanstellingen, resolver, parameterbronnen, undefined, peil, geteldeDagen, (t, jaar, maand) => {
+    if (jaar !== cacheJaar || maand !== cacheMaand) {
+      const sj = maand >= 9 ? `${jaar}-${jaar + 1}` : `${jaar - 1}-${jaar}`
+      let telling = perJaarRuw.get(sj)
+      if (telling === undefined) {
+        telling = { totaal: 0, effectief: 0, eersteDag: t }
+        perJaarRuw.set(sj, telling)
       }
+      cacheJaar = jaar
+      cacheMaand = maand
+      cacheTelling = telling
     }
-    return { start: af.start, einde: af.einde, code: af.code, teltEffectief }
+    const telling = cacheTelling!
+    telling.totaal += 1
+    telling.effectief += 1
+    if (t < telling.eersteDag) telling.eersteDag = t
   })
 
-  const perJaarRuw = new Map<string, { totaal: number; effectief: number }>()
-  for (const dag of geteldeDagen) {
-    const sj = schooljaarVan(dag)
-    const telling = perJaarRuw.get(sj) ?? { totaal: 0, effectief: 0 }
-    telling.totaal += 1
-    if (!nietEffectief.has(dag)) telling.effectief += 1
-    perJaarRuw.set(sj, telling)
-  }
+  // Effectiviteit van een afwezigheid wordt per dag bepaald (G1): een
+  // afwezigheid over een parameterversiegrens heen kan deels wél, deels niet
+  // effectief zijn. teltEffectief in de verantwoording betekent: "deze
+  // afwezigheid heeft het effectief gepresteerde niet verminderd".
+  const nietEffectief = new Set<number>()
+  const afwezigheidsVerantwoording = afwezigheden.map((af) => {
+    let verminderde = false
+    const einde = naarUtc(af.einde)
+    for (let t = naarUtc(af.start); t <= einde; t += DAG_MS) {
+      if (!geteldeDagen.has(t) || nietEffectief.has(t)) continue
+      if (resolver(t).telregels.effectieveAfwezigheidscodes.includes(af.code)) continue
+      nietEffectief.add(t)
+      verminderde = true
+      const d = new Date(t)
+      const jaar = d.getUTCFullYear()
+      const sj = d.getUTCMonth() + 1 >= 9 ? `${jaar}-${jaar + 1}` : `${jaar - 1}-${jaar}`
+      const telling = perJaarRuw.get(sj)
+      if (telling !== undefined) telling.effectief -= 1
+    }
+    return { start: af.start, einde: af.einde, code: af.code, teltEffectief: !verminderde }
+  })
 
   const perSchooljaar: SchooljaarTelling[] = [...perJaarRuw.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([schooljaar, ruw]) => {
-      const startVanSchooljaar: ISODatum = `${schooljaar.slice(0, 4)}-09-01`
-      const max = resolveerParameters(parameters, startVanSchooljaar).maxPerSchooljaar
+      const max = resolver(ruw.eersteDag).maxPerSchooljaar
       const totaal = Math.min(ruw.totaal, max)
       return {
         schooljaar,
@@ -83,7 +92,7 @@ export function berekenTeller(invoer: TellerInvoer): TellerResultaat {
       }
     })
 
-  const telregelsOpPeildatum = resolveerParameters(parameters, peildatum).telregels
+  const telregelsOpPeildatum = resolver(peil).telregels
 
   return {
     dagenTotaal: perSchooljaar.reduce((som, j) => som + j.totaal, 0),

@@ -337,6 +337,49 @@ describe('Randgevallen buiten het testcontract (regressiebescherming)', () => {
     )
   })
 
+  it('afwezigheid vóór elke parameterversie crasht niet en beïnvloedt niets', () => {
+    const r = teller({
+      aanstellingen: [aanstelling('2025-09-01', '2026-06-30')],
+      afwezigheden: [{ start: '2019-08-15', einde: '2019-08-20', code: 'ziekte' }],
+    })
+    expect(r.dagenTotaal).toBe(303)
+    expect(r.dagenEffectief).toBe(303)
+    expect(r.verantwoording.afwezigheden[0]?.teltEffectief).toBe(true)
+  })
+
+  it('G1: effectiviteit van een afwezigheid volgt per dag de versie die toen gold', () => {
+    const versieA: ParameterVersie = { ...PERS_2019_03, geldigTot: '2025-12-31' }
+    const versieB: ParameterVersie = {
+      ...PERS_2019_03,
+      geldigVanaf: '2026-01-01',
+      bron: 'fictieve opvolger — ziekte telt effectief',
+      telregels: { ...PERS_2019_03.telregels, effectieveAfwezigheidscodes: ['ziekte'] },
+    }
+    const r = berekenTeller({
+      parameters: [versieA, versieB],
+      peildatum: '2026-06-30',
+      aanstellingen: [aanstelling('2025-09-01', '2026-06-30')],
+      afwezigheden: [{ start: '2025-12-29', einde: '2026-01-09', code: 'ziekte' }],
+    })
+    // alleen 29-31/12 vallen onder versie A (ziekte niet effectief); de
+    // januaridagen vallen onder versie B en verminderen dus niets
+    expect(r.dagenTotaal).toBe(303)
+    expect(r.dagenEffectief).toBe(300)
+    expect(r.verantwoording.afwezigheden[0]?.teltEffectief).toBe(false)
+  })
+
+  it('plafond wordt geresolveerd op de eerste getelde dag, ook als de versie middenin het schooljaar ingaat', () => {
+    const laat: ParameterVersie = { ...PERS_2019_03, geldigVanaf: '2026-01-01' }
+    const r = berekenTeller({
+      parameters: [laat],
+      peildatum: '2026-06-30',
+      aanstellingen: [aanstelling('2026-01-01', '2026-06-30')],
+    })
+    // resolutie op synthetisch 1/9/2025 zou crashen; op de eerste getelde dag niet
+    expect(r.dagenTotaal).toBe(181)
+    expect(r.perSchooljaar[0]?.geplafonneerd).toBe(false)
+  })
+
   it('kalenderhulpen: isGeldigeKalenderdatum en dagenTussen', async () => {
     const { isGeldigeKalenderdatum, dagenTussen } = await import('../src/index.js')
     expect(isGeldigeKalenderdatum('2026-02-28')).toBe(true)

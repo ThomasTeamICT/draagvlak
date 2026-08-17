@@ -51,7 +51,8 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
   const authHandler = maakAuthHandler(db)
 
   return async function (app: FastifyInstance) {
-    app.addHook('preHandler', authHandler)
+    // onRequest: 401 valt vóór body-parsing en schema-validatie
+    app.addHook('onRequest', authHandler)
 
     app.get(
       '/api/v1/personen/:persoonId/tellers',
@@ -173,7 +174,12 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
       },
     )
 
-    /** Werkvoorraad voor het startersdashboard (wireframe W5) en het startscherm (W1). */
+    /**
+     * Werkvoorraad voor het startersdashboard (wireframe W5) en het startscherm
+     * (W1). Begrensd: vervallen/verstreken rijen accumuleren per schooljaar
+     * (deadlines worden nooit verwijderd), dus zonder limiet groeit de respons
+     * onbegrensd mee. Keyset-paginering volgt zodra een scherm ze nodig heeft.
+     */
     app.get(
       '/api/v1/deadlines',
       {
@@ -182,6 +188,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
             type: 'object',
             properties: {
               status: { type: 'string', enum: ['open', 'geregistreerd', 'vervallen'] },
+              limiet: { type: 'integer', minimum: 1, maximum: 500 },
             },
             additionalProperties: false,
           },
@@ -192,7 +199,10 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
         if (!heeftRol(auth, 'DIR', 'AD', 'BG')) {
           return antwoord.code(403).send({ fout: 'geen toegang tot het deadline-overzicht' })
         }
-        const { status = 'open' } = verzoek.query as { status?: string }
+        const { status = 'open', limiet = 100 } = verzoek.query as {
+          status?: string
+          limiet?: number
+        }
 
         const deadlines = await metTenantContext(db, auth.tenantId, async (trx) => {
           return trx`
@@ -208,7 +218,8 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
             from core.deadline d
             join core.persoon p on p.id = d.persoon_id
             where d.status = ${status}
-            order by d.datum, p.naam`
+            order by d.datum, p.naam
+            limit ${limiet}`
         })
 
         return { status, deadlines }

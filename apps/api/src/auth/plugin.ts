@@ -26,14 +26,26 @@ interface IssuerConfig {
   geladenOp: number
 }
 
+/** Negatief cache-item: issuer is opgezocht en bestaat niet. */
+interface OnbekendeIssuer {
+  onbekend: true
+  geladenOp: number
+}
+
 const CONFIG_TTL_MS = 10 * 60 * 1000
+// onbekende issuers kort onthouden: anders vertaalt elke request met een
+// verzonnen `iss` zich 1-op-1 in een databankroundtrip (DoS op de pool)
+const ONBEKEND_TTL_MS = 60 * 1000
 
 export function maakAuthHandler(db: Db) {
-  const perIssuer = new Map<string, IssuerConfig>()
+  const perIssuer = new Map<string, IssuerConfig | OnbekendeIssuer>()
 
   async function configVoorIssuer(issuer: string): Promise<IssuerConfig | undefined> {
     const cached = perIssuer.get(issuer)
-    if (cached !== undefined && Date.now() - cached.geladenOp < CONFIG_TTL_MS) return cached
+    if (cached !== undefined) {
+      const ttl = 'onbekend' in cached ? ONBEKEND_TTL_MS : CONFIG_TTL_MS
+      if (Date.now() - cached.geladenOp < ttl) return 'onbekend' in cached ? undefined : cached
+    }
 
     const rijen = (await db`
       select tenant_id, audience, jwks_uri
@@ -43,7 +55,10 @@ export function maakAuthHandler(db: Db) {
       jwks_uri: string
     }[]
     const rij = rijen[0]
-    if (rij === undefined) return undefined
+    if (rij === undefined) {
+      perIssuer.set(issuer, { onbekend: true, geladenOp: Date.now() })
+      return undefined
+    }
 
     const config: IssuerConfig = {
       tenantId: rij.tenant_id,
@@ -74,7 +89,9 @@ export function maakAuthHandler(db: Db) {
 
     const config = await configVoorIssuer(issuer)
     if (config === undefined) {
-      return antwoord.code(401).send({ fout: 'onbekende issuer' })
+      // zelfde antwoord als elk ander ongeldig token: geen orakel dat verraadt
+      // welke issuers (klanten) geconfigureerd zijn
+      return antwoord.code(401).send({ fout: 'ongeldig toegangstoken' })
     }
 
     let sub: string | undefined
@@ -82,9 +99,14 @@ export function maakAuthHandler(db: Db) {
       const { payload } = await jwtVerify(token, config.jwks, {
         issuer,
         audience: config.audience,
+        algorithms: ['RS256'],
+        requiredClaims: ['exp', 'sub'],
       })
       sub = payload.sub
     } catch {
+      // geroteerde sleutels of gewijzigde idp_config: cache weg, zodat de
+      // volgende poging met verse configuratie verifieert
+      perIssuer.delete(issuer)
       return antwoord.code(401).send({ fout: 'ongeldig toegangstoken' })
     }
     if (sub === undefined) {

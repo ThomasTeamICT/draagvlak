@@ -18,6 +18,12 @@ import { startIdpStub, type IdpStub } from './idp-stub.js'
 const ADMIN_URL = process.env['DATABASE_ADMIN_URL']
 const APP_URL = process.env['DATABASE_URL']
 
+// lokaal zonder databank slaan deze tests over; in CI is dat een fout, geen
+// stilte — anders is een verkeerd geconfigureerde pipeline vals-groen
+if (process.env['CI'] !== undefined && (ADMIN_URL === undefined || APP_URL === undefined)) {
+  throw new Error('CI zonder DATABASE_ADMIN_URL/DATABASE_URL: integratietests zouden stil overgeslagen worden')
+}
+
 const TENANT_A = '11111111-1111-1111-1111-111111111111'
 const TENANT_B = '22222222-2222-2222-2222-222222222222'
 const SCHOOL_A = '33333333-3333-3333-3333-333333333333'

@@ -73,32 +73,46 @@ export async function herberekenDeadlines(
       vervallen: 0,
     }
 
+    // drie tenant-brede reads (RLS scopet al), in JS gegroepeerd per persoon:
+    // ~5 queries per run i.p.v. 3 per persoon (N+1, ~6.000 bij 2000 personeelsleden)
     const personen = (await trx`select id from core.persoon order by id`) as unknown as {
       id: string
     }[]
 
-    for (const persoon of personen) {
-      const aanstellingen = (await trx`
-        select to_char(start, 'YYYY-MM-DD') as start,
+    const perPersoonAanstellingen = groepeer(
+      (await trx`
+        select persoon_id,
+               to_char(start, 'YYYY-MM-DD') as start,
                to_char(einde, 'YYYY-MM-DD') as einde,
                ambt,
                school_id
         from core.aanstelling
-        where persoon_id = ${persoon.id}
-        order by start`) as unknown as (Aanstelling & { school_id: string })[]
+        order by persoon_id, start`) as unknown as (Aanstelling & {
+        persoon_id: string
+        school_id: string
+      })[],
+    )
 
-      const afwezigheden = (await trx`
-        select to_char(start, 'YYYY-MM-DD') as start,
+    const perPersoonAfwezigheden = groepeer(
+      (await trx`
+        select persoon_id,
+               to_char(start, 'YYYY-MM-DD') as start,
                to_char(einde, 'YYYY-MM-DD') as einde,
                code
         from core.afwezigheid
-        where persoon_id = ${persoon.id}
-        order by start`) as unknown as Afwezigheid[]
+        order by persoon_id, start`) as unknown as (Afwezigheid & { persoon_id: string })[],
+    )
 
-      const bestaandeAlle = (await trx`
-        select id, ambt, type, to_char(datum, 'YYYY-MM-DD') as datum, status, escalatieniveau
-        from core.deadline
-        where persoon_id = ${persoon.id}`) as unknown as DeadlineRij[]
+    const perPersoonDeadlines = groepeer(
+      (await trx`
+        select persoon_id, id, ambt, type, to_char(datum, 'YYYY-MM-DD') as datum, status, escalatieniveau
+        from core.deadline`) as unknown as (DeadlineRij & { persoon_id: string })[],
+    )
+
+    for (const persoon of personen) {
+      const aanstellingen = perPersoonAanstellingen.get(persoon.id) ?? []
+      const afwezigheden = perPersoonAfwezigheden.get(persoon.id) ?? []
+      const bestaandeAlle = perPersoonDeadlines.get(persoon.id) ?? []
 
       const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters: PARAMETERS, peildatum })
 
@@ -144,7 +158,13 @@ export async function herberekenDeadlines(
               set status = 'open', escalatieniveau = ${escalatie.niveau}, school_id = ${schoolId},
                   berekening = ${trx.json(berekening)}, bijgewerkt_op = now()
               where id = ${match.id}`
-            await schrijfAudit(trx, tenantId, actorId, match.id, 'deadline heropend (drempel opnieuw bereikt)')
+            await schrijfAudit(
+              trx,
+              tenantId,
+              actorId,
+              match.id,
+              `deadline heropend (drempel opnieuw bereikt; escalatieniveau ${match.escalatieniveau} → ${escalatie.niveau})`,
+            )
             resultaat.bijgewerkt += 1
           } else if (match.status === 'open' && match.escalatieniveau !== escalatie.niveau) {
             await trx`
@@ -207,6 +227,16 @@ export async function herberekenDeadlines(
 
     return resultaat
   })
+}
+
+function groepeer<T extends { persoon_id: string }>(rijen: T[]): Map<string, T[]> {
+  const map = new Map<string, T[]>()
+  for (const rij of rijen) {
+    const lijst = map.get(rij.persoon_id)
+    if (lijst === undefined) map.set(rij.persoon_id, [rij])
+    else lijst.push(rij)
+  }
+  return map
 }
 
 async function schrijfAudit(

@@ -17,8 +17,12 @@ create table core.idp_config (
   aangemaakt_op timestamptz not null default now()
 );
 
+-- ENABLE zonder FORCE, bewust: de security definer-functie hieronder draait
+-- als tabel-eigenaar (de migratierol), en die moet langs de policies kunnen
+-- lezen óók wanneer de migratierol geen superuser/BYPASSRLS is — met FORCE
+-- zou de issuer-lookup dan nul rijen zien en faalt élke authenticatie.
+-- draagvlak_app is geen eigenaar en valt dus altijd onder de policy.
 alter table core.idp_config enable row level security;
-alter table core.idp_config force row level security;
 
 create policy tenant_isolatie on core.idp_config
   using (tenant_id = current_setting('app.tenant_id', true)::uuid);
@@ -39,10 +43,13 @@ $$;
 
 revoke all on function core.idp_config_voor_issuer(text) from public;
 
+-- De applicatierol krijgt GEEN rechten op de tabel zelf: idp_config is het
+-- vertrouwensanker van de tokenvalidatie (issuer → tenant, audience,
+-- jwks_uri). De app leest uitsluitend via de definer-functie; beheer verloopt
+-- via de migratie-/beheerrol.
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'draagvlak_app') then
-    grant select, insert, update on core.idp_config to draagvlak_app;
     grant execute on function core.idp_config_voor_issuer(text) to draagvlak_app;
   end if;
 end $$;
