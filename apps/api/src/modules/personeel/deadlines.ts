@@ -3,7 +3,6 @@ import {
   berekenPerAmbt,
   berekenTeller,
   evalueerDrempel,
-  PERS_2019_03,
   prognosePeildatum,
   type Aanstelling,
   type Afwezigheid,
@@ -12,8 +11,7 @@ import {
 } from '@draagvlak/telregels'
 import { metTenantContext, type Db } from '../../db.js'
 import { schrijfAudit } from './audit.js'
-
-const PARAMETERS = [PERS_2019_03]
+import { haalActieveParameters } from './parameters.js'
 
 export interface HerberekenResultaat {
   peildatum: ISODatum
@@ -66,6 +64,9 @@ export async function herberekenDeadlines(
   return metTenantContext(db, tenantId, async (trx) => {
     await trx`select pg_advisory_xact_lock(hashtext(${'deadlines:' + tenantId}))`
 
+    // de bekrachtigde parameterversies van deze tenant (of de startset)
+    const parameters = await haalActieveParameters(trx)
+
     const resultaat: HerberekenResultaat = {
       peildatum,
       personenVerwerkt: 0,
@@ -115,7 +116,7 @@ export async function herberekenDeadlines(
       const afwezigheden = perPersoonAfwezigheden.get(persoon.id) ?? []
       const bestaandeAlle = perPersoonDeadlines.get(persoon.id) ?? []
 
-      const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters: PARAMETERS, peildatum })
+      const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters, peildatum })
 
       // reconcilieer ook ambten die alleen nog in deadlines bestaan (verdwenen ambt)
       const ambten = new Set<string>([...perAmbt.keys(), ...bestaandeAlle.map((b) => b.ambt)])
@@ -123,8 +124,8 @@ export async function herberekenDeadlines(
       for (const ambt of ambten) {
         const teller: TellerResultaat =
           perAmbt.get(ambt) ??
-          berekenTeller({ aanstellingen: [], afwezigheden, parameters: PARAMETERS, peildatum })
-        const drempel = evalueerDrempel(teller, PARAMETERS)
+          berekenTeller({ aanstellingen: [], afwezigheden, parameters, peildatum })
+        const drempel = evalueerDrempel(teller, parameters)
         const gewenst =
           drempel.deadlines !== undefined
             ? [

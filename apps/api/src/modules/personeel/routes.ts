@@ -4,7 +4,6 @@ import {
   dagenTussen,
   evalueerDrempel,
   isGeldigeKalenderdatum,
-  PERS_2019_03,
   prognosePeildatum,
   type Aanstelling,
   type Afwezigheid,
@@ -13,6 +12,12 @@ import { metTenantContext, type Db } from '../../db.js'
 import { heeftRol, maakAuthHandler, type AuthContext } from '../../auth/plugin.js'
 import { herberekenDeadlines } from './deadlines.js'
 import { registreerBeoordeling } from './beoordelingen.js'
+import {
+  beslisOverParameter,
+  haalActieveParameters,
+  stelParameterVoor,
+  type VoorstelInvoer,
+} from './parameters.js'
 
 /** Vandaag in Belgische tijd — toISOString() zou tussen middernacht en 2u de vorige dag geven. */
 function vandaagBrussel(): string {
@@ -21,12 +26,6 @@ function vandaagBrussel(): string {
 
 const UUID_PATROON =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
-
-/**
- * Tot de regelparameters per tenant in de databank staan (REGELPARAMETER,
- * latere migratie), geldt de startset uit het domeinpakket.
- */
-const PARAMETERS = [PERS_2019_03]
 
 export interface PersoneelOpties {
   /**
@@ -104,6 +103,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
           return {
             aanstellingen: aanstellingen as unknown as Aanstelling[],
             afwezigheden: afwezigheden as unknown as Afwezigheid[],
+            parameters: await haalActieveParameters(trx),
           }
         })
 
@@ -116,7 +116,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
         const perAmbt = berekenPerAmbt({
           aanstellingen: gegevens.aanstellingen,
           afwezigheden: gegevens.afwezigheden,
-          parameters: PARAMETERS,
+          parameters: gegevens.parameters,
           peildatum,
         })
 
@@ -128,7 +128,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
             dagenTotaal: resultaat.dagenTotaal,
             dagenEffectief: resultaat.dagenEffectief,
             perSchooljaar: resultaat.perSchooljaar,
-            drempel: evalueerDrempel(resultaat, PARAMETERS),
+            drempel: evalueerDrempel(resultaat, gegevens.parameters),
             verantwoording: resultaat.verantwoording,
           })),
         }
@@ -325,5 +325,137 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
         return { persoonId, beoordelingen }
       },
     )
+
+    /**
+     * Beheer van regelparameters (toegangsmatrix: BG, met vier-ogen).
+     * Wijzigen = nieuw voorstel; een ándere beheerder bekrachtigt. Alleen
+     * bekrachtigde versies sturen de teller en de engine; zonder tenant-
+     * versies geldt de startset uit het domeinpakket.
+     */
+    app.get('/api/v1/regelparameters', async (verzoek, antwoord) => {
+      const auth = verzoek.auth as AuthContext
+      if (!heeftRol(auth, 'BG')) {
+        return antwoord.code(403).send({ fout: 'parameterbeheer vereist de beheerdersrol' })
+      }
+      const regelparameters = await metTenantContext(db, auth.tenantId, async (trx) => {
+        return trx`
+          select r.id,
+                 r.status,
+                 to_char(r.geldig_vanaf, 'YYYY-MM-DD') as "geldigVanaf",
+                 to_char(r.geldig_tot, 'YYYY-MM-DD') as "geldigTot",
+                 r.bron,
+                 r.drempel_totaal as "drempelTotaal",
+                 r.drempel_effectief as "drempelEffectief",
+                 r.max_per_schooljaar as "maxPerSchooljaar",
+                 r.telregels,
+                 vp.naam as "voorgesteldDoor",
+                 bp.naam as "bekrachtigdDoor"
+          from core.regelparameter r
+          join core.persoon vp on vp.id = r.voorgesteld_door
+          left join core.persoon bp on bp.id = r.bekrachtigd_door
+          order by r.geldig_vanaf desc, r.aangemaakt_op desc`
+      })
+      return { regelparameters }
+    })
+
+    app.post(
+      '/api/v1/regelparameters',
+      {
+        schema: {
+          body: {
+            type: 'object',
+            required: [
+              'geldigVanaf',
+              'bron',
+              'drempelTotaal',
+              'drempelEffectief',
+              'maxPerSchooljaar',
+              'telregels',
+            ],
+            properties: {
+              geldigVanaf: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              geldigTot: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              bron: { type: 'string', minLength: 5, maxLength: 500 },
+              drempelTotaal: { type: 'integer', minimum: 1, maximum: 2000 },
+              drempelEffectief: { type: 'integer', minimum: 1, maximum: 2000 },
+              maxPerSchooljaar: { type: 'integer', minimum: 1, maximum: 366 },
+              telregels: {
+                type: 'object',
+                required: [
+                  'weekendTeltMee',
+                  'korteVakantieTeltMee',
+                  'zomervakantieTeltMee',
+                  'effectieveAfwezigheidscodes',
+                ],
+                properties: {
+                  weekendTeltMee: { type: 'boolean' },
+                  korteVakantieTeltMee: { type: 'boolean' },
+                  zomervakantieTeltMee: { type: 'boolean' },
+                  effectieveAfwezigheidscodes: {
+                    type: 'array',
+                    items: { type: 'string', minLength: 1, maxLength: 50 },
+                    maxItems: 100,
+                  },
+                },
+                additionalProperties: false,
+              },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG')) {
+          return antwoord.code(403).send({ fout: 'parameterbeheer vereist de beheerdersrol' })
+        }
+        const lichaam = verzoek.body as VoorstelInvoer
+        if (!isGeldigeKalenderdatum(lichaam.geldigVanaf)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${lichaam.geldigVanaf}` })
+        }
+        if (lichaam.geldigTot !== undefined && !isGeldigeKalenderdatum(lichaam.geldigTot)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${lichaam.geldigTot}` })
+        }
+        if (lichaam.geldigTot !== undefined && lichaam.geldigTot < lichaam.geldigVanaf) {
+          return antwoord.code(400).send({ fout: 'geldigTot ligt vóór geldigVanaf' })
+        }
+
+        const voorstel = await stelParameterVoor(db, auth.tenantId, auth.persoonId, lichaam)
+        return antwoord.code(201).send(voorstel)
+      },
+    )
+
+    for (const beslissing of ['bekrachtig', 'wijs-af'] as const) {
+      app.post(
+        `/api/v1/regelparameters/:parameterId/${beslissing}`,
+        {
+          schema: {
+            params: {
+              type: 'object',
+              required: ['parameterId'],
+              properties: { parameterId: { type: 'string', pattern: UUID_PATROON } },
+            },
+          },
+        },
+        async (verzoek, antwoord) => {
+          const auth = verzoek.auth as AuthContext
+          if (!heeftRol(auth, 'BG')) {
+            return antwoord.code(403).send({ fout: 'parameterbeheer vereist de beheerdersrol' })
+          }
+          const { parameterId } = verzoek.params as { parameterId: string }
+          const uitkomst = await beslisOverParameter(
+            db,
+            auth.tenantId,
+            auth.persoonId,
+            parameterId,
+            beslissing === 'bekrachtig' ? 'bekrachtig' : 'wijs_af',
+          )
+          if (!uitkomst.ok) {
+            return antwoord.code(uitkomst.status).send({ fout: uitkomst.fout })
+          }
+          return { id: uitkomst.id, status: uitkomst.status }
+        },
+      )
+    }
   }
 }

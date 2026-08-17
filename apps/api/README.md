@@ -12,8 +12,12 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 | `GET /api/v1/deadlines?status=open&limiet=100` | Werkvoorraad voor startscherm en startersdashboard: deadlines met naam, type, datum, escalatieniveau en de berekening erachter (standaard 100, max 500) |
 | `POST /api/v1/deadlines/:deadlineId/registreer` | Registreert een TADD-beoordeling (`positief`, `met_werkpunten`, `negatief`, of `stilzwijgend_positief` ná het verstrijken — casus D4) tegen een open beoordelingsdeadline; de deadline gaat naar `geregistreerd` |
 | `GET /api/v1/personen/:persoonId/beoordelingen` | Beoordelingshistoriek voor het dossierscherm, met registrator en schooljaar |
+| `GET /api/v1/regelparameters` | Alle parameterversies van de tenant (voorgesteld, actief, afgewezen), met voorsteller en bekrachtiger |
+| `POST /api/v1/regelparameters` | Nieuwe parameterversie voorstellen (drempels, plafond, telregels, bronvermelding) — status `voorgesteld` |
+| `POST /api/v1/regelparameters/:id/bekrachtig` | Vier-ogen-bekrachtiging door een ándere beheerder — pas dan stuurt de versie teller en engine |
+| `POST /api/v1/regelparameters/:id/wijs-af` | Voorstel afwijzen (rij blijft bestaan, wordt nooit actief) |
 
-**Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
+**Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR; regelparameterbeheer = BG (vier-ogen, afgedwongen tot in de databank). Zonder bekrachtigde tenantversies geldt de startset PERS/2019/03 uit het domeinpakket — de bronvermelding in elke verantwoording toont welke set gold. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 
 ## Draaien
 
