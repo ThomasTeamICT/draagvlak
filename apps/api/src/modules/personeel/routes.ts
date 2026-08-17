@@ -12,6 +12,7 @@ import {
 import { metTenantContext, type Db } from '../../db.js'
 import { heeftRol, maakAuthHandler, type AuthContext } from '../../auth/plugin.js'
 import { herberekenDeadlines } from './deadlines.js'
+import { registreerBeoordeling } from './beoordelingen.js'
 
 /** Vandaag in Belgische tijd — toISOString() zou tussen middernacht en 2u de vorige dag geven. */
 function vandaagBrussel(): string {
@@ -223,6 +224,105 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
         })
 
         return { status, deadlines }
+      },
+    )
+
+    /**
+     * Module D — registratie van een TADD-beoordeling tegen een open
+     * beoordelingsdeadline (toegangsmatrix: beoordelen is een
+     * directeursbevoegdheid). Sluit de TADD-lus: de deadline gaat naar
+     * 'geregistreerd'.
+     */
+    app.post(
+      '/api/v1/deadlines/:deadlineId/registreer',
+      {
+        schema: {
+          params: {
+            type: 'object',
+            required: ['deadlineId'],
+            properties: { deadlineId: { type: 'string', pattern: UUID_PATROON } },
+          },
+          body: {
+            type: 'object',
+            required: ['resultaat'],
+            properties: {
+              resultaat: {
+                type: 'string',
+                enum: ['positief', 'met_werkpunten', 'negatief', 'stilzwijgend_positief'],
+              },
+              opmerking: { type: 'string', maxLength: 2000 },
+              vandaag: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'DIR')) {
+          return antwoord.code(403).send({ fout: 'beoordelen is een directeursbevoegdheid' })
+        }
+        const { deadlineId } = verzoek.params as { deadlineId: string }
+        const lichaam = verzoek.body as {
+          resultaat: 'positief' | 'met_werkpunten' | 'negatief' | 'stilzwijgend_positief'
+          opmerking?: string
+          vandaag?: string
+        }
+        const vandaag = lichaam.vandaag ?? vandaagBrussel()
+        if (!isGeldigeKalenderdatum(vandaag)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${vandaag}` })
+        }
+
+        const uitkomst = await registreerBeoordeling(db, auth.tenantId, auth.persoonId, deadlineId, {
+          resultaat: lichaam.resultaat,
+          ...(lichaam.opmerking !== undefined ? { opmerking: lichaam.opmerking } : {}),
+          vandaag,
+        })
+        if (!uitkomst.ok) {
+          return antwoord.code(uitkomst.status).send({ fout: uitkomst.fout })
+        }
+        return antwoord.code(201).send({
+          beoordeling: uitkomst.beoordeling,
+          deadline: uitkomst.deadline,
+        })
+      },
+    )
+
+    /** Beoordelingshistoriek voor het dossierscherm (het personeelslid zelf of DIR). */
+    app.get(
+      '/api/v1/personen/:persoonId/beoordelingen',
+      {
+        schema: {
+          params: {
+            type: 'object',
+            required: ['persoonId'],
+            properties: { persoonId: { type: 'string', pattern: UUID_PATROON } },
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        const { persoonId } = verzoek.params as { persoonId: string }
+        if (persoonId !== auth.persoonId && !heeftRol(auth, 'DIR')) {
+          return antwoord.code(403).send({ fout: 'geen toegang tot dit dossier' })
+        }
+
+        const beoordelingen = await metTenantContext(db, auth.tenantId, async (trx) => {
+          return trx`
+            select b.id,
+                   b.ambt,
+                   b.schooljaar,
+                   b.resultaat,
+                   b.opmerking,
+                   p.naam as "geregistreerdDoor",
+                   to_char(b.aangemaakt_op, 'YYYY-MM-DD') as "geregistreerdOp"
+            from core.beoordeling b
+            join core.persoon p on p.id = b.geregistreerd_door
+            where b.persoon_id = ${persoonId}
+            order by b.schooljaar desc, b.ambt`
+        })
+
+        return { persoonId, beoordelingen }
       },
     )
   }

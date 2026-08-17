@@ -9,9 +9,11 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 | `GET /health`, `GET /version` | Liveness en identificatie |
 | `GET /api/v1/personen/:persoonId/tellers?peildatum=JJJJ-MM-DD` | Dienstanciënniteitstellers per ambt, met drempelevaluatie (TADD-deadlines) en volledige verantwoording. Zonder `peildatum`: prognose op 30 juni van het lopende schooljaar |
 | `POST /api/v1/deadlines/herbereken` | Deadline-engine: idempotente drempeldetectie over alle personen van de tenant; maakt deadlines aan, actualiseert escalatieniveaus en trekt vervallen signalen in (status, nooit delete). Body optioneel `{ "vandaag": "JJJJ-MM-DD" }` voor reproduceerbare escalatie |
-| `GET /api/v1/deadlines?status=open` | Werkvoorraad voor startscherm en startersdashboard: deadlines met naam, type, datum, escalatieniveau en de berekening erachter |
+| `GET /api/v1/deadlines?status=open&limiet=100` | Werkvoorraad voor startscherm en startersdashboard: deadlines met naam, type, datum, escalatieniveau en de berekening erachter (standaard 100, max 500) |
+| `POST /api/v1/deadlines/:deadlineId/registreer` | Registreert een TADD-beoordeling (`positief`, `met_werkpunten`, `negatief`, of `stilzwijgend_positief` ná het verstrijken — casus D4) tegen een open beoordelingsdeadline; de deadline gaat naar `geregistreerd` |
+| `GET /api/v1/personen/:persoonId/beoordelingen` | Beoordelingshistoriek voor het dossierscherm, met registrator en schooljaar |
 
-**Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
+**Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 
 ## Draaien
 
