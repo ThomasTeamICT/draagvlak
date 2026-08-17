@@ -3,20 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Draagvlak — validatie-prototype kernflows (Fase 0)</title>
+<title>Draagvlak — klikbaar prototype (stand augustus 2026)</title>
 <style>
   :root{
     --bg:#f4f6f5; --card:#ffffff; --text:#1c2b27; --muted:#5b6b66;
     --accent:#1f6f5c; --accent-soft:#e3f0ec; --warn:#9a6700; --warn-soft:#fff3d6;
-    --danger:#b3261e; --ok:#1a7f37; --line:#dde4e1; --focus:#134e42;
+    --danger:#b3261e; --ok:#1a7f37; --ok-soft:#e2f2e6; --line:#dde4e1; --focus:#134e42;
     --radius:10px;
   }
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-theme="light"]){
       --bg:#121917; --card:#1b2422; --text:#e6edea; --muted:#9fb0aa;
       --accent:#5cc0a6; --accent-soft:#1e332d; --warn:#e0b84f; --warn-soft:#3a3010;
-      --danger:#ff8a80; --ok:#7fd694; --line:#2c3a36; --focus:#8fdcc6;
+      --danger:#ff8a80; --ok:#7fd694; --ok-soft:#173323; --line:#2c3a36; --focus:#8fdcc6;
     }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121917; --card:#1b2422; --text:#e6edea; --muted:#9fb0aa;
+    --accent:#5cc0a6; --accent-soft:#1e332d; --warn:#e0b84f; --warn-soft:#3a3010;
+    --danger:#ff8a80; --ok:#7fd694; --ok-soft:#173323; --line:#2c3a36; --focus:#8fdcc6;
   }
   *{box-sizing:border-box}
   body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -43,6 +48,8 @@
     border-radius:999px;padding:.35rem .8rem;font-size:.88rem}
   nav.screens button[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:#fff}
 
+  .legende{max-width:980px;margin:0 auto;padding:.6rem 1rem 0;font-size:.82rem;color:var(--muted)}
+
   main{max-width:980px;margin:0 auto;padding:1rem}
   section.screen{display:none}
   section.screen.active{display:block}
@@ -65,6 +72,7 @@
     border-radius:8px;padding:.35rem .8rem;font-size:.86rem}
   .btn.ghost{background:transparent;color:var(--accent)}
   .btn.small{padding:.2rem .6rem;font-size:.8rem}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
 
   .bar{background:var(--line);border-radius:999px;height:10px;overflow:hidden;margin:.2rem 0}
   .bar>span{display:block;height:100%;background:var(--accent)}
@@ -75,6 +83,8 @@
     border-radius:6px;padding:.05rem .45rem;font-size:.75rem;font-weight:600;margin-right:.25rem}
   .flag{display:inline-block;background:var(--warn-soft);color:var(--warn);
     border-radius:6px;padding:.05rem .45rem;font-size:.75rem;font-weight:600}
+  .echt{display:inline-block;background:var(--ok-soft);color:var(--ok);
+    border-radius:6px;padding:.05rem .45rem;font-size:.75rem;font-weight:700;white-space:nowrap}
 
   details{border:1px solid var(--line);border-radius:var(--radius);
     padding:.6rem .9rem;margin:.8rem 0;background:var(--card)}
@@ -116,6 +126,7 @@
     background:var(--text);color:var(--bg);padding:.55rem 1rem;border-radius:999px;
     font-size:.88rem;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
   #toast.show{opacity:1}
+  @media (prefers-reduced-motion: reduce){#toast{transition:none}}
 
   footer{max-width:980px;margin:0 auto;padding:1rem;font-size:.8rem;color:var(--muted)}
 </style>
@@ -123,7 +134,7 @@
 <body>
 
 <header class="app">
-  <div class="logo">Draagvlak<small>validatie-prototype · Fase 0</small></div>
+  <div class="logo">Draagvlak<small>klikbaar prototype · stand augustus 2026</small></div>
   <div class="school">🏫 Basisschool De Regenboog</div>
   <div class="spacer"></div>
   <span class="proto-badge">Prototype — fictieve data, geen product</span>
@@ -138,7 +149,11 @@
   <button data-target="w6">Gesprekken</button>
   <span class="group">Leraar (Els)</span>
   <button data-target="w3">Mijn startscherm</button>
+  <span class="group">Beheer (Bart)</span>
+  <button data-target="w7">Regelparameters</button>
 </nav>
+
+<p class="legende"><span class="echt">✓ werkt echt</span> = vandaag al werkende, geautomatiseerd geteste platform-functionaliteit (API met echte databank, authenticatie en audittrail). De rest is klikbaar ontwerp ter validatie.</p>
 
 <main>
 
@@ -182,12 +197,12 @@
 
   <div class="cols">
     <div class="card">
-      <h2>Deadlines — komende 14 dagen</h2>
+      <h2>Deadlines — komende 14 dagen <span class="echt">✓ werkt echt</span></h2>
       <table>
         <tr><td>15/6</td><td>Kandidaatstelling TADD (herinnering naar 3 starters verstuurd)</td></tr>
         <tr><td>30/6</td><td>Beoordeling Jonas D. en Sofie P. <span class="flag">hard</span></td></tr>
       </table>
-      <p class="muted">Elke deadline toont zijn bron en berekening — deadlines verstrijken nooit stil (escalatieladder).</p>
+      <p class="muted">Elke deadline toont zijn bron en berekening. Deadlines verstrijken nooit stil: de escalatieladder klimt van eigenaar (6 weken vooraf) via directeur naar bestuur, en een verstreken deadline blijft op het hoogste niveau staan tot ze geregistreerd is.</p>
     </div>
     <div class="card">
       <h2>Snel registreren <span class="muted" style="font-weight:400">(twee-klikken-regel)</span></h2>
@@ -356,7 +371,7 @@
   <p class="persona">Je kijkt mee als <b>Anke — eerste evaluator</b>. <i>De mentor ziet dit scherm zónder het beoordelingspaneel.</i></p>
 
   <div class="card">
-    <h2>Teller — prognose op 30/6</h2>
+    <h2>Teller — prognose op 30/6 <span class="echt">✓ werkt echt</span></h2>
     <p style="font-size:1.05rem"><b>308 dagen dienstanciënniteit, waarvan 295 effectief</b><br>
       <span class="warn">→ drempel 290/200 bereikt: beoordeling vereist vóór 30/6 · kandidaatstelling TADD vóór 15/6</span></p>
     <details class="calc"><summary>Toon berekening</summary>
@@ -373,6 +388,7 @@ Parameterset: PERS/2019/03 · versie geldig vanaf 01/09/2025.
 
 Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     </details>
+    <p class="muted">Deze berekening, de drempeldetectie en de deadline-aanmaak met escalatieladder draaien vandaag al echt — inclusief de volledige verantwoording per teller, precies zoals hierboven.</p>
   </div>
 
   <div class="card">
@@ -399,20 +415,25 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
       <p class="muted">ℹ Coaching en beoordeling zijn gescheiden: jij leest mee (het traject voedt de beoordeling), maar het logboek is van mentor en starter.</p>
     </div>
     <div class="card">
-      <h2>Beoordeling <span class="flag">enkel eerste evaluator</span></h2>
+      <h2>Beoordeling <span class="flag">enkel eerste evaluator</span> <span class="echt">✓ werkt echt</span></h2>
       <fieldset>
         <legend>Uitkomst</legend>
-        <label style="font-weight:400"><input type="radio" name="oordeel"> positief <span class="muted">(geen beoordeling geldt ook als positief)</span></label>
-        <label style="font-weight:400"><input type="radio" name="oordeel"> met werkpunten <span class="muted">(verslag + traject verplicht; vervolgtraject van 200 extra effectieve dagen start automatisch; 1× per ambt)</span></label>
+        <label style="font-weight:400"><input type="radio" name="oordeel"> positief</label>
+        <label style="font-weight:400"><input type="radio" name="oordeel"> met werkpunten <span class="muted">(verslag + traject verplicht; vervolgtraject van 200 extra effectieve dagen; 1× per ambt)</span></label>
         <label style="font-weight:400"><input type="radio" name="oordeel"> negatief <span class="muted">(gemotiveerd verslag; verhaal bij het bestuur mogelijk)</span></label>
       </fieldset>
-      <button class="btn" data-toast="In het echte platform: gestructureerd verslag per uitkomsttype, met de decretaal vereiste motivering en trajectbeschrijving.">Open gestructureerd verslag</button>
+      <p>
+        <button class="btn" data-toast="Geregistreerd. De deadline gaat naar ‘geregistreerd’ en de engine raakt hem nooit meer aan; beoordeling én deadline krijgen een auditregel met jou als actor. (Zo werkt het vandaag al echt in de API.)">Registreer beoordeling</button>
+        <button class="btn ghost" data-toast="Geweigerd: stilzwijgend positief kan pas nadat de deadline (30/6) verstreken is — decretaal geldt géén beoordeling als positief (casus D4), maar een mens bevestigt dat expliciet; het systeem registreert nooit stil zelf. ⚠ Te valideren met de personeelsdienst.">Stilzwijgend positief…</button>
+      </p>
+      <p class="muted">Dubbel registreren wordt geweigerd; een directeur van een ander schoolbestuur vindt deze deadline zelfs niet (rijniveau-afscherming in de databank).</p>
     </div>
   </div>
 
   <details class="valid"><summary>Validatievragen bij dit scherm</summary>
     <ul>
       <li>Is de prognoseformulering begrijpelijk zonder uitleg?</li>
+      <li>Moet “stilzwijgend positief” automatisch vastgelegd worden bij de schooljaarovergang, of altijd door een mens bevestigd (huidige keuze)?</li>
       <li>Wat is een realistisch minimum aantal feedbackmomenten (nu: 3)?</li>
       <li>Hoe verloopt het overleg bij starters die in meerdere scholen presteren?</li>
     </ul>
@@ -457,6 +478,51 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
       <li>Is de 2-jaarnorm de juiste standaard voor de monitor?</li>
       <li>Welke verslagvelden zijn het minimum (planlast!)?</li>
       <li>Wanneer voelt de doelkoppeling natuurlijk en wanneer geforceerd?</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ══════════════ W7 — Regelparameterbeheer ══════════════ -->
+<section class="screen" id="w7" aria-labelledby="w7h">
+  <h1 id="w7h">Beheer › Regelparameters <span class="echt">✓ werkt echt</span></h1>
+  <p class="persona">Je kijkt mee als <b>Bart — beheerder scholengroep</b>. Elke wijziging vereist het <b>vier-ogen-principe</b>: een ándere beheerder (Carla) bekrachtigt — dat wordt tot in de databank afgedwongen.</p>
+
+  <div class="card">
+    <h2>Parameterversies van deze scholengroep</h2>
+    <table>
+      <thead><tr><th>Geldig vanaf</th><th>Bron</th><th>Drempels</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>01/09/2019</td>
+          <td>PERS/2019/03 <span class="muted">(startset domeinpakket)</span></td>
+          <td>290 kd / 200 eff · plafond 360</td>
+          <td><span class="tag">actief</span></td>
+        </tr>
+        <tr>
+          <td>01/09/2026</td>
+          <td>PERS/2099/01 <span class="muted">(fictief voorbeeld — voorgesteld door Bart)</span></td>
+          <td>310 kd / 200 eff · plafond 360</td>
+          <td id="vp-status"><span class="flag">voorgesteld</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin:.7rem 0 .3rem">
+      <button class="btn ghost" id="vp-bart">Bekrachtig als Bart (voorsteller)</button>
+      <button class="btn" id="vp-carla">Bekrachtig als Carla</button>
+    </p>
+    <p class="muted">Pas een <i>bekrachtigde</i> versie stuurt de tellers en de deadline-engine. Elke stap — voorstellen, bekrachtigen, afwijzen — krijgt een auditregel; versies worden nooit verwijderd. Elke teller-verantwoording vermeldt met welke parameterset (en bron) hij berekend werd.</p>
+  </div>
+
+  <div class="card">
+    <h2>Waarom dit zo streng is</h2>
+    <p style="font-size:.92rem">Eén verkeerd drempelgetal verandert stilletjes wie wél en niet een TADD-beoordeling krijgt — over de hele scholengroep. Daarom: twee paar ogen op elke wijziging, verplichte bronvermelding naar de omzendbrief, en een onwisbaar spoor van wie wat voorstelde en bekrachtigde.</p>
+  </div>
+
+  <details class="valid"><summary>Validatievragen bij dit scherm</summary>
+    <ul>
+      <li>Wie vervult de tweede-ogen-rol in een klein bestuur met maar één beheerder?</li>
+      <li>Welke parameters moeten per bestuur instelbaar zijn, en welke horen centraal (decretaal) vast te liggen?</li>
+      <li>Is de verplichte bronvermelding werkbaar bij elke wijziging?</li>
     </ul>
   </details>
 </section>
@@ -534,11 +600,22 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
   </div>
 </dialog>
 
+<dialog id="modal-kscs">
+  <h2 style="margin-top:0;font-size:1rem">Evaluatie — ouderbetrokkenheid lezen</h2>
+  <label for="k-keep">Keep / Stop / Change / Start</label>
+  <select id="k-keep"><option>change — andere aanpak proberen</option><option>keep</option><option>stop</option><option>start</option></select>
+  <textarea placeholder="korte motivering voor het team"></textarea>
+  <div class="dialog-actions">
+    <button class="btn ghost" data-close>Annuleer</button>
+    <button class="btn" data-close data-toast="Evaluatie bewaard — de actie-eigenaar en het doel-overzicht zijn bijgewerkt.">Bewaar</button>
+  </div>
+</dialog>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <footer>
-  <b>Draagvlak — validatie-prototype v0.1 (Fase 0).</b> Weggooibaar materiaal met fictieve data, bedoeld voor co-creatiesessies met pilootscholen.
-  Zie <code>docs/functioneel-ontwerp/wireframes.md</code> voor de validatievragen en <code>docs/blauwdruk.md</code> voor het volledige ontwerp.
+  <b>Draagvlak — klikbaar prototype v0.2 (stand augustus 2026).</b> Fictieve data, bedoeld voor co-creatiesessies met pilootscholen.
+  Onderdelen met <span class="echt">✓ werkt echt</span> draaien vandaag als geteste platform-API (tellers, deadline-engine met escalatie, registratieflow, regelparameterbeheer, OIDC-authenticatie, audittrail, rijniveau-afscherming per schoolbestuur).
   Geen echte personen, geen opslag, geen AI.
 </footer>
 
@@ -565,7 +642,7 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     toast.textContent = msg;
     toast.classList.add("show");
     clearTimeout(timer);
-    timer = setTimeout(() => toast.classList.remove("show"), 4200);
+    timer = setTimeout(() => toast.classList.remove("show"), 5200);
   }
   document.querySelectorAll("[data-toast]").forEach(b =>
     b.addEventListener("click", () => say(b.dataset.toast)));
@@ -574,6 +651,21 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     b.addEventListener("click", () => document.getElementById(b.dataset.modal).showModal()));
   document.querySelectorAll("dialog [data-close]").forEach(b =>
     b.addEventListener("click", () => b.closest("dialog").close()));
+
+  // vier-ogen-demo (regelparameters) — spiegelt het echte API-gedrag
+  const vpStatus = document.getElementById("vp-status");
+  const vpBart = document.getElementById("vp-bart");
+  const vpCarla = document.getElementById("vp-carla");
+  if (vpStatus && vpBart && vpCarla){
+    vpBart.addEventListener("click", () =>
+      say("Geweigerd (403): vier-ogen-principe — de voorsteller kan niet zelf bekrachtigen. Dit wordt óók door de databank zelf tegengehouden."));
+    vpCarla.addEventListener("click", () => {
+      vpStatus.innerHTML = '<span class="tag">actief</span>';
+      vpBart.disabled = true;
+      vpCarla.disabled = true;
+      say("Bekrachtigd door Carla. Vanaf nu rekenen de tellers en de deadline-engine met drempel 310 — en elke verantwoording vermeldt deze versie als bron.");
+    });
+  }
 })();
 </script>
 </body>
