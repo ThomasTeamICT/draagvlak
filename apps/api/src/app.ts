@@ -1,12 +1,15 @@
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify'
 import { maakDb } from './db.js'
 import { personeelModule } from './modules/personeel/routes.js'
+import { startPlanner, type PlannerOpties } from './scheduler.js'
 
 export interface AppOpties {
   /** Zonder databaseUrl start de app met alleen health/version (bv. unit-tests). */
   databaseUrl?: string
   /** Plausibiliteitsvenster voor de injecteerbare `vandaag` van de deadline-engine. */
   herberekenVensterDagen?: number
+  /** Nachtelijke deadline-herberekening (ADR-0004); niet gezet = geen planner (tests). */
+  planner?: PlannerOpties
 }
 
 /**
@@ -46,7 +49,9 @@ export function buildApp(opties: AppOpties = {}): FastifyInstance {
           : {}),
       }),
     )
+    const stopPlanner = opties.planner !== undefined ? startPlanner(db, app.log, opties.planner) : undefined
     app.addHook('onClose', async () => {
+      stopPlanner?.()
       await db.end()
     })
   }

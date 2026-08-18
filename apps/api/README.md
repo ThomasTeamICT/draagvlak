@@ -19,6 +19,8 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 
 **Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR; regelparameterbeheer = BG (vier-ogen, afgedwongen tot in de databank). Zonder bekrachtigde tenantversies geldt de startset PERS/2019/03 uit het domeinpakket — de bronvermelding in elke verantwoording toont welke set gold. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 
+**Nachtelijke planner (ADR-0004):** de server draait elke nacht (standaard 03:30 Belgische tijd) automatisch de deadline-veegronde over alle tenants — zo klimt de escalatieladder vanzelf en verstrijken deadlines nooit stil, met het systeem (`actor_id = null`) in de audittrail. Configuratie: `HERBEREKEN_TIJDSTIP=UU:MM` en `HERBEREKEN_PLANNER=uit` om hem uit te schakelen. De veegronde is idempotent en replica-veilig (advisory lock per tenant); het handmatige herbereken-endpoint blijft bestaan als vangnet.
+
 ## Draaien
 
 ```bash
