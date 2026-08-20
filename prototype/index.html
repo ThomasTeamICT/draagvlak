@@ -242,6 +242,7 @@
   <button data-doel="doelen">Doelen</button>
   <button data-doel="opdrachten">Opdrachten</button>
   <button data-doel="kalender">Kalender</button>
+  <button data-doel="toezichten">Toezichten</button>
   <span class="verrek"></span>
   <button data-doel="leraar" class="stil">Als leraar (Els)</button>
   <button data-doel="beheer" class="stil">Beheer</button>
@@ -535,6 +536,39 @@
       <li>Blokkeren bij regelboek-fouten en waarschuwen bij de opvangplicht: is die balans juist?</li>
       <li>⚠ De regelboekwaarden (facultatieve dagen, studiedagen, hervorming 1/9/2026) moeten nog tegen de omzendbrieftekst op Edulex gecontroleerd worden — kloppen ze met jullie praktijk?</li>
       <li>Wat hoort hier nog thuis: zwemmomenten, uitstappen, examenperiodes?</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ═════════ TOEZICHTEN (P2) ═════════ -->
+<section class="scherm" id="toezichten" aria-labelledby="tz-h">
+  <p class="eyebrow">Planning · module P2</p>
+  <h1 id="tz-h">Toezichten &amp; beurtrollen <span class="echt">✓ werkt echt</span></h1>
+  <p class="sublijn">Middagtoezicht refter (ma·di·do·vr, 12:05–13:05, categorie <b>vergoed</b> — valt wettelijk buiten de schoolopdracht). De verdeler hieronder is <b>dezelfde logica als in het platform</b>: laagste teller eerst, niemand twee keer per dag als het niet hoeft, en de schoolkalender wordt gerespecteerd. De verdeling is een suggestie — jij beslist en kunt ruilen.</p>
+
+  <div class="kaart" style="margin-bottom:1rem">
+    <h2>Billijkheidstellers <span class="gedempt" style="font-weight:400;font-size:.85rem">(zichtbaar voor het hele team)</span></h2>
+    <div id="tz-tellers" style="display:flex;gap:.8rem;flex-wrap:wrap"></div>
+    <p style="margin:.9rem 0 0">
+      <button class="knop" id="tz-genereer">Genereer beurtrol 20/10 – 7/11</button>
+      <button class="knop spook" id="tz-reset">Begin opnieuw</button>
+    </p>
+    <p class="gedempt" id="tz-uitleg" style="font-size:.84rem;margin:.6rem 0 0"></p>
+  </div>
+
+  <div class="kaart">
+    <h2>Rooster <span class="gedempt" id="tz-samenvatting" style="font-weight:400;font-size:.85rem"></span></h2>
+    <div style="overflow-x:auto"><table class="vlak" style="min-width:460px">
+      <thead><tr><th>Datum</th><th>Toezichter</th><th>Waarom deze persoon?</th><th></th></tr></thead>
+      <tbody id="tz-lijst"><tr><td colspan="4" class="gedempt">nog geen beurten — klik "Genereer beurtrol"</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <details class="valideer"><summary>Validatievragen bij dit scherm</summary>
+    <ul>
+      <li>Is "suggestie + zichtbare tellers, mens beslist" de juiste balans, of mag het systeem harder verdelen?</li>
+      <li>Welke toezichtsoorten heeft jouw school (ochtend, speeltijden, refter, rijen, avond) en wie mag erin staan?</li>
+      <li>Moet een halve pedagogische studiedag het middagtoezicht schrappen of net niet? (Nu: elke kalenderperiode blokkeert de hele dag.)</li>
     </ul>
   </details>
 </section>
@@ -892,6 +926,89 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     kalJaar.addEventListener("change", tekenKalender);
     kalNiveau.addEventListener("change", tekenKalender);
     tekenKalender();
+  }
+
+  /* toezichten (P2): een-op-een-port van verdeelBeurten uit @draagvlak/planregels */
+  const tzKandidaten = () => [
+    { id: "Els Vermeulen", teller: 0 }, { id: "Karim Benali", teller: 0 },
+    { id: "Lien Maes", teller: 0 }, { id: "Nora El Amrani", teller: 0 },
+  ];
+  let tzStand = tzKandidaten();
+  let tzBeurten = [];
+  function verdeelBeurtenP2(datums, kandidaten) {
+    const stand = new Map(kandidaten.map((k) => [k.id, k.teller]));
+    const perDatum = new Map();
+    const laagste = (uitgesloten) =>
+      [...stand.entries()].filter(([id]) => !uitgesloten.has(id))
+        .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))[0];
+    const uit = [];
+    for (const datum of [...datums].sort()) {
+      const bezet = perDatum.get(datum) || new Set();
+      const keuze = laagste(bezet) || laagste(new Set());
+      if (!keuze) continue;
+      const [id, teller] = keuze;
+      stand.set(id, teller + 1);
+      bezet.add(id); perDatum.set(datum, bezet);
+      uit.push({ datum, kandidaatId: id, tellerVoor: teller });
+    }
+    return uit;
+  }
+  const tzTellersEl = document.getElementById("tz-tellers");
+  if (tzTellersEl) {
+    const el = (id) => document.getElementById(id);
+    const WEEKDAGEN = [1, 2, 4, 5]; /* ma di do vr */
+    function tekenTellers() {
+      const stand = new Map(tzStand.map((k) => [k.id, k.teller]));
+      for (const b of tzBeurten) stand.set(b.kandidaatId, (stand.get(b.kandidaatId) || 0) + 1);
+      tzTellersEl.innerHTML = [...stand.entries()].map(([naam, n]) =>
+        "<span class='chip neutraal' style='font-size:.85rem'>" + naam + " <b class='cijfer'>" + n + "</b></span>").join("");
+    }
+    function tekenRooster() {
+      el("tz-lijst").innerHTML = tzBeurten.length === 0
+        ? "<tr><td colspan='4' class='gedempt'>nog geen beurten - klik \"Genereer beurtrol\"</td></tr>"
+        : tzBeurten.map((b, i) =>
+          "<tr><td class='cijfer'>" + b.datum + "</td><td>" + b.kandidaatId +
+          "</td><td class='gedempt' style='font-size:.82rem'>laagste teller op dat moment (" + b.tellerVoor + ")" +
+          "</td><td><button class='knop spook klein' data-tzruil='" + i + "'>ruil</button></td></tr>").join("");
+      tekenTellers();
+    }
+    el("tz-genereer").addEventListener("click", () => {
+      /* ma 20/10 t/m vr 7/11, herfstvakantie 27/10-2/11 uit de schoolkalender overgeslagen */
+      const datums = [];
+      const overgeslagen = [];
+      for (let t = Date.parse("2025-10-20T00:00Z"); t <= Date.parse("2025-11-07T00:00Z"); t += 86400000) {
+        const d = new Date(t), iso = d.toISOString().slice(0, 10);
+        if (!WEEKDAGEN.includes(d.getUTCDay())) continue;
+        if (iso >= "2025-10-27" && iso <= "2025-11-02") { overgeslagen.push(iso); continue; }
+        if (tzBeurten.some((b) => b.datum === iso)) continue;
+        datums.push(iso);
+      }
+      if (datums.length === 0) { zeg("Alle dagen in deze periode zijn al gepland (idempotent, net als de echte API)."); return; }
+      const stand = new Map(tzStand.map((k) => [k.id, k.teller]));
+      for (const b of tzBeurten) stand.set(b.kandidaatId, (stand.get(b.kandidaatId) || 0) + 1);
+      const nieuwe = verdeelBeurtenP2(datums, [...stand.entries()].map(([id, teller]) => ({ id, teller })));
+      tzBeurten = [...tzBeurten, ...nieuwe];
+      el("tz-samenvatting").textContent = "- " + tzBeurten.length + " beurten; " + overgeslagen.length + " kalendervrije dagen (herfstvakantie) overgeslagen";
+      el("tz-uitleg").textContent = "Uitlegbaar per beurt: telkens wint wie op dat moment de laagste teller heeft; bij gelijke stand geldt een vaste volgorde. Zo is \"waarom sta ik dinsdag?\" altijd controleerbaar te beantwoorden.";
+      tekenRooster();
+      zeg("Beurtrol gegenereerd (201): " + nieuwe.length + " beurten, eerlijk verdeeld. Eén auditregel vat de ronde samen.");
+    });
+    el("tz-reset").addEventListener("click", () => {
+      tzBeurten = []; tzStand = tzKandidaten();
+      el("tz-samenvatting").textContent = ""; el("tz-uitleg").textContent = "";
+      tekenRooster();
+    });
+    el("tz-lijst").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tzruil]");
+      if (!b) return;
+      const beurt = tzBeurten[Number(b.dataset.tzruil)];
+      const anderen = tzStand.map((k) => k.id).filter((id) => id !== beurt.kandidaatId);
+      beurt.kandidaatId = anderen[Number(b.dataset.tzruil) % anderen.length];
+      beurt.tellerVoor = "geruild";
+      tekenRooster();
+      zeg("Geruild - met auditregel, en de tellers schuiven mee. In het echte platform kiest de directeur met wie.");
+    });
+    tekenRooster();
   }
 
   /* vier-ogen-demo */
