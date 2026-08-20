@@ -12,6 +12,7 @@ import {
 import { metTenantContext, type Db } from '../../db.js'
 import { schrijfAudit } from './audit.js'
 import { haalActieveParameters } from './parameters.js'
+import { haalKorteVakanties } from '../planning/kalender.js'
 
 export interface HerberekenResultaat {
   peildatum: ISODatum
@@ -64,8 +65,10 @@ export async function herberekenDeadlines(
   return metTenantContext(db, tenantId, async (trx) => {
     await trx`select pg_advisory_xact_lock(hashtext(${'deadlines:' + tenantId}))`
 
-    // de bekrachtigde parameterversies van deze tenant (of de startset)
+    // de bekrachtigde parameterversies van deze tenant (of de startset),
+    // plus de schoolkalender voor het geval korte vakanties niet tellen (B2)
     const parameters = await haalActieveParameters(trx)
+    const korteVakanties = await haalKorteVakanties(trx)
 
     const resultaat: HerberekenResultaat = {
       peildatum,
@@ -116,7 +119,7 @@ export async function herberekenDeadlines(
       const afwezigheden = perPersoonAfwezigheden.get(persoon.id) ?? []
       const bestaandeAlle = perPersoonDeadlines.get(persoon.id) ?? []
 
-      const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters, peildatum })
+      const perAmbt = berekenPerAmbt({ aanstellingen, afwezigheden, parameters, peildatum, korteVakanties })
 
       // reconcilieer ook ambten die alleen nog in deadlines bestaan (verdwenen ambt)
       const ambten = new Set<string>([...perAmbt.keys(), ...bestaandeAlle.map((b) => b.ambt)])
@@ -124,7 +127,7 @@ export async function herberekenDeadlines(
       for (const ambt of ambten) {
         const teller: TellerResultaat =
           perAmbt.get(ambt) ??
-          berekenTeller({ aanstellingen: [], afwezigheden, parameters, peildatum })
+          berekenTeller({ aanstellingen: [], afwezigheden, parameters, peildatum, korteVakanties })
         const drempel = evalueerDrempel(teller, parameters)
         const gewenst =
           drempel.deadlines !== undefined

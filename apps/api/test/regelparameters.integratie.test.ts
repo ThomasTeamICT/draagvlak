@@ -97,6 +97,7 @@ describe.skipIf(ADMIN_URL === undefined || APP_URL === undefined)(
         '0005_beoordeling.sql',
         '0006_regelparameters.sql',
         '0007_scheduler.sql',
+        '0008_kalender.sql',
       ]) {
         await admin.file(join(repoWortel, 'db', 'migrations', migratie), { cache: false })
       }

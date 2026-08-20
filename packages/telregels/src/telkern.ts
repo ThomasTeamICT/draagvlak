@@ -60,6 +60,19 @@ export function maakParameterResolver(
  * dag die volgens de telregels van die dag meetelt. Weekdag en maand worden
  * incrementeel bijgehouden zodat er per dag geen datum geparset wordt.
  */
+/** Alle kalenderdagen van de periodes als UTC-ms-set (voor de korte vakanties). */
+export function periodesAlsDagenSet(
+  periodes: readonly { start: ISODatum; einde: ISODatum }[] | undefined,
+): Set<number> | undefined {
+  if (periodes === undefined) return undefined
+  const dagen = new Set<number>()
+  for (const p of periodes) {
+    const einde = naarUtc(p.einde)
+    for (let t = naarUtc(p.start); t <= einde; t += DAG_MS) dagen.add(t)
+  }
+  return dagen
+}
+
 export function loopGeteldeDagen(
   aanstellingen: readonly { start: ISODatum; einde: ISODatum }[],
   resolver: (t: number) => ParameterVersie,
@@ -68,6 +81,7 @@ export function loopGeteldeDagen(
   peilMs: number,
   geteldeDagen: Set<number>,
   cb: (t: number, jaar: number, maand: number) => void,
+  korteVakantieDagen?: Set<number>,
 ): void {
   for (const a of aanstellingen) {
     let t = naarUtc(a.start)
@@ -96,9 +110,14 @@ export function loopGeteldeDagen(
       bronnen.add(versie.bron)
       const regels = versie.telregels
       if (!regels.korteVakantieTeltMee) {
-        throw new Error(
-          'korteVakantieTeltMee=false vereist een vakantiekalender als invoer — nog niet ondersteund (⚠ TE VALIDEREN, testcase B2)',
-        )
+        // testcase B2: dagen in korte vakanties tellen niet — vereist de
+        // schoolkalender als invoer (⚠ TE VALIDEREN welke periodes precies)
+        if (korteVakantieDagen === undefined) {
+          throw new Error(
+            'korteVakantieTeltMee=false vereist de schoolkalender (korteVakanties) als invoer (testcase B2)',
+          )
+        }
+        if (korteVakantieDagen.has(t)) continue
       }
       if ((maand === 7 || maand === 8) && !regels.zomervakantieTeltMee) continue
       if ((weekdag === 0 || weekdag === 6) && !regels.weekendTeltMee) continue

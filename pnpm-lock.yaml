@@ -10,6 +10,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@draagvlak/planregels':
+        specifier: workspace:*
+        version: link:../../packages/planregels
       '@draagvlak/telregels':
         specifier: workspace:*
         version: link:../../packages/telregels
@@ -26,6 +29,19 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.0
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@22.20.0)
+
+  packages/planregels:
+    dependencies:
+      '@draagvlak/telregels':
+        specifier: workspace:*
+        version: link:../telregels
+    devDependencies:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

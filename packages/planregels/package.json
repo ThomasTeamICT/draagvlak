@@ -1,0 +1,28 @@
+{
+  "name": "@draagvlak/planregels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure domeinlogica voor schoolplanning: kalenderregelboek per schooljaar en validatie — regelgebaseerd en reproduceerbaar (module-familie P)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@draagvlak/telregels": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

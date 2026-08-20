@@ -380,6 +380,36 @@ describe('Randgevallen buiten het testcontract (regressiebescherming)', () => {
     expect(r.perSchooljaar[0]?.geplafonneerd).toBe(false)
   })
 
+  it('B2-mechanisme: korte vakanties tellen niet wanneer de parameterversie dat stelt', () => {
+    const zonderKorteVakantie: ParameterVersie = {
+      ...PERS_2019_03,
+      bron: 'fictieve versie — korte vakanties tellen niet (⚠ B2)',
+      telregels: { ...PERS_2019_03.telregels, korteVakantieTeltMee: false },
+    }
+    const r = berekenTeller({
+      parameters: [zonderKorteVakantie],
+      peildatum: '2026-06-30',
+      aanstellingen: [aanstelling('2025-09-01', '2026-06-30')],
+      korteVakanties: [{ start: '2025-12-22', einde: '2026-01-04' }],
+    })
+    // 303 kalenderdagen minus 14 kerstvakantiedagen
+    expect(r.dagenTotaal).toBe(289)
+  })
+
+  it('B2-mechanisme: zonder schoolkalender als invoer blijft de berekening weigeren', () => {
+    const zonderKorteVakantie: ParameterVersie = {
+      ...PERS_2019_03,
+      telregels: { ...PERS_2019_03.telregels, korteVakantieTeltMee: false },
+    }
+    expect(() =>
+      berekenTeller({
+        parameters: [zonderKorteVakantie],
+        peildatum: '2026-06-30',
+        aanstellingen: [aanstelling('2025-09-01', '2026-06-30')],
+      }),
+    ).toThrow(/schoolkalender/)
+  })
+
   it('kalenderhulpen: isGeldigeKalenderdatum en dagenTussen', async () => {
     const { isGeldigeKalenderdatum, dagenTussen } = await import('../src/index.js')
     expect(isGeldigeKalenderdatum('2026-02-28')).toBe(true)

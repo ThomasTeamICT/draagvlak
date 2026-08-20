@@ -9,7 +9,7 @@ import {
   type Afwezigheid,
 } from '@draagvlak/telregels'
 import { metTenantContext, type Db } from '../../db.js'
-import { heeftRol, maakAuthHandler, type AuthContext } from '../../auth/plugin.js'
+import { heeftRol, maakAuthHandler, type AuthContext, type AuthHandler } from '../../auth/plugin.js'
 import { herberekenDeadlines } from './deadlines.js'
 import { registreerBeoordeling } from './beoordelingen.js'
 import {
@@ -18,6 +18,7 @@ import {
   stelParameterVoor,
   type VoorstelInvoer,
 } from './parameters.js'
+import { haalKorteVakanties } from '../planning/kalender.js'
 
 /** Vandaag in Belgische tijd — toISOString() zou tussen middernacht en 2u de vorige dag geven. */
 function vandaagBrussel(): string {
@@ -34,6 +35,8 @@ export interface PersoneelOpties {
    * POST alle open deadlines van de tenant intrekken.
    */
   vensterDagen?: number
+  /** Gedeelde authenticatiehandler (app.ts maakt er één voor alle modules). */
+  authHandler?: AuthHandler
 }
 
 /**
@@ -48,7 +51,7 @@ export interface PersoneelOpties {
  */
 export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPluginAsync {
   const vensterDagen = opties.vensterDagen ?? 400
-  const authHandler = maakAuthHandler(db)
+  const authHandler = opties.authHandler ?? maakAuthHandler(db)
 
   return async function (app: FastifyInstance) {
     // onRequest: 401 valt vóór body-parsing en schema-validatie
@@ -104,6 +107,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
             aanstellingen: aanstellingen as unknown as Aanstelling[],
             afwezigheden: afwezigheden as unknown as Afwezigheid[],
             parameters: await haalActieveParameters(trx),
+            korteVakanties: await haalKorteVakanties(trx),
           }
         })
 
@@ -118,6 +122,7 @@ export function personeelModule(db: Db, opties: PersoneelOpties = {}): FastifyPl
           afwezigheden: gegevens.afwezigheden,
           parameters: gegevens.parameters,
           peildatum,
+          korteVakanties: gegevens.korteVakanties,
         })
 
         return {

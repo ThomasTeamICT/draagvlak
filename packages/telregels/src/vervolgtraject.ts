@@ -1,6 +1,6 @@
 import type { ISODatum, TellerInvoer, VervolgtrajectStand } from './types.js'
 import { naarIso, naarUtc } from './kalender.js'
-import { DAG_MS, loopGeteldeDagen, maakParameterResolver } from './telkern.js'
+import { DAG_MS, loopGeteldeDagen, maakParameterResolver, periodesAlsDagenSet } from './telkern.js'
 
 /**
  * Stand van een vervolgtraject na een beoordeling met werkpunten (testcase E1):
@@ -23,7 +23,16 @@ export function berekenVervolgtraject(
 
   const bronnen = new Set<string>()
   const geteldeDagen = new Set<number>()
-  loopGeteldeDagen(aanstellingen, resolver, bronnen, start, peil, geteldeDagen, () => {})
+  loopGeteldeDagen(
+    aanstellingen,
+    resolver,
+    bronnen,
+    start,
+    peil,
+    geteldeDagen,
+    () => {},
+    periodesAlsDagenSet(invoer.korteVakanties),
+  )
 
   // effectiviteit per dag (G1) — en een afwezigheid buiten de getelde dagen
   // (bv. vóór elke parameterversie) is onschadelijk

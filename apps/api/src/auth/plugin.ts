@@ -140,6 +140,8 @@ export function maakAuthHandler(db: Db) {
   }
 }
 
+export type AuthHandler = ReturnType<typeof maakAuthHandler>
+
 export function heeftRol(auth: AuthContext, ...rollen: string[]): boolean {
   return rollen.some((rol) => auth.rollen.includes(rol))
 }

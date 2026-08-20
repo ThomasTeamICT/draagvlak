@@ -5,7 +5,7 @@ import type {
   TellerResultaat,
 } from './types.js'
 import { naarUtc } from './kalender.js'
-import { DAG_MS, loopGeteldeDagen, maakParameterResolver } from './telkern.js'
+import { DAG_MS, loopGeteldeDagen, maakParameterResolver, periodesAlsDagenSet } from './telkern.js'
 
 /**
  * Berekent dienstanciënniteit (totaal en effectief gepresteerd) tot en met de peildatum.
@@ -30,6 +30,7 @@ export function berekenTeller(invoer: TellerInvoer): TellerResultaat {
   const { aanstellingen, afwezigheden = [], parameters, peildatum } = invoer
   const peil = naarUtc(peildatum)
   const resolver = maakParameterResolver(parameters)
+  const korteVakantieDagen = periodesAlsDagenSet(invoer.korteVakanties)
 
   const parameterbronnen = new Set<string>()
   const geteldeDagen = new Set<number>()
@@ -55,7 +56,7 @@ export function berekenTeller(invoer: TellerInvoer): TellerResultaat {
     telling.totaal += 1
     telling.effectief += 1
     if (t < telling.eersteDag) telling.eersteDag = t
-  })
+  }, korteVakantieDagen)
 
   // Effectiviteit van een afwezigheid wordt per dag bepaald (G1): een
   // afwezigheid over een parameterversiegrens heen kan deels wél, deels niet

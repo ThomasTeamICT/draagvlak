@@ -50,6 +50,12 @@ export interface TellerInvoer {
   parameters: readonly ParameterVersie[]
   /** Dagen na de peildatum tellen niet mee; een peildatum in de toekomst geeft een prognose. */
   peildatum: ISODatum
+  /**
+   * Korte vakanties uit de schoolkalender (herfst, kerst, krokus, paas…).
+   * Alleen relevant wanneer een parameterversie korteVakantieTeltMee=false
+   * stelt (testcase B2): die dagen tellen dan niet. Vereist in dat geval.
+   */
+  korteVakanties?: readonly { start: ISODatum; einde: ISODatum }[]
 }
 
 export interface SchooljaarTelling {

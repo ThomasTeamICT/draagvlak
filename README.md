@@ -25,6 +25,7 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 | [docs/functioneel-ontwerp/datamodel.md](docs/functioneel-ontwerp/datamodel.md) | Conceptueel datamodel MVP met multi-tenant-scoping en audittrail |
 | [docs/functioneel-ontwerp/wireframes.md](docs/functioneel-ontwerp/wireframes.md) | Low-fi wireframes van de zes kernflows, met validatievragen voor de pilootscholen |
 | [docs/functioneel-ontwerp/testcases-telregels.md](docs/functioneel-ontwerp/testcases-telregels.md) | Testcasusset voor de TADD-telregels: het levende contract tussen regelgeving en code |
+| [docs/functioneel-ontwerp/planning.md](docs/functioneel-ontwerp/planning.md) | Planningssoftware (module-familie P): marktonderzoek, Vlaamse context en gefaseerd ontwerp |
 | [docs/dpia/dpia-aanzet.md](docs/dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) |
 | [docs/adr/](docs/adr/README.md) | Architectuurbeslissingen (ADR-0001: stackkeuze, status "voorgesteld") |
 | [prototype/](prototype/README.md) | Klikbaar validatie-prototype van de zes kernflows (één HTML-bestand, geen installatie) |
@@ -34,6 +35,7 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 ```
 packages/telregels   pure domeinlogica: TADD-tellers, drempeldetectie, vervolgtrajecten
                      — testcases-telregels.md als geautomatiseerde suite (⚠-casussen als todo)
+packages/planregels  pure domeinlogica voor planning: kalenderregelboek per schooljaar (module P1)
 apps/api             API-skelet (Fastify, modulaire monoliet)
 db/                  SQL-migraties met row-level security als eerste-klas ontwerp
 prototype/           wegwerp-validatieprototype (Fase 0)

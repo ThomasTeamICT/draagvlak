@@ -1,6 +1,8 @@
 import Fastify, { type FastifyError, type FastifyInstance } from 'fastify'
 import { maakDb } from './db.js'
+import { maakAuthHandler } from './auth/plugin.js'
 import { personeelModule } from './modules/personeel/routes.js'
+import { planningModule } from './modules/planning/routes.js'
 import { startPlanner, type PlannerOpties } from './scheduler.js'
 
 export interface AppOpties {
@@ -42,13 +44,16 @@ export function buildApp(opties: AppOpties = {}): FastifyInstance {
 
   if (opties.databaseUrl !== undefined) {
     const db = maakDb(opties.databaseUrl)
+    const authHandler = maakAuthHandler(db)
     app.register(
       personeelModule(db, {
+        authHandler,
         ...(opties.herberekenVensterDagen !== undefined
           ? { vensterDagen: opties.herberekenVensterDagen }
           : {}),
       }),
     )
+    app.register(planningModule(db, { authHandler }))
     const stopPlanner = opties.planner !== undefined ? startPlanner(db, app.log, opties.planner) : undefined
     app.addHook('onClose', async () => {
       stopPlanner?.()
