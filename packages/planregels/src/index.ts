@@ -4,6 +4,8 @@ export {
   schooljaarGrenzen,
   valideerKalender,
 } from './kalenderregels.js'
+export { spreiding, verdeelBeurten } from './toezicht.js'
+export type { BeurtKandidaat, BeurtToewijzing } from './toezicht.js'
 export type {
   Dagdeel,
   ISODatum,

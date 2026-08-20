@@ -19,6 +19,11 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 | `GET /api/v1/kalender?schooljaar=JJJJ-JJJJ&niveau=basis` | Schoolkalender (module P1) met validatiemeldingen tegen het kalenderregelboek van dat schooljaar |
 | `POST /api/v1/kalender` | Kalenderperiode toevoegen (vakantie, facultatieve verlofdag, pedagogische studiedag…) — regelboek-fouten blokkeren met 422, waarschuwingen (bv. opvangplicht 2026-2027) informeren |
 | `DELETE /api/v1/kalender/:id` | Kalenderperiode verwijderen (planning, geen juridisch feit) — mét auditregel |
+| `POST /api/v1/toezichten/soorten` · `GET …/soorten` | Toezichtsoorten (module P2) met juridische categorie: `schoolopdracht`, `vergoed` (middagtoezicht) of `vrijwillig`, plus weekdagen en tijdvak |
+| `POST /api/v1/toezichten/genereer` | Billijke, deterministische beurtrolgeneratie over een periode: laagste historische teller eerst, niemand twee keer per dag als het niet hoeft, kalendervrije dagen overgeslagen |
+| `GET /api/v1/toezichten?van=…&tot=…` | Toezichtrooster — leesbaar voor het hele team (transparantie) |
+| `GET /api/v1/toezichten/tellers` | Billijkheidstellers per persoon per soort — het antwoord op "waarom sta ik er weer op?" |
+| `POST /api/v1/toezichten` · `POST …/:id/ruil` · `DELETE …/:id` | Handmatige beurt (personeelslid óf externe toezichter), ruilen en annuleren — elk met auditregel |
 
 **Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR; regelparameterbeheer = BG (vier-ogen, afgedwongen tot in de databank). Zonder bekrachtigde tenantversies geldt de startset PERS/2019/03 uit het domeinpakket — de bronvermelding in elke verantwoording toont welke set gold. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 

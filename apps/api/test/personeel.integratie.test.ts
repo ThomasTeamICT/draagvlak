@@ -61,7 +61,7 @@ describe.skipIf(ADMIN_URL === undefined || APP_URL === undefined)(
 
       await admin.unsafe('drop schema if exists core cascade')
       await admin.file(join(repoWortel, 'db', 'bootstrap', 'rollen.sql'), { cache: false })
-      for (const migratie of ['0001_init.sql', '0002_personeel.sql', '0003_deadlines.sql', '0004_idp.sql', '0005_beoordeling.sql', '0006_regelparameters.sql', '0007_scheduler.sql', '0008_kalender.sql']) {
+      for (const migratie of ['0001_init.sql', '0002_personeel.sql', '0003_deadlines.sql', '0004_idp.sql', '0005_beoordeling.sql', '0006_regelparameters.sql', '0007_scheduler.sql', '0008_kalender.sql', '0009_toezichten.sql']) {
         await admin.file(join(repoWortel, 'db', 'migrations', migratie), { cache: false })
       }
 

@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync } from 'fastify'
-import { isGeldigeKalenderdatum } from '@draagvlak/telregels'
+import { dagenTussen, isGeldigeKalenderdatum } from '@draagvlak/telregels'
 import {
   schooljaarGrenzen,
   valideerKalender,
@@ -11,6 +11,7 @@ import { metTenantContext, type Db } from '../../db.js'
 import { heeftRol, type AuthContext, type AuthHandler } from '../../auth/plugin.js'
 import { schrijfAudit } from '../personeel/audit.js'
 import { haalKalender } from './kalender.js'
+import { genereerBeurten } from './toezichten.js'
 
 const UUID_PATROON =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
@@ -219,6 +220,332 @@ export function planningModule(db: Db, opties: PlanningOpties): FastifyPluginAsy
         })
 
         if (!verwijderd) return antwoord.code(404).send({ fout: 'kalenderperiode niet gevonden' })
+        return antwoord.code(204).send()
+      },
+    )
+
+    /*
+     * Module P2 — toezichten & beurtrollen. Soorten dragen hun juridische
+     * categorie (schoolopdracht / vergoed / vrijwillig); beurten worden
+     * gegenereerd met de billijke, deterministische verdeler uit
+     * @draagvlak/planregels, met respect voor de schoolkalender. Iedereen
+     * leest het rooster en de tellers (transparantie); beheren = BG/DIR.
+     */
+    app.post(
+      '/api/v1/toezichten/soorten',
+      {
+        schema: {
+          body: {
+            type: 'object',
+            required: ['naam', 'categorie', 'weekdagen', 'starttijd', 'eindtijd'],
+            properties: {
+              naam: { type: 'string', minLength: 3, maxLength: 120 },
+              categorie: { type: 'string', enum: ['schoolopdracht', 'vergoed', 'vrijwillig'] },
+              weekdagen: {
+                type: 'array',
+                items: { type: 'integer', minimum: 1, maximum: 5 },
+                minItems: 1,
+                maxItems: 5,
+                uniqueItems: true,
+              },
+              starttijd: { type: 'string', pattern: '^\\d{2}:\\d{2}$' },
+              eindtijd: { type: 'string', pattern: '^\\d{2}:\\d{2}$' },
+              schoolId: { type: 'string', pattern: UUID_PATROON },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'toezichtbeheer vereist de beheerders- of directeursrol' })
+        }
+        const lichaam = verzoek.body as {
+          naam: string
+          categorie: string
+          weekdagen: number[]
+          starttijd: string
+          eindtijd: string
+          schoolId?: string
+        }
+        if (lichaam.eindtijd <= lichaam.starttijd) {
+          return antwoord.code(400).send({ fout: 'eindtijd ligt niet na starttijd' })
+        }
+
+        const id = await metTenantContext(db, auth.tenantId, async (trx) => {
+          const [rij] = (await trx`
+            insert into core.toezichtsoort (tenant_id, school_id, naam, categorie, weekdagen, starttijd, eindtijd)
+            values (${auth.tenantId}, ${lichaam.schoolId ?? null}, ${lichaam.naam}, ${lichaam.categorie},
+                    ${lichaam.weekdagen}, ${lichaam.starttijd}, ${lichaam.eindtijd})
+            returning id`) as unknown as { id: string }[]
+          await schrijfAudit(
+            trx,
+            auth.tenantId,
+            auth.persoonId,
+            'toezichtsoort',
+            rij!.id,
+            `toezichtsoort aangemaakt: '${lichaam.naam}' (${lichaam.categorie}, ${lichaam.starttijd}–${lichaam.eindtijd})`,
+          )
+          return rij!.id
+        })
+        return antwoord.code(201).send({ id })
+      },
+    )
+
+    app.get('/api/v1/toezichten/soorten', async (verzoek) => {
+      const auth = verzoek.auth as AuthContext
+      const soorten = await metTenantContext(db, auth.tenantId, (trx) =>
+        trx`
+          select id, naam, categorie, weekdagen,
+                 to_char(starttijd, 'HH24:MI') as starttijd,
+                 to_char(eindtijd, 'HH24:MI') as eindtijd
+          from core.toezichtsoort
+          order by starttijd, naam`,
+      )
+      return { soorten }
+    })
+
+    app.post(
+      '/api/v1/toezichten/genereer',
+      {
+        schema: {
+          body: {
+            type: 'object',
+            required: ['soortId', 'van', 'tot', 'persoonIds'],
+            properties: {
+              soortId: { type: 'string', pattern: UUID_PATROON },
+              van: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              tot: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              persoonIds: {
+                type: 'array',
+                items: { type: 'string', pattern: UUID_PATROON },
+                minItems: 1,
+                maxItems: 200,
+                uniqueItems: true,
+              },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'toezichtbeheer vereist de beheerders- of directeursrol' })
+        }
+        const lichaam = verzoek.body as { soortId: string; van: string; tot: string; persoonIds: string[] }
+        if (!isGeldigeKalenderdatum(lichaam.van) || !isGeldigeKalenderdatum(lichaam.tot)) {
+          return antwoord.code(400).send({ fout: 'ongeldige kalenderdatum' })
+        }
+        if (lichaam.tot < lichaam.van || dagenTussen(lichaam.van, lichaam.tot) > 200) {
+          return antwoord.code(400).send({ fout: 'periode moet oplopend zijn en hoogstens 200 dagen beslaan' })
+        }
+
+        const uitkomst = await metTenantContext(db, auth.tenantId, (trx) =>
+          genereerBeurten(trx, auth.tenantId, auth.persoonId, lichaam),
+        )
+        if (!uitkomst.ok) return antwoord.code(uitkomst.status ?? 404).send({ fout: uitkomst.fout })
+        return antwoord.code(201).send({
+          aangemaakt: uitkomst.aangemaakt,
+          overgeslagen: uitkomst.overgeslagen,
+          verdeling: uitkomst.verdeling,
+        })
+      },
+    )
+
+    app.get(
+      '/api/v1/toezichten',
+      {
+        schema: {
+          querystring: {
+            type: 'object',
+            required: ['van', 'tot'],
+            properties: {
+              van: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              tot: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek) => {
+        const auth = verzoek.auth as AuthContext
+        const { van, tot } = verzoek.query as { van: string; tot: string }
+        const beurten = await metTenantContext(db, auth.tenantId, (trx) =>
+          trx`
+            select b.id,
+                   s.naam as soort,
+                   s.categorie,
+                   to_char(b.datum, 'YYYY-MM-DD') as datum,
+                   b.persoon_id as "persoonId",
+                   coalesce(p.naam, b.externe_naam) as naam,
+                   (b.persoon_id is null) as extern
+            from core.toezichtbeurt b
+            join core.toezichtsoort s on s.id = b.soort_id
+            left join core.persoon p on p.id = b.persoon_id
+            where b.datum between ${van} and ${tot}
+            order by b.datum, s.starttijd, naam`,
+        )
+        return { van, tot, beurten }
+      },
+    )
+
+    /** Billijkheidstellers: voor het hele team zichtbaar — dit is de transparantie-USP. */
+    app.get('/api/v1/toezichten/tellers', async (verzoek) => {
+      const auth = verzoek.auth as AuthContext
+      const tellers = await metTenantContext(db, auth.tenantId, (trx) =>
+        trx`
+          select s.naam as soort,
+                 coalesce(p.naam, b.externe_naam) as naam,
+                 count(*)::int as beurten
+          from core.toezichtbeurt b
+          join core.toezichtsoort s on s.id = b.soort_id
+          left join core.persoon p on p.id = b.persoon_id
+          group by s.naam, coalesce(p.naam, b.externe_naam)
+          order by s.naam, beurten desc, naam`,
+      )
+      return { tellers }
+    })
+
+    /** Handmatige beurt: personeelslid óf externe toezichter (bv. vrijwilliger middag). */
+    app.post(
+      '/api/v1/toezichten',
+      {
+        schema: {
+          body: {
+            type: 'object',
+            required: ['soortId', 'datum'],
+            properties: {
+              soortId: { type: 'string', pattern: UUID_PATROON },
+              datum: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$' },
+              persoonId: { type: 'string', pattern: UUID_PATROON },
+              externeNaam: { type: 'string', minLength: 2, maxLength: 120 },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'toezichtbeheer vereist de beheerders- of directeursrol' })
+        }
+        const lichaam = verzoek.body as {
+          soortId: string
+          datum: string
+          persoonId?: string
+          externeNaam?: string
+        }
+        if ((lichaam.persoonId === undefined) === (lichaam.externeNaam === undefined)) {
+          return antwoord.code(400).send({ fout: 'geef óf een persoonId óf een externeNaam op' })
+        }
+        if (!isGeldigeKalenderdatum(lichaam.datum)) {
+          return antwoord.code(400).send({ fout: `ongeldige kalenderdatum: ${lichaam.datum}` })
+        }
+
+        const id = await metTenantContext(db, auth.tenantId, async (trx) => {
+          const [rij] = (await trx`
+            insert into core.toezichtbeurt (tenant_id, soort_id, datum, persoon_id, externe_naam)
+            values (${auth.tenantId}, ${lichaam.soortId}, ${lichaam.datum},
+                    ${lichaam.persoonId ?? null}, ${lichaam.externeNaam ?? null})
+            returning id`) as unknown as { id: string }[]
+          await schrijfAudit(
+            trx,
+            auth.tenantId,
+            auth.persoonId,
+            'toezichtbeurt',
+            rij!.id,
+            `toezichtbeurt toegevoegd op ${lichaam.datum} (${lichaam.externeNaam !== undefined ? `externe: ${lichaam.externeNaam}` : 'personeelslid'})`,
+          )
+          return rij!.id
+        })
+        return antwoord.code(201).send({ id })
+      },
+    )
+
+    app.post(
+      '/api/v1/toezichten/:beurtId/ruil',
+      {
+        schema: {
+          params: {
+            type: 'object',
+            required: ['beurtId'],
+            properties: { beurtId: { type: 'string', pattern: UUID_PATROON } },
+          },
+          body: {
+            type: 'object',
+            required: ['naarPersoonId'],
+            properties: { naarPersoonId: { type: 'string', pattern: UUID_PATROON } },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'toezichtbeheer vereist de beheerders- of directeursrol' })
+        }
+        const { beurtId } = verzoek.params as { beurtId: string }
+        const { naarPersoonId } = verzoek.body as { naarPersoonId: string }
+
+        const geruild = await metTenantContext(db, auth.tenantId, async (trx) => {
+          const rijen = (await trx`
+            update core.toezichtbeurt
+            set persoon_id = ${naarPersoonId}, externe_naam = null
+            where id = ${beurtId}
+            returning to_char(datum, 'YYYY-MM-DD') as datum`) as unknown as { datum: string }[]
+          const rij = rijen[0]
+          if (rij === undefined) return false
+          await schrijfAudit(
+            trx,
+            auth.tenantId,
+            auth.persoonId,
+            'toezichtbeurt',
+            beurtId,
+            `toezichtbeurt geruild op ${rij.datum}`,
+          )
+          return true
+        })
+        if (!geruild) return antwoord.code(404).send({ fout: 'toezichtbeurt niet gevonden' })
+        return { id: beurtId, persoonId: naarPersoonId }
+      },
+    )
+
+    app.delete(
+      '/api/v1/toezichten/:beurtId',
+      {
+        schema: {
+          params: {
+            type: 'object',
+            required: ['beurtId'],
+            properties: { beurtId: { type: 'string', pattern: UUID_PATROON } },
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        if (!heeftRol(auth, 'BG', 'DIR')) {
+          return antwoord.code(403).send({ fout: 'toezichtbeheer vereist de beheerders- of directeursrol' })
+        }
+        const { beurtId } = verzoek.params as { beurtId: string }
+        const verwijderd = await metTenantContext(db, auth.tenantId, async (trx) => {
+          const rijen = (await trx`
+            delete from core.toezichtbeurt where id = ${beurtId}
+            returning to_char(datum, 'YYYY-MM-DD') as datum`) as unknown as { datum: string }[]
+          const rij = rijen[0]
+          if (rij === undefined) return false
+          await schrijfAudit(
+            trx,
+            auth.tenantId,
+            auth.persoonId,
+            'toezichtbeurt',
+            beurtId,
+            `toezichtbeurt geannuleerd op ${rij.datum}`,
+          )
+          return true
+        })
+        if (!verwijderd) return antwoord.code(404).send({ fout: 'toezichtbeurt niet gevonden' })
         return antwoord.code(204).send()
       },
     )
