@@ -241,6 +241,7 @@
   <button data-doel="gesprekken">Gesprekken</button>
   <button data-doel="doelen">Doelen</button>
   <button data-doel="opdrachten">Opdrachten</button>
+  <button data-doel="kalender">Kalender</button>
   <span class="verrek"></span>
   <button data-doel="leraar" class="stil">Als leraar (Els)</button>
   <button data-doel="beheer" class="stil">Beheer</button>
@@ -474,6 +475,66 @@
     <ul>
       <li>Is “aantal schoolgebonden taken” het juiste eerste billijkheidsbeeld?</li>
       <li>Wanneer in het jaar moet de desiderata-ronde openen en sluiten?</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ═════════ KALENDER (P1) ═════════ -->
+<section class="scherm" id="kalender" aria-labelledby="kal-h">
+  <p class="eyebrow">Planning · module P1</p>
+  <h1 id="kal-h">Schoolkalender <span class="echt">✓ werkt echt</span></h1>
+  <p class="sublijn">Vakanties, facultatieve verlofdagen en pedagogische studiedagen — gevalideerd tegen het regelboek van het gekozen schooljaar. De validatie hieronder is <b>letterlijk dezelfde logica als in het platform</b>: probeer bv. een facultatieve verlofdag in 2026-2027, of een derde in 2025-2026.</p>
+
+  <div class="kaart" style="margin-bottom:1rem">
+    <div style="display:flex;gap:.8rem;flex-wrap:wrap;align-items:end">
+      <div><label for="kal-jaar" style="display:block;font-size:.78rem;font-weight:650;margin-bottom:.2rem">Schooljaar</label>
+        <select id="kal-jaar" style="width:auto"><option>2025-2026</option><option>2026-2027</option></select></div>
+      <div><label for="kal-niveau" style="display:block;font-size:.78rem;font-weight:650;margin-bottom:.2rem">Niveau</label>
+        <select id="kal-niveau" style="width:auto"><option value="basis">basisonderwijs</option><option value="secundair">secundair</option></select></div>
+      <p class="gedempt" id="kal-regelboek" style="font-size:.8rem;margin:0;flex:1;min-width:220px"></p>
+    </div>
+  </div>
+
+  <div class="kolommen">
+    <div class="kaart">
+      <h2>Periode toevoegen</h2>
+      <form onsubmit="return false">
+        <label for="kal-type">Type</label>
+        <select id="kal-type">
+          <option value="vakantie">vakantie</option>
+          <option value="facultatieve_verlofdag">facultatieve verlofdag</option>
+          <option value="pedagogische_studiedag">pedagogische studiedag</option>
+          <option value="wettelijke_feestdag">wettelijke feestdag</option>
+        </select>
+        <div style="display:flex;gap:.6rem">
+          <div style="flex:1"><label for="kal-start">Van</label><input type="date" id="kal-start"></div>
+          <div style="flex:1"><label for="kal-einde">Tot en met</label><input type="date" id="kal-einde"></div>
+        </div>
+        <label for="kal-dagdeel">Dagdeel</label>
+        <select id="kal-dagdeel"><option value="heel">hele dag</option><option value="voormiddag">voormiddag</option><option value="namiddag">namiddag</option></select>
+        <label style="font-weight:400;font-size:.88rem;margin-top:.5rem"><input type="checkbox" id="kal-opvang"> opvang voorzien voor leerlingen</label>
+        <p style="margin-top:.8rem"><button class="knop" id="kal-voegtoe">Voeg toe</button></p>
+      </form>
+    </div>
+    <div class="kaart">
+      <h2>Meldingen uit het regelboek</h2>
+      <div id="kal-meldingen"><p class="gedempt" style="font-size:.86rem">Nog geen meldingen — de kalender past binnen het regelboek.</p></div>
+    </div>
+  </div>
+
+  <div class="kaart" style="margin-top:1rem">
+    <h2>Jaarkalender <span class="gedempt" id="kal-telling" style="font-weight:400;font-size:.85rem"></span></h2>
+    <div style="overflow-x:auto"><table class="vlak" style="min-width:520px">
+      <thead><tr><th>Type</th><th>Periode</th><th>Dagdeel</th><th></th></tr></thead>
+      <tbody id="kal-lijst"></tbody>
+    </table></div>
+  </div>
+
+  <details class="valideer"><summary>Validatievragen bij dit scherm</summary>
+    <ul>
+      <li>Blokkeren bij regelboek-fouten en waarschuwen bij de opvangplicht: is die balans juist?</li>
+      <li>⚠ De regelboekwaarden (facultatieve dagen, studiedagen, hervorming 1/9/2026) moeten nog tegen de omzendbrieftekst op Edulex gecontroleerd worden — kloppen ze met jullie praktijk?</li>
+      <li>Wat hoort hier nog thuis: zwemmomenten, uitstappen, examenperiodes?</li>
     </ul>
   </details>
 </section>
@@ -717,6 +778,121 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.target.closest("tr")?.click(); }
   });
   render();
+
+  /* schoolkalender (P1): een-op-een-port van @draagvlak/planregels */
+  const KREGELS = [
+    { vanaf: "2000-2001", maxFac: { basis: 4, secundair: 2 }, maxPed: { basis: 3, secundair: 2 },
+      opvang: false, bron: "BaO/2020/03 + SO 74 - regime t/m 2025-2026 (te valideren)" },
+    { vanaf: "2026-2027", maxFac: { basis: 0, secundair: 0 }, maxPed: { basis: 3, secundair: 0 },
+      opvang: true, bron: "hervorming schooljaarorganisatie per 1/9/2026 (te valideren)" },
+  ];
+  const regelboekVoor = (sj) => KREGELS.filter((r) => r.vanaf <= sj).sort((a, b) => (a.vanaf < b.vanaf ? 1 : -1))[0];
+  const grenzen = (sj) => ({ start: sj.slice(0, 4) + "-09-01", einde: sj.slice(5) + "-08-31" });
+  function halveDagen(p) {
+    let n = 0;
+    for (let t = Date.parse(p.start + "T00:00Z"); t <= Date.parse(p.einde + "T00:00Z"); t += 86400000) {
+      const wd = new Date(t).getUTCDay();
+      if (wd !== 0 && wd !== 6) n += 1;
+    }
+    return n * (p.dagdeel === "heel" ? 2 : 1);
+  }
+  function valideerKalender(periodes, sj, niveau) {
+    const m = [];
+    const boek = regelboekVoor(sj);
+    const g = grenzen(sj);
+    let fac = 0, ped = 0;
+    for (const p of periodes) {
+      if (p.einde < p.start) { m.push({ ernst: "fout", tekst: "periode " + p.start + " - " + p.einde + ": einde ligt voor start" }); continue; }
+      if (p.start < g.start || p.einde > g.einde)
+        m.push({ ernst: "fout", tekst: "periode " + p.start + " - " + p.einde + " valt buiten schooljaar " + sj });
+      if (p.type === "facultatieve_verlofdag") fac += halveDagen(p);
+      if (p.type === "pedagogische_studiedag") ped += halveDagen(p);
+      if (boek.opvang && p.type === "pedagogische_studiedag" && !p.opvang)
+        m.push({ ernst: "waarschuwing", tekst: p.start + ": leerlingen hebben vanaf 2026-2027 recht op zinvolle opvang op lesvrije dagen - opvang is niet aangeduid" });
+    }
+    if (fac > boek.maxFac[niveau])
+      m.push({ ernst: "fout", tekst: boek.maxFac[niveau] === 0
+        ? "facultatieve verlofdagen zijn afgeschaft vanaf schooljaar 2026-2027 (" + boek.bron + ")"
+        : fac + " halve facultatieve verlofdagen gepland; maximum voor " + niveau + " is " + boek.maxFac[niveau] });
+    if (ped > boek.maxPed[niveau])
+      m.push({ ernst: "fout", tekst: boek.maxPed[niveau] === 0
+        ? "pedagogische studiedagen mogen in het secundair niet meer tot lesschorsing leiden vanaf 2026-2027"
+        : ped + " halve pedagogische studiedagen gepland; maximum voor " + niveau + " is " + boek.maxPed[niveau] });
+    const s = periodes.filter((p) => p.einde >= p.start).slice().sort((a, b) => a.start.localeCompare(b.start));
+    for (let i = 1; i < s.length; i++)
+      if (s[i].start <= s[i - 1].einde)
+        m.push({ ernst: "waarschuwing", tekst: "periodes overlappen: " + s[i - 1].type.replace(/_/g, " ") + " t/m " + s[i - 1].einde + " en " + s[i].type.replace(/_/g, " ") + " vanaf " + s[i].start });
+    return m;
+  }
+
+  const kalState = {
+    "2025-2026": [
+      { type: "vakantie", start: "2025-10-27", einde: "2025-11-02", dagdeel: "heel", naam: "herfstvakantie" },
+      { type: "vakantie", start: "2025-12-22", einde: "2026-01-04", dagdeel: "heel", naam: "kerstvakantie" },
+      { type: "vakantie", start: "2026-02-16", einde: "2026-02-22", dagdeel: "heel", naam: "krokusvakantie" },
+      { type: "vakantie", start: "2026-04-06", einde: "2026-04-19", dagdeel: "heel", naam: "paasvakantie" },
+      { type: "facultatieve_verlofdag", start: "2025-10-06", einde: "2025-10-06", dagdeel: "heel" },
+    ],
+    "2026-2027": [
+      { type: "vakantie", start: "2026-11-02", einde: "2026-11-08", dagdeel: "heel", naam: "herfstvakantie" },
+      { type: "vakantie", start: "2026-12-21", einde: "2027-01-03", dagdeel: "heel", naam: "kerstvakantie" },
+    ],
+  };
+  const kalJaar = document.getElementById("kal-jaar");
+  const kalNiveau = document.getElementById("kal-niveau");
+  if (kalJaar) {
+    const el = (id) => document.getElementById(id);
+    function tekenKalender() {
+      const sj = kalJaar.value, niveau = kalNiveau.value;
+      const periodes = kalState[sj];
+      const boek = regelboekVoor(sj);
+      el("kal-regelboek").textContent =
+        "Regelboek: max " + boek.maxFac[niveau] + " halve facultatieve verlofdagen, max " +
+        boek.maxPed[niveau] + " halve studiedagen" + (boek.opvang ? ", opvangplicht" : "") + " - " + boek.bron;
+      el("kal-lijst").innerHTML = periodes.map((p, i) =>
+        "<tr><td>" + p.type.replace(/_/g, " ") + (p.naam ? " <span class='gedempt'>(" + p.naam + ")</span>" : "") +
+        "</td><td class='cijfer'>" + p.start + (p.einde !== p.start ? " - " + p.einde : "") + "</td><td>" + p.dagdeel +
+        "</td><td><button class='knop spook klein' data-kalweg='" + i + "'>verwijder</button></td></tr>").join("") ||
+        "<tr><td colspan='4' class='gedempt'>nog geen periodes</td></tr>";
+      const meldingen = valideerKalender(periodes, sj, niveau);
+      el("kal-meldingen").innerHTML = meldingen.length === 0
+        ? "<p class='gedempt' style='font-size:.86rem'>Geen meldingen - de kalender past binnen het regelboek. <span class='chip ok'>OK</span></p>"
+        : meldingen.map((m) =>
+            "<p style='font-size:.86rem;margin:.3rem 0'><span class='chip " + (m.ernst === "fout" ? "krit" : "let") + "'>" +
+            m.ernst + "</span> " + m.tekst + "</p>").join("");
+      el("kal-telling").textContent = "- " + periodes.length + " periode(s) in " + sj;
+    }
+    el("kal-voegtoe").addEventListener("click", () => {
+      const start = el("kal-start").value, einde = el("kal-einde").value || start;
+      if (!start) { zeg("Kies eerst een datum."); return; }
+      const kandidaat = {
+        type: el("kal-type").value, start, einde,
+        dagdeel: el("kal-dagdeel").value, opvang: el("kal-opvang").checked,
+      };
+      const sj = kalJaar.value;
+      const meldingen = valideerKalender([...kalState[sj], kandidaat], sj, kalNiveau.value);
+      if (meldingen.some((m) => m.ernst === "fout")) {
+        el("kal-meldingen").innerHTML = meldingen.map((m) =>
+          "<p style='font-size:.86rem;margin:.3rem 0'><span class='chip " + (m.ernst === "fout" ? "krit" : "let") + "'>" +
+          m.ernst + "</span> " + m.tekst + "</p>").join("");
+        zeg("Geweigerd (422): de kalender zou het regelboek van " + sj + " overschrijden - er is niets opgeslagen. Precies zo antwoordt de echte API.");
+        return;
+      }
+      kalState[sj].push(kandidaat);
+      tekenKalender();
+      zeg("Toegevoegd (201), met auditregel. " + (meldingen.length ? "Let op: er zijn waarschuwingen." : ""));
+    });
+    document.getElementById("kal-lijst").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-kalweg]");
+      if (!b) return;
+      kalState[kalJaar.value].splice(Number(b.dataset.kalweg), 1);
+      tekenKalender();
+      zeg("Verwijderd (204) - planning is geen juridisch feit, maar de auditregel blijft.");
+    });
+    kalJaar.addEventListener("change", tekenKalender);
+    kalNiveau.addEventListener("change", tekenKalender);
+    tekenKalender();
+  }
 
   /* vier-ogen-demo */
   const vpStatus = document.getElementById("vp-status");
