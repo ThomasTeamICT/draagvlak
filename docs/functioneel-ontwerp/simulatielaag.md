@@ -42,14 +42,27 @@ het Vlaamse onderwijs levert ze (zie planning.md):
 | Bezoekerstevredenheid | gesprekdekking, billijkheid toezichten, verstreken deadlines |
 | Seizoenen/kalender | schooljaar, vakanties, examenperiodes, teldatum 1 februari |
 
+In **vrij spel** mag die economie volledig uitgespeeld worden: gebouwen zetten,
+klassen splitsen, personeel aanwerven binnen bekwaamheidsbewijzen, plage-uren
+uitdelen (en de gevolgen voelen), een inspectiebezoek overleven, groeien van
+dorpsschooltje tot campus. De regels zijn echt; de school is verzonnen.
+
 ## 3. Ontwerpkeuzes (met aanbeveling)
 
-**K1 — Projectie.** Top-down tiles (Pokémon) leest als plattegrond en is de
-goedkoopste art; isometrisch (RCT/B&W) geeft ruimtelijkheid maar verdubbelt de
-sprites. *Aanbeveling:* één **top-down tilewereld** als basis, met bij
-"bezieling" een gekantelde camera (canvas-transform op de tilemap, sprites
-blijven rechtop — Diablo-achtige pseudo-iso). Zo krijg je het isometrische
-gevoel zonder een tweede spriteset. Echte iso-art pas als de vibe het vraagt.
+**K1 — Projectie: dimetrisch isometrisch (herzien).** Eerste voorstel was
+top-down met gekantelde camera; de wens "navigeren zoals Diablo" beslecht het
+anders: **dimetrische iso-wereld (2:1), klik-om-te-gaan, camera die volgt.**
+Diablo's gevoel zit precies in die combinatie — klikken op de vloer, personage
+loopt er met pathfinding heen, diepte-gesorteerde sprites, muren die wegvallen.
+De Pokémon-charme leeft dan in de *sprite-stijl en het palet*, niet in de
+projectie. Kost: iso-art (zie art-bible.md), maar dat is exact wat wél
+aanleverbaar is via prompting.
+
+**Navigatiemodel (twee camera's, één wereld):**
+- **Godsmodus (RCT/B&W)**: slepen om te pannen, scrollen om te zoomen, klikken
+  om te selecteren, krachten via de hand.
+- **Bezield (Diablo)**: klik op de vloer = die persoon loopt erheen, camera
+  volgt, de rest van de school leeft door om je heen.
 
 **K2 — Sprites: procedureel, niet getekend.** Avatars worden bij het laden
 *gegenereerd*: gelaagde pixeldelen (lichaam, hoofd, haar, kleding, accessoire)
@@ -70,11 +83,20 @@ I/O. Exact de discipline van `telregels` en `planregels`. Renderer apart in
 `apps/spel`. Zelfde dag + zelfde zaad = zelfde film: reproduceerbaar, dus
 demonstreerbaar en debugbaar.
 
-**K5 — Twee modi, streng gescheiden.**
-- **Spiegel** (standaard): read-only weergave van de echte dag. Niets schrijft.
-- **Zandbak**: wat-als-scenario's (griepgolf, drie zieken). Nooit persistent.
-Alleen expliciete handelingen in spiegelmodus schrijven — via dezelfde API,
-dezelfde rolchecks, dezelfde audittrail als de gewone schermen.
+**K5 — Drie modi, met één ijzeren principe: hoe wilder de modus, hoe fictiever
+de data.**
+1. **Spiegel** (dagelijks gebruik, directeur): read-only weergave van de echte
+   dag. Niets schrijft, tenzij een expliciete handeling — via dezelfde API,
+   rolchecks en audittrail als de gewone schermen.
+2. **Zandbak** (wat-als op echte cijfers): griepgolf, vier zieken, één
+   vervanger. Rekent met de echte school, schrijft nooit. Voor beslissingen
+   voorbereiden en voor opleiding.
+3. **Vrij spel — "Schooltycoon"** (volledig los): fictieve school, fictief
+   personeel, echte Vlaamse regels als spelregels. Bouwen, aanwerven,
+   lestijdenpakket verdelen, crisissen overleven, seizoenen doorlopen. **Geen
+   enkel persoonsgegeven**, dus ook geen enkele juridische rem: hier mag het
+   spel volledig spel zijn. Dit is tegelijk de veiligste demo-modus voor
+   beurzen, opleidingen en verkoop.
 
 **K6 — Krachten die echte handelingen zijn.** De B&W-hand mag nooit "straffen".
 De krachten zijn organisatorisch: *Bezielen* (perspectiefwissel), *Verplaatsen*
@@ -89,6 +111,15 @@ feiten: open/verstreken deadlines, spreiding toezichtbeurten, gesprekdekking,
 niet-ingevulde vervangingen. Goed beleid → zon, kleur, bloeiende speelplaats.
 Signalen stapelen → grijzer, regen. **Nooit** per individu, **nooit** afgeleid
 uit emotie of gedrag (AI Act art. 5 verbiedt emotieherkenning op de werkplek).
+
+**K8 — Art via prompting: een *kit*, geen sprite sheets.** Beeldgeneratoren
+leveren onbetrouwbare sprite sheets maar uitstekende *losse* assets. Daarom:
+per asset één afbeelding prompten (één tegel, één prop, één personagepose),
+op vaste specificaties (2:1 dimetrie, vaste lichtrichting, vast palet,
+transparante achtergrond), en de sheets zelf samenstellen. De massa-avatars
+blijven procedureel (K2) — prompted art is voor de *herkenbare* dingen:
+gebouwdelen, meubels, speelplaats, decor, en een handvol hero-personages.
+Volledige specificatie en kant-en-klare prompts: `art-bible.md`.
 
 ## 4. Technische realisatie
 
@@ -148,7 +179,12 @@ juiste keuze qua privacy.
 | **S4** | **Krachten**: slepen = vervangen, bijeenroepen = gesprek plannen; zandbak voor wat-als | echte handelingen, met audit |
 | **S5** | **Ambient/meerspeler** (optioneel, opt-in): collega's zichtbaar in de ruimte | midnight.city-gevoel |
 
-**Eerste concrete stap (S1-spike):** een zelfstandige webpagina met de
+**S1-spike: gebouwd** — zie [`apps/spel/`](../../apps/spel/). Isometrische
+wereld, ~240 agents met dagritme, procedurele avatars, A*-pathfinding,
+bezieling met klik-om-te-lopen, krachten, drie modi en klimaatweer. 60 fps in
+Canvas2D. Bevestigt de architectuur uit K1-K8 vóór er productiecode aan hangt.
+
+**Oorspronkelijke omschrijving:** een zelfstandige webpagina met de
 procedurele avatargenerator, een gegenereerde schoolplattegrond, ~200 agents met
 dagschema uit de kalender, en de klok-scrubber — op fictieve maar realistisch
 gevormde cijfers. Doel: binnen één iteratie zien of de vibe klopt, vóór er
