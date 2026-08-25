@@ -26,6 +26,7 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 | [docs/functioneel-ontwerp/wireframes.md](docs/functioneel-ontwerp/wireframes.md) | Low-fi wireframes van de zes kernflows, met validatievragen voor de pilootscholen |
 | [docs/functioneel-ontwerp/testcases-telregels.md](docs/functioneel-ontwerp/testcases-telregels.md) | Testcasusset voor de TADD-telregels: het levende contract tussen regelgeving en code |
 | [docs/functioneel-ontwerp/planning.md](docs/functioneel-ontwerp/planning.md) | Planningssoftware (module-familie P): marktonderzoek, Vlaamse context en gefaseerd ontwerp |
+| [docs/functioneel-ontwerp/simulatielaag.md](docs/functioneel-ontwerp/simulatielaag.md) | "De Levende School" (module-familie S): 2D-simulatielaag als begrijpelijke bril op de echte cijfers — concept |
 | [docs/dpia/dpia-aanzet.md](docs/dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) |
 | [docs/adr/](docs/adr/README.md) | Architectuurbeslissingen (ADR-0001: stackkeuze, status "voorgesteld") |
 | [prototype/](prototype/README.md) | Klikbaar validatie-prototype van de zes kernflows (één HTML-bestand, geen installatie) |
