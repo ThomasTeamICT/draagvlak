@@ -28,13 +28,27 @@ een diorama maakt.
 **Daken weg.** Eén knop (of het bezielen van iemand binnen) tilt de daken van
 de gebouwen: je kijkt in elk lokaal tegelijk.
 
-**De lerarenkamer.** Toets `L` of de knop rechtsboven opent het intranet van de
-school: prikbord (wat het systeem ziet + wat mensen zelf prikken), teamoverzicht
-met dienstanciënniteit en signalen per personeelslid, de plannen en deelplannen
-die een Vlaamse school moet kunnen voorleggen (met het kader en wie erover
-beslist), beleidskeuzes die meteen doorwerken in het schoolklimaat, en het
-weekbeeld van een personeelslid. Klikken op een rij in Team zoekt die persoon op
-in de wereld.
+**De lerarenkamer.** Toets `L` of de knop rechtsboven brengt je naar binnen: een
+getekende kamer in point-and-click-stijl, met raam op de speelplaats, prikbord,
+postvakjes, een kast vol ordners, de deur van de directie, de koffiehoek en de
+grote tafel. Collega's staan er echt — hun uiterlijk komt uit dezelfde generator
+als buiten, en wie een openstaand signaal heeft, draagt het boven zijn hoofd.
+Bewegen over de kamer schrijft onderaan wat je aankijkt; klikken opent wat
+erachter zit:
+
+| Wat je aanklikt | Wat je krijgt |
+|---|---|
+| het prikbord | wat het systeem ziet (open dossiers, ziektemeldingen, weer) plus wat mensen zelf prikken |
+| de postvakjes | het teamoverzicht met dienstanciënniteit tegen de TADD-drempel en het signaal per persoon |
+| de kast met ordners | de plannen en deelplannen die een Vlaamse school moet kunnen voorleggen, met kader en wie beslist |
+| de deur van de directie | de beleidskeuzes, elk met gevolg voor het schoolklimaat en het overlegorgaan dat eraan te pas komt |
+| de grote tafel | het weekbeeld van een personeelslid |
+| een collega | zijn of haar dossier, met een zin die past bij wat er openstaat |
+| de koffiemachine | koffie. Het scheelt twee punten schoolklimaat. |
+| het raam | terug naar buiten, de school in |
+
+De kamer volgt de klok: 's avonds dooft het raam, springen de TL's aan en valt er
+warm licht onder de deur van het bureau.
 
 **Verder.** Klok met scrubber en snelheden (een tijdsprong zet iedereen meteen
 waar hij hoort), drie modi (spiegel / zandbak / vrij spel), zes krachten

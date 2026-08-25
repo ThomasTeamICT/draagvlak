@@ -155,6 +155,40 @@
     letter-spacing:.08em}
   .lkweek .les{background:#20362f} .lkweek .toe{background:#3a3222;color:#f2d99a}
   .lkweek .vrij{background:#161f1c;color:var(--gedempt)}
+  /* ── lerarenkamer: point-and-click ── */
+  #lkscene{flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse at 50% 40%,#101c18,#080f0d 70%);overflow:hidden;min-height:0}
+  #lkdoek{image-rendering:pixelated;display:block;cursor:default;
+    box-shadow:0 18px 60px rgba(0,0,0,.6)}
+  #lkdoek.wijs{cursor:pointer}
+  #lkbijschrift{position:absolute;left:0;right:0;bottom:0;padding:.5rem .9rem;
+    background:linear-gradient(0deg,rgba(6,11,10,.94),rgba(6,11,10,0));
+    font-size:.82rem;color:#dfe9e4;text-align:center;pointer-events:none;min-height:2.2rem}
+  #lkbijtekst{background:rgba(8,14,12,.7);padding:.2rem .6rem;border-radius:6px}
+  #lkkaartje{position:absolute;left:.8rem;bottom:2.6rem;width:270px;background:rgba(20,31,27,.97);
+    border:1px solid var(--lijn);border-radius:12px;padding:.7rem .8rem;
+    box-shadow:0 14px 40px rgba(0,0,0,.6);font-size:.75rem}
+  #lkkaartje[hidden]{display:none}
+  #lkkaartje h4{margin:0;font-size:.86rem}
+  #lkkaartje .rol{color:var(--gedempt);font-size:.68rem;margin:0 0 .4rem}
+  #lkkaartje .cit{font-style:italic;color:#c8d6d1;margin:.45rem 0 .55rem;line-height:1.5}
+  #lkkaartje .knoppen{display:flex;gap:.35rem;flex-wrap:wrap}
+  #lkkaartje button{border:1px solid var(--lijn);background:rgba(255,255,255,.04);
+    border-radius:7px;padding:.28rem .55rem;font-size:.68rem}
+  #lkkaartje button:hover{border-color:var(--merk);color:#eafff7}
+  #lkspots{border:1px solid var(--lijn);background:rgba(255,255,255,.04);border-radius:8px;
+    padding:.3rem .6rem;font-size:.7rem;color:var(--gedempt)}
+  #lkspots[aria-pressed="true"]{background:var(--merk-diep);color:#eafff7;border-color:var(--merk)}
+  #lkpaneel{position:absolute;inset:0;background:linear-gradient(180deg,#16231f,#111c19);
+    display:flex;flex-direction:column;z-index:3}
+  #lkpaneel[hidden]{display:none}
+  .lkpkop{display:flex;align-items:center;gap:.6rem;padding:.55rem .9rem;
+    border-bottom:1px solid var(--lijn);background:rgba(31,111,92,.22);flex-wrap:wrap}
+  .lkpkop .lktabs{flex:1}
+  #lkterug{border:1px solid var(--lijn);background:rgba(255,255,255,.04);border-radius:8px;
+    padding:.32rem .7rem;font-size:.72rem}
+  #lkterug:hover{border-color:var(--merk);color:#eafff7}
+  .lkdoos{position:relative}
 </style>
 
 <canvas id="doek"></canvas>
@@ -212,17 +246,29 @@
 <div class="hud" id="lk" aria-hidden="true">
   <div class="lkdoos" role="dialog" aria-label="Lerarenkamer">
     <div class="lkkop">
-      <h1 class="pix">Lerarenkamer<small>intranet van de school</small></h1>
-      <nav class="lktabs" role="group" aria-label="Onderdelen">
-        <button data-lktab="prikbord" aria-pressed="true">📌 Prikbord</button>
-        <button data-lktab="team">👥 Team</button>
-        <button data-lktab="plannen">📚 Plannen</button>
-        <button data-lktab="beleid">⚖️ Beleidskeuzes</button>
-        <button data-lktab="week">🗓️ Weekbeeld</button>
-      </nav>
+      <h1 class="pix">Lerarenkamer<small>klik rond — alles wat oplicht, doet iets</small></h1>
+      <div class="rek"></div>
+      <button id="lkspots" aria-pressed="false" title="Toon alle klikbare plekken">👁️ Toon wat klikbaar is</button>
       <button id="lkdicht" aria-label="Sluiten">✕</button>
     </div>
-    <div id="lkinhoud"></div>
+    <div id="lkscene">
+      <canvas id="lkdoek"></canvas>
+      <div id="lkbijschrift"><span id="lkbijtekst">De lerarenkamer</span></div>
+      <div id="lkkaartje" hidden></div>
+    </div>
+    <div id="lkpaneel" hidden>
+      <div class="lkpkop">
+        <nav class="lktabs" role="group" aria-label="Onderdelen">
+          <button data-lktab="prikbord" aria-pressed="true">📌 Prikbord</button>
+          <button data-lktab="team">👥 Team</button>
+          <button data-lktab="plannen">📚 Plannen</button>
+          <button data-lktab="beleid">⚖️ Beleidskeuzes</button>
+          <button data-lktab="week">🗓️ Weekbeeld</button>
+        </nav>
+        <button id="lkterug">← Terug naar de kamer</button>
+      </div>
+      <div id="lkinhoud"></div>
+    </div>
   </div>
 </div>
 
@@ -1629,6 +1675,663 @@ function weekVoor(a){
   return {blokken,rooster};
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   DE LERARENKAMER — een point-and-click-kamer, geen tabbladenscherm.
+   Alles wordt in een buffer van 512×288 getekend en met hele pixels
+   opgeschaald, zodat de kamer dezelfde pixelart is als de school buiten.   */
+
+const KW=512, KH=344;                       // ontwerpresolutie van de kamer
+const KV=176;                               // vloerlijn
+const kdoek=document.getElementById('lkdoek'), kctx=kdoek.getContext('2d');
+let kbuf=null, kb=null, kachter=null, kvoor=null, KSCH=2;
+
+/* ── piepklein pixelfont (3×5) voor bordjes en labels ── */
+const FONT35={' ':'00000','.':'00002','-':'00700','/':'11244',':':'02020',"'":'20000',
+ A:'25755',B:'65656',C:'34443',D:'65556',E:'74647',F:'74644',G:'34553',H:'55755',
+ I:'72227',J:'11152',K:'55655',L:'44447',M:'57755',N:'57775',O:'25552',P:'65644',
+ Q:'25573',R:'65655',S:'34216',T:'72222',U:'55557',V:'55552',W:'55775',X:'55255',
+ Y:'55222',Z:'71247','0':'75557','1':'26227','2':'61247','3':'61216','4':'55711',
+ '5':'74616','6':'34757','7':'71222','8':'75757','9':'75716'};
+function pixTekst(g,tekst,x,y,kleur,s){
+  s=s||1; g.fillStyle=kleur;
+  let cx=x;
+  for(const ch of tekst.toUpperCase()){
+    const gl=FONT35[ch];
+    if(gl){ for(let r=0;r<5;r++){ const bits=+gl[r];
+      for(let c=0;c<3;c++) if(bits&(4>>c)) g.fillRect(cx+c*s,y+r*s,s,s); } }
+    cx+=4*s;
+  }
+  return cx-x;
+}
+const pixBreed=(t,s)=>t.length*4*(s||1)-(s||1);
+
+/* ── kleuren van de kamer ── */
+const KK={
+  plafond:'#e4e9dd', muur:'#c3d1bd', muurLicht:'#d2ddcb', muurDonk:'#adbca7',
+  lambris:'#8b6748', lambrisL:'#a3805f', lambrisD:'#6b4d33', plint:'#5e422c',
+  vloer:'#b07f56', vloerD:'#9a6c47', vloerL:'#c08f63',
+  kurk:'#c7a069', lijst:'#7a5535', lijstL:'#96693f',
+  deur:'#8b5433', deurL:'#a56a42', deurD:'#6a3d24', glas:'#cfe4ea',
+  kast:'#6f4d33', kastL:'#8b6242', kastD:'#4f3624',
+  metaal:'#93a0a3', metaalL:'#b6c1c3', wit:'#f4f1e6', inkt:'#2c2521',
+  tafel:'#c39a68', tafelL:'#d9b283', tafelD:'#96714a',
+  tapijt:'#416b63', tapijt2:'#54857b'
+};
+const F=(g,x,y,w,h,k)=>{ g.fillStyle=k; g.fillRect(x|0,y|0,w|0,h|0); };
+const ruis=(g,x,y,w,h,zaad,k,kans)=>{ const r=prng(hash32(zaad)); g.fillStyle=k;
+  for(let j=0;j<h;j++) for(let i=0;i<w;i++) if(r()>kans) g.fillRect(x+i,y+j,1,1); };
+
+/* ── het uitzicht door het raam ── */
+function bakUitzicht(){
+  const {c,g}=nieuw(112,102);
+  const lucht=g.createLinearGradient(0,0,0,102);
+  lucht.addColorStop(0,'#74bfe6'); lucht.addColorStop(.55,'#a8dcee'); lucht.addColorStop(1,'#cfe8d8');
+  g.fillStyle=lucht; g.fillRect(0,0,112,102);
+  F(g,0,0,112,1,'#5aa9d6');
+  // wolken
+  g.fillStyle='rgba(255,255,255,.85)';
+  [[16,18,16,5],[26,15,10,4],[74,28,20,5],[86,25,12,4]].forEach(([x,y,w,h])=>g.fillRect(x,y,w,h));
+  // verre daken
+  F(g,0,44,44,10,'#8f5f4a'); F(g,0,44,44,2,'#a87560');
+  F(g,68,40,44,14,'#7d5443'); F(g,68,40,44,2,'#9a6a55');
+  // bomenrij
+  for(let i=0;i<8;i++){ const x=4+i*14, h=10+((i*7)%9);
+    F(g,x+3,54-h+8,2,h,'#5c4630');
+    g.fillStyle=['#2f7d3f','#3c9450','#276a35'][i%3];
+    g.beginPath(); g.arc(x+4,54-h+4,6,0,6.283); g.fill(); }
+  // speelplaats
+  F(g,0,54,112,6,'#4c8f3e'); ruis(g,0,54,112,6,'gras',licht('#4c8f3e',.16),.86);
+  F(g,0,60,112,42,'#8d9a95'); ruis(g,0,60,112,42,'asfalt',donk('#8d9a95',.10),.90);
+  F(g,0,72,112,1,'#e8ece4'); F(g,0,92,112,1,'#e8ece4');
+  // hek
+  for(let x=0;x<112;x+=6) F(g,x,50,1,6,'#7f8c88');
+  F(g,0,52,112,1,'#96a29e');
+  return c;
+}
+const UITZICHT=bakUitzicht();
+
+/* ── kleine figuurtjes op de speelplaats (bewegen achter het glas) ── */
+const buiten=[];
+for(let i=0;i<7;i++) buiten.push({x:Math.random()*112, y:64+Math.random()*32,
+  vx:(Math.random()>.5?1:-1)*(5+Math.random()*10),
+  k:kies(prng(i*13+3),KLEUR), h:kies(prng(i*29+7),HUID)});
+
+/* ── de kamer zelf: één keer gebakken achtergrond ── */
+function bakKamerAchter(){
+  const {c,g}=nieuw(KW,KH); 
+  // plafond en muur
+  F(g,0,0,KW,12,KK.plafond); F(g,0,12,KW,2,donk(KK.plafond,.22));
+  const mv=g.createLinearGradient(0,14,0,KV); mv.addColorStop(0,KK.muurLicht); mv.addColorStop(1,KK.muur);
+  g.fillStyle=mv; g.fillRect(0,14,KW,KV-14);
+  ruis(g,0,14,KW,KV-14,'muur',KK.muurDonk,.965);
+  // lambrisering met verticale groeven
+  F(g,0,128,KW,4,KK.lambrisL); F(g,0,132,KW,38,KK.lambris);
+  for(let x=0;x<KW;x+=18){ F(g,x,132,1,38,KK.lambrisD); F(g,x+1,132,1,38,KK.lambrisL); }
+  F(g,0,168,KW,2,KK.lambrisD); F(g,0,170,KW,6,KK.plint); F(g,0,170,KW,1,licht(KK.plint,.2));
+
+  // vloer met perspectief: banden worden dieper naar voren toe
+  let y=KV, band=2;
+  while(y<KH){ const h=Math.min(band,KH-y);
+    F(g,0,y,KW,h, (Math.floor(y/7)%2) ? KK.vloer : KK.vloerD);
+    y+=h; band+=0.9; }
+  // plankvoegen die naar het vluchtpunt lopen
+  g.strokeStyle='rgba(70,42,24,.16)'; g.lineWidth=1;
+  for(let i=-7;i<=7;i++){ g.beginPath(); g.moveTo(KW/2+i*17,KV); g.lineTo(KW/2+i*44,KH); g.stroke(); }
+  F(g,0,KV,KW,1,'#5e422c');
+  // lichtbaan van het raam over de vloer
+  g.save(); g.globalAlpha=.16; g.fillStyle='#fff3c8';
+  g.beginPath(); g.moveTo(16,KV); g.lineTo(126,KV); g.lineTo(210,KH); g.lineTo(-30,KH);
+  g.closePath(); g.fill(); g.restore();
+
+  return {c,g};
+}
+
+/* ── raam ── */
+function tekenRaam(g){
+  const x=14,y=24,w=112,h=102;
+  F(g,x-5,y-5,w+10,h+12,KK.wit); F(g,x-5,y-5,w+10,2,licht(KK.wit,.4));
+  F(g,x-3,y-3,w+6,h+6,donk(KK.wit,.30));
+  g.drawImage(UITZICHT,x,y);
+  // roeden
+  F(g,x+w/2-1,y,2,h,KK.wit); F(g,x,y+h/2-1,w,2,KK.wit);
+  F(g,x,y,w,1,'rgba(255,255,255,.5)');
+  // glans schuin over het glas
+  g.save(); g.globalAlpha=.13; g.fillStyle='#ffffff';
+  g.beginPath(); g.moveTo(x+8,y+h); g.lineTo(x+42,y); g.lineTo(x+62,y); g.lineTo(x+28,y+h);
+  g.closePath(); g.fill(); g.restore();
+  // vensterbank met plantjes
+  F(g,x-9,y+h+6,w+18,6,KK.lambrisL); F(g,x-9,y+h+6,w+18,1,licht(KK.lambrisL,.3));
+  F(g,x-9,y+h+12,w+18,2,KK.lambrisD);
+  for(const px0 of [x+8,x+52,x+92]){
+    F(g,px0,y+h-2,10,8,'#b85c3e'); F(g,px0,y+h-2,10,1,licht('#b85c3e',.25));
+    g.fillStyle='#3f8f4a'; g.beginPath(); g.arc(px0+5,y+h-6,6,0,6.283); g.fill();
+    g.fillStyle='#57b06a'; g.beginPath(); g.arc(px0+2,y+h-9,3,0,6.283); g.fill();
+  }
+  // gordijn links en rechts
+  for(const [gx,mir] of [[x-6,1],[x+w-10,-1]]){
+    for(let i=0;i<4;i++){ const cx=gx+i*4*mir;
+      F(g,cx,y-6,4,h+8, i%2?'#7a4f63':'#8d5c73'); }
+  }
+}
+
+/* ── kindertekeningen ── */
+function tekenTekeningen(g){
+  const bl=[[132,38,'#f6f2df'],[131,66,'#eef4de'],[134,94,'#f4eef6']];
+  bl.forEach(([x,y,kl],i)=>{
+    g.save(); g.translate(x+8,y+11); g.rotate((i-1)*.05); g.translate(-8,-11);
+    F(g,0,0,16,22,kl); F(g,0,0,16,1,'#ffffff');
+    const r=prng(hash32('tek'+i));
+    for(let j=0;j<9;j++){ g.fillStyle=kies(r,['#c9503f','#3f7dc9','#4fae6a','#e0b23f','#8f6bb5']);
+      g.fillRect(2+Math.floor(r()*11),3+Math.floor(r()*16),2+Math.floor(r()*3),2); }
+    g.restore();
+    F(g,x+6,y-2,5,3,'rgba(240,240,220,.7)');
+  });
+}
+
+/* ── prikbord ── */
+function tekenPrikbord(g){
+  const x=154,y=30,w=118,h=92;
+  F(g,x-4,y-4,w+8,h+8,KK.lijstL); F(g,x-2,y-2,w+4,h+4,KK.lijst);
+  F(g,x,y,w,h,KK.kurk); ruis(g,x,y,w,h,'kurk',donk(KK.kurk,.16),.80);
+  ruis(g,x,y,w,h,'kurk2',licht(KK.kurk,.12),.88);
+  F(g,x,y,w,1,donk(KK.kurk,.3)); F(g,x,y+h-1,w,1,licht(KK.kurk,.1));
+  const r=prng(hash32('prik'));
+  const blad=[[6,6,30,24,'#f6f2df'],[42,4,34,26,'#dfeaf6'],[82,8,28,22,'#f6e2e2'],
+              [8,36,32,26,'#eef6e2'],[46,34,30,20,'#f6f2df'],[82,34,28,26,'#f0e6f6'],
+              [10,68,34,20,'#f6f2df'],[50,58,26,30,'#e6f2f6'],[82,64,28,22,'#f6f0da']];
+  for(const [bx,by,bw,bh,kl] of blad){
+    g.save(); g.translate(x+bx+bw/2,y+by+bh/2); g.rotate((r()-.5)*.14);
+    g.translate(-bw/2,-bh/2);
+    F(g,1,1,bw,bh,'rgba(40,26,14,.28)');
+    F(g,0,0,bw,bh,kl);
+    for(let l=0;l<Math.floor(bh/5)-1;l++)
+      F(g,3,4+l*5,bw-6-Math.floor(r()*8),1,'rgba(60,60,60,.45)');
+    F(g,3,3,Math.floor(bw*.5),2,'rgba(40,60,90,.6)');
+    g.restore();
+    const pk=kies(r,['#c9503f','#3f7dc9','#4fae6a','#e0b23f']);
+    F(g,x+bx+bw/2-1,y+by-1,3,3,pk); F(g,x+bx+bw/2-1,y+by-1,1,1,licht(pk,.4));
+  }
+  // foto van de klasgroep
+  F(g,x+44,y+62,30,24,KK.wit); F(g,x+46,y+64,26,17,'#6b8fa8');
+  for(let i=0;i<6;i++){ F(g,x+48+i*4,y+72,2,6,kies(r,KLEUR)); F(g,x+48+i*4,y+69,2,3,kies(r,HUID)); }
+}
+
+/* ── postvakjes ── */
+function tekenPostvakjes(g){
+  const x=284,y=60,w=96,h=74, kol=4, rij=4;
+  F(g,x-3,y-3,w+6,h+6,KK.kastL); F(g,x-1,y-1,w+2,h+2,KK.kastD);
+  F(g,x,y,w,h,KK.kast);
+  const bw=w/kol, bh=h/rij;
+  const r=prng(hash32('post'));
+  for(let j=0;j<rij;j++) for(let i=0;i<kol;i++){
+    const bx=x+i*bw+1, by=y+j*bh+1, iw=bw-2, ih=bh-2;
+    F(g,bx,by,iw,ih,KK.kastD);
+    F(g,bx,by,iw,2,donk(KK.kastD,.3));
+    if(r()>.35){ const ph=3+Math.floor(r()*4);
+      F(g,bx+2,by+ih-ph-3,iw-4,ph,KK.wit);
+      F(g,bx+2,by+ih-ph-3,iw-4,1,'#ffffff'); }
+    F(g,bx,by+ih-3,iw,3,KK.kastL);
+    pixTekst(g,String.fromCharCode(65+((i*7+j*5)%26))+String.fromCharCode(65+((i*3+j*11)%26)),
+             bx+3,by+ih-3+(-1),KK.kastD,1);
+  }
+  F(g,x-3,y+h+3,w+6,2,KK.kastD);
+}
+
+/* ── klok ── */
+function tekenKlokRand(g){
+  const cx=310,cy=42,rr=14;
+  g.fillStyle='#2f3a36'; g.beginPath(); g.arc(cx,cy,rr+2,0,6.283); g.fill();
+  g.fillStyle=KK.wit; g.beginPath(); g.arc(cx,cy,rr,0,6.283); g.fill();
+  g.fillStyle='#2f3a36';
+  for(let i=0;i<12;i++){ const a=i/12*6.283;
+    g.fillRect(Math.round(cx+Math.sin(a)*(rr-3))-0,Math.round(cy-Math.cos(a)*(rr-3))-0,
+      i%3?1:2,i%3?1:2); }
+}
+
+/* ── kast met ordners ── */
+function tekenKast(g){
+  const x=288,y=136,w=88,h=80;
+  F(g,x+3,y+h-3,w,4,'rgba(30,18,10,.35)');
+  F(g,x-2,y-2,w+4,h+4,KK.kastL); F(g,x,y,w,h,KK.kast);
+  const r=prng(hash32('kast'));
+  const ORDNER=['#8c3b32','#2f5f8f','#3f7a4f','#a8792f','#6b4a7a','#4f7f8f','#a85a3a'];
+  for(let p=0;p<3;p++){
+    const py=y+4+p*26;
+    F(g,x+3,py,w-6,22,KK.kastD);
+    let ox=x+5;
+    while(ox<x+w-8){
+      const ow=4+Math.floor(r()*3), kl=kies(r,ORDNER), lean=r()>.9;
+      if(lean){ g.save(); g.translate(ox+ow/2,py+21); g.rotate(.16); g.translate(-ow/2,-21); 
+        F(g,0,1,ow,20,kl); F(g,0,4,ow,4,KK.wit); g.restore(); }
+      else { F(g,ox,py+1,ow,20,kl); F(g,ox,py+1,ow,1,licht(kl,.28));
+        F(g,ox,py+5,ow,4,KK.wit); F(g,ox+1,py+6,ow-2,1,'rgba(60,60,60,.5)');
+        F(g,ox,py+16,ow,2,donk(kl,.3)); }
+      ox+=ow+1;
+    }
+    F(g,x+3,py+22,w-6,2,KK.kastL);
+  }
+  // bovenblad met beker en plant
+  F(g,x-4,y-6,w+8,6,KK.kastL); F(g,x-4,y-6,w+8,1,licht(KK.kastL,.3));
+  F(g,x+10,y-16,8,10,'#d6b24a'); F(g,x+8,y-18,12,3,'#e8c85a');
+  F(g,x+12,y-6,4,2,'#8a6a2f');
+  F(g,x+58,y-14,12,8,'#b85c3e');
+  g.fillStyle='#3f8f4a'; g.beginPath(); g.arc(x+64,y-16,7,0,6.283); g.fill();
+  g.fillStyle='#57b06a'; g.beginPath(); g.arc(x+60,y-19,4,0,6.283); g.fill();
+}
+
+/* ── deur naar het bureau van de directeur ── */
+function tekenDeur(g){
+  const x=400,y=18,w=88,h=184;
+  F(g,x-6,y-6,w+12,h+6,KK.lijstL); F(g,x-3,y-3,w+6,h+3,KK.lijst);
+  F(g,x,y,w,h,KK.deur);
+  F(g,x,y,2,h,KK.deurL); F(g,x+w-2,y,2,h,KK.deurD);
+  // matglaspaneel
+  F(g,x+10,y+14,w-20,54,KK.deurD);
+  F(g,x+12,y+16,w-24,50,KK.glas);
+  for(let i=0;i<50;i+=3) F(g,x+12,y+16+i,w-24,1,'rgba(255,255,255,.22)');
+  F(g,x+12,y+16,w-24,2,'rgba(255,255,255,.5)');
+  // paneel onderaan
+  F(g,x+10,y+80,w-20,88,KK.deurD); F(g,x+12,y+82,w-24,84,KK.deurL);
+  F(g,x+16,y+86,w-32,76,KK.deur);
+  // naambordje
+  F(g,x+18,y+74,52,1,KK.deurD);
+  F(g,x+14,y+2,w-28,10,'#2f3a36'); F(g,x+14,y+2,w-28,1,'#4a5a54');
+  pixTekst(g,'DIRECTIE',x+14+((w-28)-pixBreed('DIRECTIE',1))/2,y+5,'#e8d8a0',1);
+  // klink
+  F(g,x+w-16,y+94,10,4,KK.metaal); F(g,x+w-16,y+94,10,1,KK.metaalL);
+  F(g,x+w-10,y+92,3,8,KK.metaal);
+  // licht dat onder de deur door komt
+  F(g,x,y+h-2,w,2,'rgba(255,214,140,.5)');
+  F(g,x-2,y+h,w+4,3,'rgba(255,214,140,.18)');
+}
+
+/* ── koffiehoek ── */
+function tekenKoffie(g){
+  const x=10,y=158,w=132,h=60;
+  F(g,x+4,y+h-2,w,4,'rgba(30,18,10,.3)');
+  // kastjes onder
+  F(g,x,y+8,w,h-8,'#5f7a72'); F(g,x,y+8,w,2,'#7b9890');
+  for(let i=0;i<3;i++){ const cx=x+4+i*(w-8)/3;
+    F(g,cx,y+12,(w-8)/3-3,h-16,'#4e665f');
+    F(g,cx+((w-8)/3-3)/2-4,y+14,8,2,KK.metaalL); }
+  // werkblad
+  F(g,x-4,y,w+8,8,'#8e8579'); F(g,x-4,y,w+8,2,'#a8a094'); F(g,x-4,y+8,w+8,1,'#5f584f');
+  // koffiemachine
+  const mx=x+8,my=y-34;
+  F(g,mx,my,26,34,'#3a4440'); F(g,mx,my,26,3,'#55625d');
+  F(g,mx+3,my+4,20,10,'#1e2624'); F(g,mx+5,my+6,7,6,'#f0c04a');
+  F(g,mx+4,my+18,18,10,'#2b3330'); F(g,mx+8,my+16,10,3,'#93a0a3');
+  F(g,mx+9,my+28,8,4,'#6b4a2f');
+  // waterkoker en kannen
+  F(g,x+42,y-18,14,18,'#b6c1c3'); F(g,x+42,y-18,14,2,'#dfe7e9');
+  F(g,x+56,y-14,3,8,'#8e9a9d');
+  // mokken
+  const r=prng(hash32('mok'));
+  for(let i=0;i<5;i++){ const cx=x+66+i*11, kl=kies(r,['#c9503f','#3f7dc9','#4fae6a','#e0b23f','#f4f1e6']);
+    F(g,cx,y-9,8,9,kl); F(g,cx,y-9,8,1,licht(kl,.35)); F(g,cx+8,y-7,2,4,kl); }
+  // spoelbak
+  F(g,x+96,y+1,34,6,'#7f8a8c'); F(g,x+98,y+2,30,4,'#5f6a6c');
+  F(g,x+112,y-10,2,11,'#b6c1c3'); F(g,x+108,y-11,8,2,'#b6c1c3');
+}
+
+/* ── tafel met stoelen, voorgrond ── */
+function bakKamerVoor(){
+  const {c,g}=nieuw(KW,KH);
+  const x=118,y=238,w=236,h=26;
+
+  // tapijt met rand
+  const tap=(inzet,kl)=>{ g.fillStyle=kl; g.beginPath();
+    g.moveTo(x-16+inzet,y+h+24+inzet*.5); g.lineTo(x+w+16-inzet,y+h+24+inzet*.5);
+    g.lineTo(x+w+40-inzet*1.4,KH-14); g.lineTo(x-40+inzet*1.4,KH-14); g.closePath(); g.fill(); };
+  g.save(); g.globalAlpha=.92;
+  tap(0,'#2f4f49'); tap(4,KK.tapijt); tap(9,KK.tapijt2); tap(15,donk(KK.tapijt,.08));
+  g.globalAlpha=.35; g.strokeStyle=KK.tapijt2; g.lineWidth=1;
+  for(let i=-2;i<=2;i++){ g.beginPath(); g.moveTo(x+w/2+i*30,y+h+30);
+    g.lineTo(x+w/2+i*46,KH-20); g.stroke(); }
+  g.restore();
+
+  // schaduw onder de tafel
+  g.fillStyle='rgba(40,22,12,.30)';
+  g.beginPath(); g.ellipse(x+w/2,y+h+28,w*.55,22,0,0,6.283); g.fill();
+
+  // tafelblad in perspectief
+  g.fillStyle=KK.tafelD;
+  g.beginPath(); g.moveTo(x,y); g.lineTo(x+w,y);
+  g.lineTo(x+w+32,y+h+18); g.lineTo(x-32,y+h+18); g.closePath(); g.fill();
+  g.fillStyle=KK.tafel;
+  g.beginPath(); g.moveTo(x,y); g.lineTo(x+w,y);
+  g.lineTo(x+w+30,y+h+14); g.lineTo(x-30,y+h+14); g.closePath(); g.fill();
+  g.fillStyle=KK.tafelL;
+  g.beginPath(); g.moveTo(x,y); g.lineTo(x+w,y); g.lineTo(x+w+2,y+3); g.lineTo(x-2,y+3);
+  g.closePath(); g.fill();
+  g.strokeStyle='rgba(120,84,50,.30)'; g.lineWidth=1;
+  for(let i=1;i<10;i++){ const t=i/10;
+    g.beginPath(); g.moveTo(x+w*t,y); g.lineTo(x-30+(w+60)*t,y+h+14); g.stroke(); }
+  F(g,x+4,y+h+14,8,38,KK.tafelD); F(g,x+w-12,y+h+14,8,38,KK.tafelD);
+  F(g,x+4,y+h+14,2,38,KK.tafel); F(g,x+w-12,y+h+14,2,38,KK.tafel);
+
+  // wat er op tafel ligt
+  F(g,x+30,y+5,46,17,'#e8e4d6'); F(g,x+30,y+5,46,2,'#f6f2e6');
+  for(let i=0;i<4;i++) F(g,x+34,y+10+i*3,32-i*4,1,'rgba(70,70,70,.4)');
+  F(g,x+104,y-17,44,21,'#4a5450'); F(g,x+106,y-15,40,17,'#7fc7de');
+  for(let i=0;i<5;i++) F(g,x+109,y-12+i*3,28-i*3,1,'rgba(255,255,255,.55)');
+  F(g,x+100,y+4,52,4,'#5d6a65'); F(g,x+100,y+4,52,1,'#8b9a94');
+  [[x+16,'#c9503f'],[x+88,'#4fae6a'],[x+170,'#3f7dc9'],[x+208,'#e0b23f']].forEach(([mx,kl])=>{
+    F(g,mx,y+3,9,10,kl); F(g,mx,y+3,9,1,licht(kl,.35)); F(g,mx+9,y+5,2,5,kl);
+    F(g,mx+1,y+3,7,2,'#6b4a2f'); });
+  F(g,x+158,y-4,28,9,'#a8792f'); F(g,x+158,y-4,28,1,'#c99a4a');
+  F(g,x+162,y-10,7,7,'#c9503f'); F(g,x+170,y-9,6,6,'#8ac04a'); F(g,x+177,y-10,6,7,'#e0b23f');
+  F(g,x+196,y+7,26,10,'#c8b48a'); F(g,x+196,y+7,26,2,'#dcc9a4');
+  return {c,g};
+}
+
+/* ── personages op ware grootte voor de kamer ── */
+const kamerCache=new Map();
+function maakPersoon(u,pose,frame){
+  const sl=u.sleutel+'|'+pose+'|'+frame;
+  if(kamerCache.has(sl)) return kamerCache.get(sl);
+  const {c,g}=nieuw(32,94);
+  const bob=frame?-1:0, Y=v=>v+bob;
+  const H1=donk(u.huid,.20), K1=u.kleding, KD=donk(K1,.26), KL=licht(K1,.20);
+  const B=u.broek, BD=donk(B,.32), HR=u.haar;
+
+  F(g,8,88,7,5,'#2f2a26'); F(g,17,88,7,5,'#2f2a26');
+  F(g,8,88,7,1,'#4a423c'); F(g,17,88,7,1,'#4a423c');
+  F(g,9,Y(58),6,31,B); F(g,17,Y(58),6,31,B);
+  F(g,9,Y(58),6,2,BD); F(g,17,Y(58),6,2,BD); F(g,15,Y(60),2,29,BD);
+
+  F(g,6,Y(28),20,5,K1); F(g,7,Y(33),18,25,K1);
+  F(g,7,Y(28),2,30,KL); F(g,23,Y(28),2,30,KD);
+  F(g,7,Y(55),18,3,donk(B,.45));
+  if(u.streep){ for(let i=0;i<4;i++) F(g,7,Y(35)+i*5,18,2,KL); }
+  if(u.hesje){ F(g,7,Y(30),18,22,'#f2870f'); F(g,7,Y(38),18,2,'#f6f3e7'); }
+  F(g,12,Y(28),8,4,licht(u.huid,.04));
+  F(g,12,Y(28),8,1,KD); F(g,15,Y(28),2,6,KD);
+
+  const arm=(x,y,w,h)=>F(g,x,Y(y),w,h,K1);
+  const hand=(x,y)=>F(g,x,Y(y),4,5,u.huid);
+  if(pose==='koffie'){
+    arm(3,32,4,24); hand(3,55);
+    arm(25,32,4,12); arm(19,43,10,4); hand(16,42);
+    F(g,11,Y(39),7,9,u.accent); F(g,11,Y(39),7,1,licht(u.accent,.35)); F(g,18,Y(41),2,5,u.accent);
+    F(g,12,Y(39),5,2,'#6b4a2f');
+  } else if(pose==='praat'){
+    arm(3,32,4,24); hand(3,55);
+    arm(25,28,4,12); arm(26,20,4,10); hand(26,16);
+  } else if(pose==='lees'){
+    arm(3,32,4,10); arm(5,41,8,4); hand(11,40);
+    arm(25,32,4,10); arm(19,41,8,4); hand(17,40);
+    F(g,8,Y(33),16,12,'#f4f1e6'); F(g,8,Y(33),16,1,'#ffffff');
+    for(let i=0;i<4;i++) F(g,10,Y(36)+i*2,12-i*2,1,'rgba(70,70,70,.45)');
+  } else if(pose==='klembord'){
+    arm(3,32,4,22); hand(3,53);
+    arm(25,32,4,12); arm(19,43,10,4); hand(16,42);
+    F(g,9,Y(36),12,15,'#a5764e'); F(g,10,Y(38),10,12,'#f4f1e6');
+    for(let i=0;i<4;i++) F(g,11,Y(40)+i*2,8-i,1,'rgba(70,70,70,.45)');
+  } else {
+    arm(3,32,4,24); hand(3,55); arm(25,32,4,24); hand(25,55);
+  }
+
+  F(g,8,Y(9),16,16,u.huid); F(g,8,Y(23),16,3,H1);
+  F(g,7,Y(15),1,5,u.huid); F(g,24,Y(15),1,5,u.huid);
+  F(g,11,Y(15),4,3,'#f4f1e6'); F(g,17,Y(15),4,3,'#f4f1e6');
+  F(g,12,Y(16),2,2,'#2b2320'); F(g,18,Y(16),2,2,'#2b2320');
+  F(g,11,Y(13),4,1,donk(HR,.15)); F(g,17,Y(13),4,1,donk(HR,.15));
+  F(g,15,Y(18),2,3,H1); F(g,13,Y(22),6,1,donk(u.huid,.45));
+  if(u.blos){ F(g,9,Y(19),3,2,mix(u.huid,'#f0709c',.4)); F(g,20,Y(19),3,2,mix(u.huid,'#f0709c',.4)); }
+  const hs=u.haarstijl;
+  F(g,7,Y(6),18,6,HR);
+  if(hs===0){ F(g,7,Y(12),2,7,HR); F(g,23,Y(12),2,7,HR); }
+  else if(hs===1){ F(g,5,Y(10),3,22,HR); F(g,24,Y(10),3,22,HR); F(g,7,Y(12),2,9,HR); F(g,23,Y(12),2,9,HR); }
+  else if(hs===2){ g.fillStyle=HR; g.beginPath(); g.arc(16,Y(4),6,0,6.283); g.fill();
+    F(g,7,Y(12),2,5,HR); F(g,23,Y(12),2,5,HR); }
+  else if(hs===3){ F(g,8,Y(7),16,4,HR); }
+  else if(hs===4){ g.fillStyle=HR;
+    [[9,7],[16,4],[23,7],[7,12],[25,12]].forEach(([hx,hy])=>{
+      g.beginPath(); g.arc(hx,Y(hy),5,0,6.283); g.fill(); }); }
+  else { F(g,7,Y(12),2,7,HR); F(g,23,Y(12),2,7,HR); F(g,25,Y(14),3,16,HR); }
+  F(g,7,Y(6),18,1,licht(HR,.22));
+  if(u.bril){ F(g,10,Y(14),6,5,'rgba(220,240,245,.35)'); F(g,16,Y(14),6,5,'rgba(220,240,245,.35)');
+    F(g,10,Y(14),6,1,'#3a4a4f'); F(g,16,Y(14),6,1,'#3a4a4f');
+    F(g,10,Y(18),6,1,'#3a4a4f'); F(g,16,Y(18),6,1,'#3a4a4f'); F(g,15,Y(15),2,1,'#3a4a4f'); }
+  if(u.badge){ F(g,19,Y(36),5,7,'#f4f1e6'); F(g,20,Y(38),3,1,'#4a5a54'); }
+  omlijn(g,32,94);
+  kamerCache.set(sl,c);
+  return c;
+}
+
+/* ── wie er in de kamer staat ── */
+let kamerVolk=[];
+const PLEKKEN=[
+  {x:88, y:220, pose:'koffie',   achter:1, w:'staat koffie te halen'},
+  {x:214,y:200, pose:'lees',     achter:1, w:'leest het prikbord'},
+  {x:166,y:272, pose:'staan',    achter:1, w:'zit aan de grote tafel'},
+  {x:300,y:272, pose:'staan',    achter:1, w:'zit aan de grote tafel'},
+  {x:404,y:322, pose:'praat',    achter:0, w:'staat te praten bij de deur'},
+  {x:452,y:330, pose:'klembord', achter:0, w:'staat te praten bij de deur'},
+];
+function vulKamer(){
+  const r=prng(hash32('kamer|'+spel.ll+'|'+spel.pers));
+  const ernst={krit:0,let:1,ok:2};
+  const mensen=personeel().filter(a=>a.rol!=='extern'&&a.rol!=='directie')
+    .slice().sort((a,b)=>ernst[dossier(a).sig.e]-ernst[dossier(b).sig.e]||a.naam.localeCompare(b.naam));
+  kamerVolk=PLEKKEN.map((p,i)=>({...p, a:mensen[i%mensen.length],
+    fase:r()*6, spiegel:p.x>360}));
+}
+function citaat(a){
+  const d=dossier(a);
+  if(d.sig.e==='krit') return '“Ik hoorde dat mijn beoordeling er nog aan komt. Weet jij wanneer?”';
+  if(/drempel/.test(d.sig.t)) return '“Nog twee dagen en ik zit aan de 290. Verandert er dan iets?”';
+  if(/functionerings|gesprek/.test(d.sig.t)) return '“We hebben elkaar al een tijd niet echt gesproken, hè.”';
+  if(d.beurten!==null&&d.beurten>=12) return '“Ik heb er deze maand al '+d.beurten+' gedraaid. Staat dat ergens?”';
+  if(a.ziek) return '“Ik voel me niet zo goed. Ik meld me beter af voor morgen.”';
+  return kies(prng(hash32(a.id+'|cit')),[
+    '“De kopieermachine doet het weer niet.”',
+    '“Heb jij die nieuwe klas al gezien? Wat een energie.”',
+    '“Ik neem woensdag de zwemles over, als dat past.”',
+    '“Nog iemand koffie?”',
+    '“Het lukt wel. Het lukt altijd wel.”']);
+}
+
+/* ── glasvoorgrond: roeden en weerspiegeling, ook per beeld ── */
+function tekenGlasVoor(g){
+  const x=14,y=24,w=112,h=102;
+  F(g,x+w/2-1,y,2,h,KK.wit); F(g,x,y+h/2-1,w,2,KK.wit);
+  F(g,x,y,w,1,'rgba(255,255,255,.5)');
+  g.save(); g.globalAlpha=.13; g.fillStyle='#ffffff';
+  g.beginPath(); g.moveTo(x+8,y+h); g.lineTo(x+42,y); g.lineTo(x+62,y); g.lineTo(x+28,y+h);
+  g.closePath(); g.fill(); g.restore();
+}
+
+/* ── de achtergrond samenstellen ── */
+function bakKamer(){
+  const A=bakKamerAchter();
+  tekenRaam(A.g); tekenTekeningen(A.g); tekenPrikbord(A.g);
+  tekenKlokRand(A.g); tekenPostvakjes(A.g); tekenKast(A.g);
+  tekenDeur(A.g); tekenKoffie(A.g);
+  // plant naast de deur
+  F(A.g,492,208,20,16,'#b85c3e'); F(A.g,492,208,20,2,licht('#b85c3e',.3));
+  A.g.fillStyle='#2f7d3f'; A.g.beginPath(); A.g.arc(502,198,14,0,6.283); A.g.fill();
+  A.g.fillStyle='#3f9450'; A.g.beginPath(); A.g.arc(496,190,9,0,6.283); A.g.fill();
+  A.g.fillStyle='#57b06a'; A.g.beginPath(); A.g.arc(508,192,7,0,6.283); A.g.fill();
+  tekenExtras(A.g);
+  kachter=A.c;
+  kvoor=bakKamerVoor().c;
+  const n=nieuw(KW,KH); kbuf=n.c; kb=n.g;
+}
+
+/* ── de kleine dingen die een kamer bewoond maken ── */
+function tekenExtras(g){
+  // TL-armaturen tegen het plafond, zoals in elke school
+  for(const lx of [96,236,376]){
+    F(g,lx-42,2,84,7,'#c8ccc4'); F(g,lx-42,2,84,2,'#e4e8e0');
+    F(g,lx-38,6,76,4,'#fdf7dc'); F(g,lx-42,9,84,2,'#9aa298');
+    g.save(); g.globalAlpha=.09; g.fillStyle='#fff3c8';
+    g.beginPath(); g.moveTo(lx-38,11); g.lineTo(lx+38,11); g.lineTo(lx+70,86); g.lineTo(lx-70,86);
+    g.closePath(); g.fill(); g.restore();
+  }
+  // radiator onder het raam
+  const rx=18, ry=140;
+  F(g,rx,ry,104,26,'#d8dcd4'); F(g,rx,ry,104,2,'#eef1ea');
+  for(let i=0;i<13;i++) F(g,rx+3+i*8,ry+3,5,20,'#c2c8bf');
+  F(g,rx,ry+26,104,2,'#a9b0a6');
+  // prullenmand
+  F(g,150,196,16,20,'#4f5f59'); F(g,149,194,18,3,'#6f7d78');
+  F(g,153,190,4,5,'#f4f1e6');
+  // deurmat voor de deur
+  g.fillStyle='#6b5a44';
+  g.beginPath(); g.moveTo(408,206); g.lineTo(482,206); g.lineTo(496,222); g.lineTo(394,222);
+  g.closePath(); g.fill();
+  g.fillStyle='#7d6a52';
+  g.beginPath(); g.moveTo(414,209); g.lineTo(476,209); g.lineTo(486,219); g.lineTo(404,219);
+  g.closePath(); g.fill();
+  // stoelen rond de tafel — achter de zittende collega's
+  const jassen={192:'#2f4f7f',296:'#7a4f63'};
+  for(const cx of [140,192,244,296]){
+    F(g,cx+1,254,26,3,'rgba(40,22,12,.25)');
+    F(g,cx+2,196,22,30,'#7b5a3c'); F(g,cx+4,198,18,26,'#8f6a46');
+    for(let i=0;i<3;i++) F(g,cx+6+i*6,200,3,22,'#7b5a3c');
+    F(g,cx,224,26,7,'#96714d'); F(g,cx,224,26,2,'#ad8659');
+    F(g,cx+2,231,3,22,'#6d4f34'); F(g,cx+21,231,3,22,'#6d4f34');
+    const jk=jassen[cx];
+    if(jk){
+      F(g,cx+8,193,10,3,jk);                       // kraag over de leuning
+      F(g,cx+5,196,16,26,jk);                      // rug
+      F(g,cx+2,199,4,16,jk); F(g,cx+20,199,4,16,jk); // mouwen
+      F(g,cx+5,196,16,1,licht(jk,.30));
+      F(g,cx+12,198,2,20,donk(jk,.30));            // rits
+      F(g,cx+5,222,16,3,donk(jk,.22));
+    }
+  }
+  // een tas onder een stoel
+  F(g,262,240,18,14,'#5c4636'); F(g,262,240,18,2,'#75593f'); F(g,268,236,6,5,'#5c4636');
+}
+
+/* ── klikbare plekken ── */
+const SPOTS=[
+  {id:'prikbord',x:150,y:26,w:126,h:100,t:'Het prikbord — wat er deze week speelt',
+   a:()=>toonPaneel('prikbord')},
+  {id:'postvak', x:281,y:57,w:102,h:80, t:'De postvakjes — wie werkt hier eigenlijk allemaal?',
+   a:()=>toonPaneel('team')},
+  {id:'kast',    x:284,y:130,w:96,h:86, t:'De kast met de schoolplannen',
+   a:()=>toonPaneel('plannen')},
+  {id:'deur',    x:394,y:12,w:100,h:192,t:'De deur van het bureau — hier vallen de beslissingen',
+   a:()=>toonPaneel('beleid')},
+  {id:'tafel',   x:88, y:222,w:304,h:60, t:'De grote tafel — er ligt een weekrooster open',
+   a:()=>toonPaneel('week')},
+  {id:'koffie',  x:8,  y:122,w:140,h:98, t:'De koffiemachine',        a:()=>koffieZetten()},
+  {id:'raam',    x:10, y:20, w:120,h:112,t:'Het raam op de speelplaats — terug naar buiten',
+   a:()=>sluitLk()},
+  {id:'klok',    x:294,y:26, w:32, h:32, t:'De klok',                 a:()=>klokKijken()},
+];
+let kSpotsAan=false, kHover=null, kKoffieGezet=false, kTijd=0;
+
+function kamerSpots(){
+  const lijst=SPOTS.slice();
+  for(const p of kamerVolk) if(p.a)
+    lijst.push({id:'p'+p.a.id, x:p.x-16, y:p.y-92, w:32, h:92,
+      t:p.a.naam+' — '+p.w, persoon:p.a, a:()=>toonPersoon(p.a)});
+  return lijst;
+}
+
+function tekenKamer(dt){
+  kTijd+=dt;
+  const donkerheid = spel.weer==='nacht' ? .62
+    : spel.min>930 ? Math.min(.55,(spel.min-930)/130)
+    : spel.min<440 ? .40 : (spel.weer==='storm' ? .26 : 0);
+  kb.drawImage(kachter,0,0);
+
+  // uitzicht met bewegende figuurtjes
+  kb.save(); kb.beginPath(); kb.rect(14,24,112,102); kb.clip();
+  kb.drawImage(UITZICHT,14,24);
+  if(donkerheid<.34) for(const f of buiten){
+    f.x+=f.vx*dt;
+    if(f.x<-6){f.x=118;} if(f.x>118){f.x=-6;}
+    const X=Math.round(14+f.x), Yy=Math.round(24+f.y);
+    F(kb,X,Yy,4,5,f.k); F(kb,X,Yy-4,4,4,f.h);
+    F(kb,X,Yy+5,2,3,'#33415c'); F(kb,X+2,Yy+5,2,3,'#33415c');
+  }
+  if(donkerheid>0){
+    kb.globalAlpha=Math.min(.94,donkerheid*1.5); F(kb,14,24,112,102,'#1b2340'); kb.globalAlpha=1;
+    if(donkerheid>.4){ const r=prng(hash32('avondraam'));
+      for(let i=0;i<9;i++) F(kb,16+Math.floor(r()*106),30+Math.floor(r()*44),2,2,'#ffd88a');
+      F(kb,14,86,112,1,'rgba(120,140,180,.35)'); }
+  }
+  tekenGlasVoor(kb);
+  kb.restore();
+
+  // klokwijzers
+  const uur=(spel.min/60)%12, minu=spel.min%60;
+  const wijzer=(hoek,len,dik,kl)=>{ kb.strokeStyle=kl; kb.lineWidth=dik;
+    kb.beginPath(); kb.moveTo(310,42);
+    kb.lineTo(310+Math.sin(hoek)*len,42-Math.cos(hoek)*len); kb.stroke(); };
+  wijzer(uur/12*6.283,7,2,'#2f3a36'); wijzer(minu/60*6.283,11,1,'#2f3a36');
+  F(kb,309,41,2,2,'#c9503f');
+
+  // damp uit de koffiemachine
+  for(let i=0;i<3;i++){ const t=(kTijd*.6+i*.34)%1;
+    kb.globalAlpha=(1-t)*.5;
+    F(kb,29+Math.round(Math.sin((t+i)*6)*3),Math.round(122-t*22),2,2,'#e8f0ee'); }
+  kb.globalAlpha=1;
+
+  // mensen achteraan, dan de tafel, dan de mensen vooraan
+  for(const p of kamerVolk) if(p.achter) tekenKamerPersoon(p);
+  kb.drawImage(kvoor,0,0);
+  for(const p of kamerVolk) if(!p.achter) tekenKamerPersoon(p);
+
+  // licht van de dag: 's avonds nemen de TL's het over
+  if(donkerheid>0){
+    kb.globalCompositeOperation='multiply';
+    kb.fillStyle='#3a4570'; kb.globalAlpha=donkerheid;
+    kb.fillRect(0,0,KW,KH);
+    kb.globalAlpha=1; kb.globalCompositeOperation='lighter';
+    for(const lx of [96,236,376]){
+      const gr=kb.createLinearGradient(0,10,0,150);
+      gr.addColorStop(0,'rgba(255,238,190,'+(.30*donkerheid+.10).toFixed(3)+')');
+      gr.addColorStop(1,'rgba(255,238,190,0)');
+      kb.fillStyle=gr; kb.beginPath(); kb.moveTo(lx-38,10); kb.lineTo(lx+38,10);
+      kb.lineTo(lx+80,150); kb.lineTo(lx-80,150); kb.closePath(); kb.fill();
+      kb.fillStyle='rgba(255,244,208,.55)'; kb.fillRect(lx-38,6,76,4);
+    }
+    kb.globalCompositeOperation='source-over';
+    // warm licht onder de deur van de directie
+    kb.globalAlpha=.5*donkerheid; F(kb,394,200,102,6,'#ffd68c'); kb.globalAlpha=1;
+  }
+
+  // markeringen
+  const lijst=kamerSpots();
+  if(kSpotsAan) for(const s of lijst) if(s!==kHover) omkader(s,.30,'#5fd3ad');
+  if(kHover) omkader(kHover,.95,'#8ef0cd');
+
+  kctx.imageSmoothingEnabled=false;
+  kctx.drawImage(kbuf,0,0,KW,KH,0,0,kdoek.width,kdoek.height);
+}
+function tekenKamerPersoon(p){
+  const d=dossier(p.a);
+  const frame=Math.floor(kTijd*.9+p.fase)%2;
+  const spr=maakPersoon(p.a.uiterlijk,p.pose,frame);
+  kb.save();
+  kb.globalAlpha=.25; kb.fillStyle='#241408';
+  kb.beginPath(); kb.ellipse(p.x,p.y+1,13,4,0,0,6.283); kb.fill();
+  kb.globalAlpha=1;
+  if(p.spiegel){ kb.translate(p.x,0); kb.scale(-1,1); kb.drawImage(spr,-16,p.y-92); }
+  else kb.drawImage(spr,p.x-16,p.y-92);
+  kb.restore();
+  if(d.sig.e!=='ok'){
+    const kl=d.sig.e==='krit'?'#f0709c':'#f0c04a', by=p.y-104+Math.round(Math.sin(kTijd*2+p.fase)*2);
+    F(kb,p.x-7,by,14,12,'#f6f3e7'); F(kb,p.x-2,by+12,4,3,'#f6f3e7');
+    F(kb,p.x-1,by+3,2,5,kl); F(kb,p.x-1,by+9,2,2,kl);
+  }
+}
+function omkader(s,alfa,kl){
+  kb.save(); kb.globalAlpha=alfa; kb.strokeStyle=kl; kb.lineWidth=1;
+  kb.setLineDash([3,3]); kb.lineDashOffset=-Math.round(kTijd*8)%6;
+  kb.strokeRect(s.x+.5,s.y+.5,s.w-1,s.h-1);
+  kb.setLineDash([]); kb.globalAlpha=alfa*.16; kb.fillStyle=kl;
+  kb.fillRect(s.x,s.y,s.w,s.h); kb.restore();
+}
+
+
 /* ── weergave ── */
 const lk=document.getElementById('lk'), lkInhoud=document.getElementById('lkinhoud');
 let lkTab='prikbord', lkZoek='', lkAlleenSignaal=false;
@@ -1726,23 +2429,108 @@ function zetKeuze(id,i){
   toonLk(); paneel();
   zeg('⚖️ '+k.t+': '+k.o[i].l+' — schoolklimaat '+(nieuwe-vorig>0?'+':'')+(nieuwe-vorig)+'.');
 }
-function openLk(tab){
-  if(tab) lkTab=tab;
-  lk.classList.add('aan'); lk.setAttribute('aria-hidden','false');
+/* ── bediening van de kamer ── */
+const kscene=document.getElementById('lkscene'), kbij=document.getElementById('lkbijtekst'),
+      kkaart=document.getElementById('lkkaartje'), kpaneel=document.getElementById('lkpaneel');
+
+function pasKamerAan(){
+  const w=kscene.clientWidth, h=kscene.clientHeight;
+  if(!w||!h) return;
+  const pas=Math.min(w/KW,(h-42)/KH);
+  KSCH=Math.max(1,Math.min(4,Math.floor(pas)));
+  kdoek.width=KW*KSCH; kdoek.height=KH*KSCH;
+  kdoek.style.width=Math.round(KW*pas)+'px'; kdoek.style.height=Math.round(KH*pas)+'px';
+  kctx.imageSmoothingEnabled=false;
+}
+const kamerPos=e=>{ const r=kdoek.getBoundingClientRect();
+  return {x:(e.clientX-r.left)/r.width*KW, y:(e.clientY-r.top)/r.height*KH}; };
+function zoekSpot(p){
+  const lijst=kamerSpots();
+  for(let i=lijst.length-1;i>=0;i--){ const s=lijst[i];
+    if(p.x>=s.x&&p.x<s.x+s.w&&p.y>=s.y&&p.y<s.y+s.h) return s; }
+  return null;
+}
+kdoek.addEventListener('mousemove',e=>{
+  kHover=zoekSpot(kamerPos(e));
+  kdoek.classList.toggle('wijs',!!kHover);
+  kbij.textContent=kHover?kHover.t:'De lerarenkamer — klik rond, alles wat oplicht doet iets';
+});
+kdoek.addEventListener('mouseleave',()=>{ kHover=null; kdoek.classList.remove('wijs');
+  kbij.textContent='De lerarenkamer — klik rond, alles wat oplicht doet iets'; });
+kdoek.addEventListener('click',e=>{ const s=zoekSpot(kamerPos(e)); if(s) s.a(); });
+
+function toonPaneel(tab){
+  lkTab=tab; kkaart.hidden=true; kpaneel.hidden=false;
   document.querySelectorAll('[data-lktab]').forEach(b=>
     b.setAttribute('aria-pressed',String(b.dataset.lktab===lkTab)));
   toonLk();
 }
+function terugNaarKamer(){ kpaneel.hidden=true; requestAnimationFrame(pasKamerAan); }
+
+function toonPersoon(a){
+  const d=dossier(a), pct=Math.min(100,Math.round(d.dagen/DREMPEL*100));
+  const kl=d.sig.e==='krit'?'v-krit':d.sig.e==='let'?'v-let':'v-ok';
+  kkaart.hidden=false;
+  kkaart.innerHTML='<h4>'+ontsnap(a.naam)+'</h4><p class="rol">'+ontsnap(d.ambt)+' · '+d.statuut+
+    (d.opdracht?' · '+d.opdracht+'/24 lestijden':'')+'</p>'+
+    '<p class="cit">'+ontsnap(citaat(a))+'</p>'+
+    (d.onderwijs&&d.statuut!=='vastbenoemd'
+      ? '<div class="ancien"><div class="balk"><i style="width:'+pct+'%'+
+        (d.dagen<DREMPEL?';background:var(--amber)':'')+'"></i></div><span>'+
+        (d.dagen>=DREMPEL?'drempel bereikt':d.dagen+'/'+DREMPEL+' dagen')+'</span></div>' : '')+
+    '<p style="margin:.45rem 0 .55rem"><span class="vlag '+kl+'">'+ontsnap(d.sig.t)+'</span></p>'+
+    '<div class="knoppen"><button data-kk="team">In het teamoverzicht</button>'+
+    '<button data-kk="week">Zijn of haar week</button>'+
+    '<button data-kk="zoek">Zoek in de school</button>'+
+    '<button data-kk="weg">Sluiten</button></div>';
+  kkaart.querySelectorAll('[data-kk]').forEach(b=>b.addEventListener('click',()=>{
+    const k=b.dataset.kk;
+    if(k==='weg'){ kkaart.hidden=true; return; }
+    if(k==='zoek'){ sluitLk(); spel.sel=a; spel.bez=null;
+      cam.x=BW/2-(a.x-a.y)*(TW/2); cam.y=BH/2-(a.x+a.y)*(TH/2);
+      paneel(); zeg('👁️ '+a.naam+' — gevonden in '+(a.kamer?a.kamer.naam:'de school')+'.'); return; }
+    spel.sel=a; toonPaneel(k==='week'?'week':'team');
+  }));
+}
+
+function koffieZetten(){
+  if(!kKoffieGezet){ kKoffieGezet=true;
+    spel.klimaat=clamp(spel.klimaat+2,0,100);
+    const sch=document.getElementById('tc-kl'); if(sch) sch.value=spel.klimaat;
+    paneel();
+    kbij.textContent='Je zet een verse kan. Het is maar koffie — en toch scheelt het.';
+  } else {
+    kbij.textContent='De kan is vol. Er staat nog altijd €1 in de kas te weinig.';
+  }
+}
+function klokKijken(){
+  const b=blokVan(spel.min);
+  kbij.textContent='Het is '+klokT(spel.min)+' — '+b.naam+'. Buiten loopt de school gewoon door.';
+}
+
+/* ── openen en sluiten ── */
+function openLk(tab){
+  lk.classList.add('aan'); lk.setAttribute('aria-hidden','false');
+  if(!kachter) bakKamer();
+  vulKamer(); kKoffieGezet=false; kkaart.hidden=true; kHover=null;
+  if(tab) toonPaneel(tab); else kpaneel.hidden=true;
+  requestAnimationFrame(pasKamerAan);
+}
 function sluitLk(){ lk.classList.remove('aan'); lk.setAttribute('aria-hidden','true'); }
+
 document.getElementById('lkknop').addEventListener('click',()=>openLk());
 document.getElementById('lkdicht').addEventListener('click',sluitLk);
-document.querySelectorAll('[data-lktab]').forEach(b=>b.addEventListener('click',()=>openLk(b.dataset.lktab)));
-lk.addEventListener('click',e=>{ if(e.target===lk) sluitLk(); });
+document.getElementById('lkterug').addEventListener('click',terugNaarKamer);
+document.getElementById('lkspots').addEventListener('click',e=>{ kSpotsAan=!kSpotsAan;
+  e.currentTarget.setAttribute('aria-pressed',String(kSpotsAan)); });
+document.querySelectorAll('[data-lktab]').forEach(b=>
+  b.addEventListener('click',()=>toonPaneel(b.dataset.lktab)));
 addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT') return;
   if(e.key==='l'||e.key==='L'){ lk.classList.contains('aan')?sluitLk():openLk(); }
-  if(e.key==='Escape') sluitLk();
+  if(e.key==='Escape'){ if(!kpaneel.hidden) terugNaarKamer(); else sluitLk(); }
 });
+addEventListener('resize',()=>{ if(lk.classList.contains('aan')) pasKamerAan(); });
 
 /* ── opstart ── */
 function centreer(){
@@ -1766,7 +2554,8 @@ let vorig=performance.now(), fa=0, fn=0, pt=1.5;
 function lus(nu){
   const dt=Math.min(.05,(nu-vorig)/1000); vorig=nu;
   werkBij(dt);
-  if(!lk.classList.contains('aan')) teken(dt);
+  if(lk.classList.contains('aan')){ if(kpaneel.hidden) tekenKamer(dt); }
+  else teken(dt);
   document.getElementById('klok').textContent=klokT(spel.min);
   const b=blokVan(spel.min);
   if(b.naam!==spel.lb){ spel.lb=b.naam; document.getElementById('dagdeel').textContent=b.naam;

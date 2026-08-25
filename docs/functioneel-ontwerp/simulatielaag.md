@@ -121,7 +121,14 @@ blijven procedureel (K2) — prompted art is voor de *herkenbare* dingen:
 gebouwdelen, meubels, speelplaats, decor, en een handvol hero-personages.
 Volledige specificatie en kant-en-klare prompts: `art-bible.md`.
 
-**K9 — De lerarenkamer als intranet.** De school heeft één plek waar het team
+**K9 — De lerarenkamer als kamer, niet als tabbladenscherm.** Een intranet is
+wat het is: een lijst met links. De lerarenkamer van een school is een
+*plaats* — daar hangt het prikbord, daar staan de postvakjes, daar staat de kast
+met de plannen en daar is de deur van de directeur. Daarom is dit scherm een
+point-and-click-kamer in dezelfde pixelart als de school buiten: je beweegt over
+de kamer, onderaan staat wat je aankijkt, en klikken opent wat erachter zit.
+De collega's in de kamer zijn echte agents uit de simulatie, met hun signaal
+boven het hoofd. Wat achter elk object zit: De school heeft één plek waar het team
 samenkomt, en die verdient een eigen scherm binnen de simulatie: **prikbord,
 team, plannen, beleidskeuzes, weekbeeld.** Het prikbord mengt twee bronnen —
 wat het systeem zelf ziet (openstaande dossiers, ziektemeldingen, weer) en wat
