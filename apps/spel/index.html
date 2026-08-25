@@ -1,1170 +1,1784 @@
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>De Levende School — spike (module-familie S)</title>
+<title>De Levende School</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --nacht:#0d1512; --paneel:#16211d; --paneel2:#1d2b26; --lijn:#2c3a36;
-    --inkt:#e9f0ec; --gedempt:#9db0a9; --merk:#56c0a2; --merk-diep:#1f6f5c;
-    --amber:#e0b84f; --karmozijn:#e2678f; --ok:#7fd694; --lila:#b79be0;
+    --nacht:#0b1210; --paneel:#141f1b; --paneel2:#1c2a25; --lijn:#2e3f39;
+    --inkt:#eaf2ee; --gedempt:#9db0a9; --merk:#5fd3ad; --merk-diep:#1f6f5c;
+    --amber:#f0c04a; --karmozijn:#f0709c; --ok:#8ce39f;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--nacht);color:var(--inkt);overflow:hidden;
-       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-       -webkit-font-smoothing:antialiased}
+  body{margin:0;background:#0b1210;color:var(--inkt);overflow:hidden;
+       font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   button{font:inherit;cursor:pointer;color:inherit}
   :focus-visible{outline:2px solid var(--merk);outline-offset:2px}
-  .pix{font-family:'Silkscreen',ui-monospace,monospace;letter-spacing:.02em}
-
+  .pix{font-family:'Silkscreen',ui-monospace,monospace}
   #doek{position:fixed;inset:0;display:block;image-rendering:pixelated;cursor:grab}
-  #doek.bezield{cursor:crosshair}
   #doek:active{cursor:grabbing}
+  #doek.bezield{cursor:crosshair}
 
   .hud{position:fixed;pointer-events:none;z-index:5}
   .hud > *{pointer-events:auto}
-
-  /* ── bovenbalk ─────────────────────────────────────── */
-  #boven{top:0;left:0;right:0;display:flex;gap:.6rem;align-items:center;
-    padding:.55rem .8rem;background:linear-gradient(180deg,rgba(13,21,18,.96),rgba(13,21,18,.72) 70%,transparent);
-    flex-wrap:wrap}
-  .merk{font-size:.95rem;font-weight:700;color:var(--merk)}
-  .merk small{display:block;font-size:.58rem;color:var(--gedempt);font-weight:400;letter-spacing:.12em;text-transform:uppercase;font-family:system-ui,sans-serif}
-  .modi{display:flex;gap:.2rem;background:var(--paneel);border:1px solid var(--lijn);border-radius:8px;padding:.2rem}
-  .modi button{border:0;background:transparent;border-radius:6px;padding:.3rem .7rem;font-size:.72rem}
-  .modi button[aria-pressed="true"]{background:var(--merk-diep);color:#fff}
+  #boven{top:0;left:0;right:0;display:flex;gap:.55rem;align-items:center;padding:.5rem .75rem;
+    background:linear-gradient(180deg,rgba(11,18,16,.94),rgba(11,18,16,.55) 65%,transparent);flex-wrap:wrap}
+  .merk{font-size:.9rem;font-weight:700;color:var(--merk);text-shadow:0 2px 0 #06100d}
+  .merk small{display:block;font-size:.54rem;color:var(--gedempt);font-weight:400;
+    letter-spacing:.14em;text-transform:uppercase;font-family:system-ui,sans-serif}
+  .doos{display:flex;gap:.2rem;background:rgba(20,31,27,.92);border:1px solid var(--lijn);
+    border-radius:9px;padding:.22rem;backdrop-filter:blur(6px)}
+  .doos button{border:0;background:transparent;border-radius:6px;padding:.28rem .6rem;font-size:.7rem}
+  .doos button[aria-pressed="true"]{background:var(--merk-diep);color:#eafff7;box-shadow:0 0 12px rgba(95,211,173,.35)}
   .rek{flex:1}
-  .klokdoos{display:flex;align-items:center;gap:.5rem;background:var(--paneel);
-    border:1px solid var(--lijn);border-radius:8px;padding:.3rem .6rem}
-  #klok{font-size:1rem;min-width:5.2rem;text-align:center;color:var(--merk)}
-  #dagdeel{font-size:.62rem;color:var(--gedempt);min-width:6.5rem}
-  .snelheid{display:flex;gap:.15rem}
-  .snelheid button{border:1px solid var(--lijn);background:var(--paneel2);border-radius:5px;
-    padding:.15rem .45rem;font-size:.62rem}
-  .snelheid button[aria-pressed="true"]{background:var(--merk);color:#04120e;border-color:var(--merk)}
-  #tijdbalk{-webkit-appearance:none;appearance:none;width:170px;height:5px;border-radius:99px;
-    background:var(--lijn);outline:none}
-  #tijdbalk::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;
-    background:var(--merk);cursor:pointer;border:2px solid var(--nacht)}
-  #tijdbalk::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--merk);
-    cursor:pointer;border:2px solid var(--nacht)}
+  #klok{font-size:.95rem;color:var(--merk);min-width:4.6rem;text-align:center;text-shadow:0 0 10px rgba(95,211,173,.45)}
+  #dagdeel{font-size:.6rem;color:var(--gedempt);min-width:6rem}
+  #tijdbalk{-webkit-appearance:none;appearance:none;width:150px;height:4px;border-radius:99px;background:var(--lijn)}
+  #tijdbalk::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+    background:var(--merk);border:2px solid var(--nacht);cursor:pointer}
+  #tijdbalk::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--merk);
+    border:2px solid var(--nacht);cursor:pointer}
 
-  /* ── krachtenbalk ──────────────────────────────────── */
-  #krachten{bottom:0;left:0;right:0;display:flex;justify-content:center;gap:.4rem;
-    padding:.7rem;flex-wrap:wrap}
-  .kracht{display:flex;flex-direction:column;align-items:center;gap:.15rem;
-    background:var(--paneel);border:1px solid var(--lijn);border-radius:10px;
-    padding:.4rem .55rem;min-width:66px;transition:transform .1s,border-color .1s}
-  .kracht:hover{transform:translateY(-2px);border-color:var(--merk)}
-  .kracht[aria-pressed="true"]{border-color:var(--merk);background:#12291f;box-shadow:0 0 0 1px var(--merk) inset}
-  .kracht .ico{font-size:1.2rem;line-height:1}
-  .kracht .lab{font-size:.56rem;color:var(--gedempt);text-transform:uppercase;letter-spacing:.06em}
-  .kracht[disabled]{opacity:.35;cursor:not-allowed;transform:none}
+  #krachten{bottom:0;left:0;right:0;display:flex;justify-content:center;gap:.35rem;padding:.6rem;flex-wrap:wrap}
+  .kracht{display:flex;flex-direction:column;align-items:center;gap:.1rem;background:rgba(20,31,27,.94);
+    border:1px solid var(--lijn);border-radius:10px;padding:.35rem .5rem;min-width:62px;
+    transition:transform .12s,box-shadow .12s,border-color .12s;backdrop-filter:blur(6px)}
+  .kracht:hover{transform:translateY(-3px);border-color:var(--merk);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .kracht[aria-pressed="true"]{border-color:var(--merk);background:#13322a;box-shadow:0 0 0 1px var(--merk) inset,0 0 18px rgba(95,211,173,.3)}
+  .kracht .ico{font-size:1.15rem;line-height:1;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+  .kracht .lab{font-size:.52rem;color:var(--gedempt);text-transform:uppercase;letter-spacing:.05em}
 
-  /* ── rechterpaneel ─────────────────────────────────── */
-  #paneel{top:3.4rem;right:.7rem;width:270px;background:var(--paneel);
-    border:1px solid var(--lijn);border-radius:12px;overflow:hidden;
-    box-shadow:0 8px 30px rgba(0,0,0,.45)}
-  #paneel h2{margin:0;padding:.55rem .75rem;font-size:.72rem;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--gedempt);background:var(--paneel2);
-    border-bottom:1px solid var(--lijn);font-weight:600}
-  .pinhoud{padding:.7rem .75rem;font-size:.82rem}
-  .rij{display:flex;justify-content:space-between;gap:.5rem;padding:.22rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
-  .rij:last-child{border-bottom:0}
-  .rij b{font-variant-numeric:tabular-nums}
-  .mini{font-size:.72rem;color:var(--gedempt);line-height:1.45}
-  .knopje{border:1px solid var(--merk);background:transparent;color:var(--merk);
-    border-radius:7px;padding:.3rem .7rem;font-size:.75rem;width:100%;margin-top:.5rem}
-  .knopje.vol{background:var(--merk);color:#04120e}
-  .balkje{height:6px;border-radius:99px;background:var(--lijn);overflow:hidden;margin:.3rem 0}
-  .balkje > i{display:block;height:100%;background:var(--merk);border-radius:99px}
-  .sig{display:inline-block;border-radius:5px;padding:.02rem .35rem;font-size:.66rem;font-weight:700}
-  .sig.krit{background:#3a1524;color:var(--karmozijn)}
-  .sig.let{background:#332a10;color:var(--amber)}
-  .sig.ok{background:#14301f;color:var(--ok)}
-
-  /* ── vrij spel-paneel ──────────────────────────────── */
-  #tycoon{top:3.4rem;left:.7rem;width:232px;background:var(--paneel);
-    border:1px solid var(--lijn);border-radius:12px;display:none;
-    box-shadow:0 8px 30px rgba(0,0,0,.45)}
+  .kaart{background:rgba(20,31,27,.95);border:1px solid var(--lijn);border-radius:12px;
+    box-shadow:0 10px 34px rgba(0,0,0,.55);backdrop-filter:blur(8px);overflow:hidden}
+  .kaart h2{margin:0;padding:.5rem .7rem;font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--gedempt);background:rgba(28,42,37,.9);border-bottom:1px solid var(--lijn);font-weight:600}
+  .kaartinhoud{padding:.6rem .7rem;font-size:.8rem}
+  #paneel{top:3.1rem;right:.6rem;width:256px}
+  #tycoon{top:3.1rem;left:.6rem;width:214px;display:none}
   #tycoon.aan{display:block}
-  #tycoon h2{margin:0;padding:.55rem .75rem;font-size:.72rem;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--gedempt);background:var(--paneel2);
-    border-bottom:1px solid var(--lijn)}
-  #tycoon label{display:block;font-size:.68rem;color:var(--gedempt);margin:.5rem 0 .1rem}
+  .rij{display:flex;justify-content:space-between;gap:.4rem;padding:.2rem 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .rij:last-of-type{border-bottom:0}
+  .rij b{font-variant-numeric:tabular-nums}
+  .mini{font-size:.7rem;color:var(--gedempt);line-height:1.45}
+  .knopje{border:1px solid var(--merk);background:transparent;color:var(--merk);border-radius:7px;
+    padding:.3rem .6rem;font-size:.73rem;width:100%;margin-top:.4rem}
+  .knopje.vol{background:var(--merk);color:#04120e;font-weight:600}
+  .balkje{height:6px;border-radius:99px;background:var(--lijn);overflow:hidden;margin:.25rem 0}
+  .balkje > i{display:block;height:100%;border-radius:99px}
+  .sig{display:inline-block;border-radius:5px;padding:.02rem .35rem;font-size:.64rem;font-weight:700}
+  .sig.krit{background:#3d1526;color:var(--karmozijn)} .sig.let{background:#372c10;color:var(--amber)}
+  .sig.ok{background:#153322;color:var(--ok)}
+  #tycoon label{display:block;font-size:.66rem;color:var(--gedempt);margin:.45rem 0 .1rem}
   #tycoon input[type=range]{width:100%}
-  .gebeurtenis{border:1px solid var(--lijn);background:var(--paneel2);border-radius:7px;
-    padding:.35rem .5rem;font-size:.72rem;width:100%;margin-top:.35rem;text-align:left}
-  .gebeurtenis:hover{border-color:var(--karmozijn)}
-
-  /* ── toast + tip ───────────────────────────────────── */
-  #toast{bottom:5.4rem;left:50%;transform:translateX(-50%);background:#04120e;
-    border:1px solid var(--merk-diep);color:var(--inkt);padding:.5rem .95rem;
-    border-radius:99px;font-size:.8rem;opacity:0;transition:opacity .25s;max-width:80vw;text-align:center}
+  .geb{border:1px solid var(--lijn);background:rgba(28,42,37,.9);border-radius:7px;padding:.32rem .45rem;
+    font-size:.7rem;width:100%;margin-top:.3rem;text-align:left}
+  .geb:hover{border-color:var(--karmozijn)}
+  #toast{bottom:5rem;left:50%;transform:translateX(-50%);background:rgba(6,16,13,.96);
+    border:1px solid var(--merk-diep);padding:.45rem .9rem;border-radius:99px;font-size:.78rem;
+    opacity:0;transition:opacity .25s;max-width:78vw;text-align:center;box-shadow:0 0 24px rgba(0,0,0,.6)}
   #toast.zichtbaar{opacity:1}
-  #tip{bottom:5.4rem;left:.7rem;font-size:.68rem;color:var(--gedempt);max-width:250px;line-height:1.5;background:rgba(13,21,18,.82);padding:.45rem .6rem;border-radius:8px;border:1px solid var(--lijn)}
-  #fps{top:.5rem;left:50%;transform:translateX(-50%);font-size:.58rem;color:#4a5a54}
-  @media (prefers-reduced-motion: reduce){#toast{transition:none}}
-  @media (max-width:820px){
-    #paneel{width:210px} #tip{display:none} #tycoon{width:190px}
-  }
+  #tip{bottom:5rem;left:.6rem;font-size:.65rem;color:var(--gedempt);max-width:230px;line-height:1.5;
+    background:rgba(11,18,16,.85);padding:.4rem .55rem;border-radius:8px;border:1px solid var(--lijn)}
+  #fps{top:.45rem;left:50%;transform:translateX(-50%);font-size:.54rem;color:#3f524b}
+  @media (max-width:860px){#tip{display:none}#paneel{width:196px}#tycoon{width:172px}}
+  /* ── lerarenkamer: intranet-overlay ── */
+  #lk{position:fixed;inset:0;z-index:40;background:rgba(6,11,10,.78);backdrop-filter:blur(4px);
+      display:none;padding:2.2rem 1.4rem 1.4rem}
+  #lk.aan{display:block}
+  .lkdoos{max-width:1180px;margin:0 auto;height:100%;display:flex;flex-direction:column;
+    background:linear-gradient(180deg,#16231f,#111c19);border:1px solid var(--lijn);
+    border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.7);overflow:hidden}
+  .lkkop{display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem;border-bottom:1px solid var(--lijn);
+    background:linear-gradient(180deg,rgba(31,111,92,.34),rgba(20,31,27,.2))}
+  .lkkop h1{margin:0;font-size:.95rem;color:var(--merk);letter-spacing:.02em}
+  .lkkop h1 small{display:block;font-size:.55rem;color:var(--gedempt);letter-spacing:.14em;
+    text-transform:uppercase;font-family:system-ui,sans-serif;font-weight:400}
+  .lktabs{display:flex;gap:.25rem;flex:1;flex-wrap:wrap}
+  .lktabs button{border:1px solid transparent;background:transparent;border-radius:8px;
+    padding:.35rem .7rem;font-size:.74rem;color:var(--gedempt)}
+  .lktabs button:hover{color:var(--inkt);background:rgba(255,255,255,.05)}
+  .lktabs button[aria-pressed="true"]{background:var(--merk-diep);color:#eafff7;border-color:var(--merk)}
+  #lkdicht{border:1px solid var(--lijn);background:rgba(255,255,255,.04);border-radius:8px;
+    width:30px;height:30px;line-height:1;font-size:.9rem}
+  #lkinhoud{flex:1;overflow:auto;padding:1rem 1.1rem 1.4rem}
+  .lkuitleg{font-size:.72rem;color:var(--gedempt);margin:0 0 .9rem;max-width:74ch;line-height:1.55}
+
+  /* prikbord */
+  .prik{columns:3 250px;column-gap:.8rem}
+  .briefje{break-inside:avoid;margin:0 0 .8rem;background:#1d2b26;border:1px solid var(--lijn);
+    border-top:3px solid var(--merk);border-radius:10px;padding:.65rem .75rem;position:relative;
+    box-shadow:0 6px 16px rgba(0,0,0,.35)}
+  .briefje.let{border-top-color:var(--amber)} .briefje.krit{border-top-color:var(--karmozijn)}
+  .briefje.nieuw{border-top-color:#7cc7f0}
+  .briefje h3{margin:0 0 .25rem;font-size:.8rem}
+  .briefje p{margin:0 0 .4rem;font-size:.73rem;color:#c8d6d1;line-height:1.5}
+  .briefje .meta{font-size:.6rem;color:var(--gedempt);display:flex;gap:.5rem;flex-wrap:wrap}
+  .speld{position:absolute;top:-9px;right:12px;font-size:.85rem;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+
+  /* tabellen */
+  .lktab{width:100%;border-collapse:collapse;font-size:.74rem}
+  .lktab th{text-align:left;padding:.4rem .5rem;color:var(--gedempt);font-weight:600;
+    font-size:.6rem;letter-spacing:.09em;text-transform:uppercase;border-bottom:1px solid var(--lijn);
+    position:sticky;top:0;background:#16231f}
+  .lktab td{padding:.4rem .5rem;border-bottom:1px solid rgba(255,255,255,.05)}
+  .lktab tbody tr{cursor:pointer}
+  .lktab tbody tr:hover{background:rgba(95,211,173,.09)}
+  .lktab td b{font-variant-numeric:tabular-nums}
+  .vlag{display:inline-block;padding:.08rem .4rem;border-radius:99px;font-size:.62rem;
+    border:1px solid currentColor}
+  .v-ok{color:var(--ok)} .v-let{color:var(--amber)} .v-krit{color:var(--karmozijn)}
+  .v-rust{color:var(--gedempt)}
+  .balk{height:5px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;min-width:64px}
+  .balk i{display:block;height:100%;background:var(--merk)}
+  .ancien{display:flex;align-items:center;gap:.45rem}
+  .ancien .balk{width:74px;flex:none}
+  .ancien span{font-size:.62rem;color:var(--gedempt);white-space:nowrap}
+  .leeg{color:var(--gedempt)}
+
+  /* plannen + beleid */
+  .kaarten{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.7rem}
+  .plan{background:#1a2723;border:1px solid var(--lijn);border-radius:11px;padding:.7rem .8rem}
+  .plan h3{margin:0 0 .2rem;font-size:.79rem;display:flex;justify-content:space-between;gap:.5rem;align-items:baseline}
+  .plan p{margin:.3rem 0 .45rem;font-size:.71rem;color:#c2d1cc;line-height:1.5}
+  .bron{font-size:.62rem;color:var(--gedempt);border-top:1px dashed var(--lijn);padding-top:.35rem;
+    display:block;line-height:1.45}
+  .keuze{background:#1a2723;border:1px solid var(--lijn);border-radius:11px;padding:.7rem .8rem}
+  .keuze h3{margin:0 0 .35rem;font-size:.79rem}
+  .opties{display:flex;gap:.3rem;flex-wrap:wrap;margin:.15rem 0 .5rem}
+  .opties button{border:1px solid var(--lijn);background:rgba(255,255,255,.03);border-radius:7px;
+    padding:.26rem .55rem;font-size:.68rem;color:var(--gedempt)}
+  .opties button[aria-pressed="true"]{background:var(--merk-diep);color:#eafff7;border-color:var(--merk)}
+  .gevolg{font-size:.68rem;color:#c2d1cc;min-height:1.2em;margin:0 0 .4rem;line-height:1.45}
+  .lkraad{font-size:.62rem;color:var(--amber)}
+  .lkweek{display:grid;grid-template-columns:70px repeat(5,1fr);gap:2px;font-size:.66rem}
+  .lkweek div{background:#1a2723;padding:.32rem .4rem;border-radius:5px}
+  .lkweek .kop{background:transparent;color:var(--gedempt);font-size:.6rem;text-transform:uppercase;
+    letter-spacing:.08em}
+  .lkweek .les{background:#20362f} .lkweek .toe{background:#3a3222;color:#f2d99a}
+  .lkweek .vrij{background:#161f1c;color:var(--gedempt)}
 </style>
-</head>
-<body>
 
 <canvas id="doek"></canvas>
 
 <div class="hud" id="boven">
   <div class="merk pix">Draagvlak<small>de levende school</small></div>
-  <div class="modi" role="group" aria-label="Modus">
+  <div class="doos" role="group" aria-label="Modus">
     <button data-modus="spiegel" aria-pressed="true">Spiegel</button>
-    <button data-modus="zandbak" aria-pressed="false">Zandbak</button>
-    <button data-modus="vrij" aria-pressed="false">Vrij spel</button>
+    <button data-modus="zandbak">Zandbak</button>
+    <button data-modus="vrij">Vrij spel</button>
   </div>
   <div class="rek"></div>
-  <div class="klokdoos">
+  <div class="doos">
     <span class="pix" id="klok">08:12</span>
     <span id="dagdeel">aankomst</span>
-    <input type="range" id="tijdbalk" min="450" max="1000" value="492" aria-label="Tijd van de dag">
-    <span class="snelheid" role="group" aria-label="Snelheid">
-      <button data-snel="0">⏸</button>
-      <button data-snel="1" aria-pressed="true">1×</button>
-      <button data-snel="4">4×</button>
-      <button data-snel="16">16×</button>
-    </span>
+    <input type="range" id="tijdbalk" min="450" max="1000" value="492" aria-label="Tijd">
+  </div>
+  <div class="doos" role="group" aria-label="Snelheid">
+    <button data-snel="0">⏸</button><button data-snel="1" aria-pressed="true">1×</button>
+    <button data-snel="4">4×</button><button data-snel="16">16×</button>
+  </div>
+  <div class="doos" role="group" aria-label="Zoom">
+    <button data-zoom="1" aria-pressed="true">Ver</button><button data-zoom="2">Mid</button><button data-zoom="3">Dicht</button>
+  </div>
+  <div class="doos" role="group" aria-label="Daken">
+    <button id="dakknop" aria-pressed="true" title="Daken tonen of wegnemen">🏠 Daken</button>
+  </div>
+  <div class="doos">
+    <button id="lkknop" title="Lerarenkamer openen (L)">📋 Lerarenkamer</button>
   </div>
 </div>
 
-<div class="hud" id="paneel">
-  <h2 id="paneelkop">De school</h2>
-  <div class="pinhoud" id="paneelinhoud"></div>
-</div>
+<div class="hud kaart" id="paneel"><h2 id="paneelkop">De school</h2><div class="kaartinhoud" id="paneelinhoud"></div></div>
 
-<div class="hud" id="tycoon">
-  <h2>Vrij spel — schooltycoon</h2>
-  <div class="pinhoud">
-    <label for="tc-leerlingen">Leerlingen: <b id="tc-ll-waarde">220</b></label>
-    <input type="range" id="tc-leerlingen" min="40" max="420" step="20" value="220">
-    <label for="tc-leraren">Personeel: <b id="tc-lk-waarde">18</b></label>
-    <input type="range" id="tc-leraren" min="4" max="46" step="2" value="18">
-    <label for="tc-klimaat">Schoolklimaat: <b id="tc-kl-waarde">goed</b></label>
-    <input type="range" id="tc-klimaat" min="0" max="100" value="78">
-    <button class="gebeurtenis" data-gebeurtenis="griep">🤧 Griepgolf — 4 leerkrachten ziek</button>
-    <button class="gebeurtenis" data-gebeurtenis="inspectie">🔍 Doorlichting kondigt zich aan</button>
-    <button class="gebeurtenis" data-gebeurtenis="zon">☀️ Prachtige lentedag</button>
-    <button class="gebeurtenis" data-gebeurtenis="storm">⛈️ Herfststorm</button>
-  </div>
-</div>
+<div class="hud kaart" id="tycoon"><h2>Vrij spel — schooltycoon</h2><div class="kaartinhoud">
+  <label for="tc-ll">Leerlingen: <b id="tc-llw">240</b></label><input type="range" id="tc-ll" min="60" max="420" step="20" value="240">
+  <label for="tc-lk">Personeel: <b id="tc-lkw">20</b></label><input type="range" id="tc-lk" min="6" max="48" step="2" value="20">
+  <label for="tc-kl">Schoolklimaat: <b id="tc-klw">bloeiend</b></label><input type="range" id="tc-kl" min="0" max="100" value="80">
+  <button class="geb" data-geb="griep">🤧 Griepgolf — 4 leerkrachten ziek</button>
+  <button class="geb" data-geb="feest">🎉 Schoolfeest op de speelplaats</button>
+  <button class="geb" data-geb="storm">⛈️ Herfststorm</button>
+  <button class="geb" data-geb="zon">☀️ Stralende lentedag</button>
+  <button class="geb" data-geb="nacht">🌙 Avondlicht</button>
+</div></div>
 
 <div class="hud" id="krachten">
-  <button class="kracht" data-kracht="bezielen" title="Kruip in het lijf van iemand (Diablo-navigatie)"><span class="ico">👁️</span><span class="lab pix">Bezielen</span></button>
-  <button class="kracht" data-kracht="onthullen" title="Toon alle signalen"><span class="ico">✨</span><span class="lab pix">Onthullen</span></button>
-  <button class="kracht" data-kracht="bijeen" title="Roep iedereen in de buurt samen"><span class="ico">🔔</span><span class="lab pix">Bijeen</span></button>
-  <button class="kracht" data-kracht="verplaats" title="Sleep iemand naar een lokaal = vervanging"><span class="ico">✋</span><span class="lab pix">Verplaats</span></button>
-  <button class="kracht" data-kracht="vooruit" title="Spoel door naar het volgende belmoment"><span class="ico">⏩</span><span class="lab pix">Vooruit</span></button>
-  <button class="kracht" data-kracht="zegen" title="Waardering: een schouderklopje"><span class="ico">💚</span><span class="lab pix">Zegen</span></button>
+  <button class="kracht" data-kracht="bezielen"><span class="ico">👁️</span><span class="lab pix">Bezielen</span></button>
+  <button class="kracht" data-kracht="onthullen"><span class="ico">✨</span><span class="lab pix">Onthullen</span></button>
+  <button class="kracht" data-kracht="bijeen"><span class="ico">🔔</span><span class="lab pix">Bijeen</span></button>
+  <button class="kracht" data-kracht="verplaats"><span class="ico">✋</span><span class="lab pix">Verplaats</span></button>
+  <button class="kracht" data-kracht="vooruit"><span class="ico">⏩</span><span class="lab pix">Vooruit</span></button>
+  <button class="kracht" data-kracht="zegen"><span class="ico">💚</span><span class="lab pix">Zegen</span></button>
+</div>
+
+<div class="hud" id="lk" aria-hidden="true">
+  <div class="lkdoos" role="dialog" aria-label="Lerarenkamer">
+    <div class="lkkop">
+      <h1 class="pix">Lerarenkamer<small>intranet van de school</small></h1>
+      <nav class="lktabs" role="group" aria-label="Onderdelen">
+        <button data-lktab="prikbord" aria-pressed="true">📌 Prikbord</button>
+        <button data-lktab="team">👥 Team</button>
+        <button data-lktab="plannen">📚 Plannen</button>
+        <button data-lktab="beleid">⚖️ Beleidskeuzes</button>
+        <button data-lktab="week">🗓️ Weekbeeld</button>
+      </nav>
+      <button id="lkdicht" aria-label="Sluiten">✕</button>
+    </div>
+    <div id="lkinhoud"></div>
+  </div>
 </div>
 
 <div class="hud" id="toast" role="status" aria-live="polite"></div>
-<div class="hud" id="tip">Sleep om te pannen · scroll om te zoomen · klik iemand aan · <b>Bezielen</b> → klik op de vloer om te lopen (Diablo)</div>
+<div class="hud" id="tip">Sleep om te pannen · <b>Bezielen</b> → klik op de vloer om te lopen · <b>L</b> opent de lerarenkamer</div>
 <div class="hud pix" id="fps"></div>
 
 <script>
 (function(){
 "use strict";
+/* ═════════ De Levende School v2 — pixelrenderer ═════════
+   Alles wordt getekend in een low-res buffer (32×16-tegels) en daarna met
+   nearest-neighbour opgeschaald: échte pixelart i.p.v. gladde vormen.
+   Texturen worden één keer procedureel gebakken (art-bible.md § 6).        */
 
-/* ═══════════════════════════════════════════════════════════════
-   De Levende School — spike (module-familie S)
-   Alles hier is fictief. De architectuur volgt simulatielaag.md:
-   deterministische kern (zaad → altijd dezelfde wereld) + renderer.
-   Prompted art dropt later in de `kit` en vervangt de procedurele
-   tekenfuncties zonder dat de rest wijzigt (art-bible.md).
-   ═══════════════════════════════════════════════════════════════ */
+const TW = 32, TH = 16, MUURH = 30;
+const W = 68, H = 50;
 
-/* ── determinisme ─────────────────────────────────────────────── */
-function hash32(str){
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
-  return h >>> 0;
+/* ── determinisme ── */
+function hash32(s){ let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0; }
+function prng(z){ let a=z>>>0; return ()=>{ a|=0;a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
+const kies=(r,a)=>a[Math.floor(r()*a.length)%a.length];
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+
+/* ── kleur ── */
+function mix(a,b,t){
+  const A=parseInt(a.slice(1),16),B=parseInt(b.slice(1),16);
+  const r=Math.round(((A>>16&255))*(1-t)+((B>>16&255))*t);
+  const g=Math.round(((A>>8&255))*(1-t)+((B>>8&255))*t);
+  const bl=Math.round(((A&255))*(1-t)+((B&255))*t);
+  return '#'+((1<<24)+(r<<16)+(g<<8)+bl).toString(16).slice(1);
 }
-function prng(zaad){
-  let a = zaad >>> 0;
-  return function(){
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const kies = (r, arr) => arr[Math.floor(r() * arr.length) % arr.length];
+const licht=(c,t)=>mix(c,'#ffffff',t), donk=(c,t)=>mix(c,'#0b1210',t);
 
-/* ── palet (art-bible.md § 1) ─────────────────────────────────── */
-const P = {
-  diepgroen:'#0f2e26', schoolgroen:'#1f6f5c', mint:'#56c0a2', wit:'#f6f3e7',
-  zand:'#e8d5a9', baksteen:'#c96f4a', dakrood:'#8f3b2c', hemel:'#69b8e8',
-  diepblauw:'#2b5f9e', zon:'#f2c14e', amber:'#9a6700', karmozijn:'#ad1457',
-  lila:'#8f6bb5', as:'#5a6a64', steen:'#9aa8a2', nacht:'#1b2422',
-};
-const HUID = ['#f2c9a0','#e0aa78','#c98a5c','#a4693f','#7d4a2b','#f7d9bb'];
-const HAAR = ['#3a2a20','#6b4a2f','#a9713c','#d9b26a','#2a2a2e','#8a4b3a','#c9c2b6','#5d3a5e'];
-const KLEDING = ['#2b5f9e','#1f6f5c','#8f3b2c','#8f6bb5','#c96f4a','#5a6a64','#ad1457','#f2c14e','#56c0a2','#69b8e8'];
+/* ── canvashulp ── */
+function nieuw(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d'); g.imageSmoothingEnabled=false; return {c,g}; }
+function diamantPad(g,cx,cy,w,h){ g.beginPath(); g.moveTo(cx,cy-h/2); g.lineTo(cx+w/2,cy);
+  g.lineTo(cx,cy+h/2); g.lineTo(cx-w/2,cy); g.closePath(); }
 
-/* ── isometrische wiskunde ────────────────────────────────────── */
-const TW = 64, TH = 32;            // tegel 64×32 (2:1 dimetrisch)
-const W = 50, H = 38;              // wereldraster
-const naarScherm = (gx, gy) => ({ x:(gx - gy) * (TW/2), y:(gx + gy) * (TH/2) });
-function naarRaster(sx, sy){
-  const a = sx / (TW/2), b = sy / (TH/2);
-  return { gx:(a + b) / 2, gy:(b - a) / 2 };
-}
-
-/* ── wereld ───────────────────────────────────────────────────── */
-const T = { GRAS:0, PAD:1, GANG:2, KLAS:3, SPEEL:4, REFTER:5, ZAND:6, MUUR:7, DEUR:8, BUREAU:9 };
-const LOOPBAAR = new Set([T.GRAS, T.PAD, T.GANG, T.KLAS, T.SPEEL, T.REFTER, T.ZAND, T.DEUR, T.BUREAU]);
-
-const wereld = { tegels:new Int8Array(W*H), kamers:[], props:[] };
-const tg = (x,y) => (x<0||y<0||x>=W||y>=H) ? T.MUUR : wereld.tegels[y*W+x];
-const zetT = (x,y,v) => { if(x>=0&&y>=0&&x<W&&y<H) wereld.tegels[y*W+x] = v; };
-const loopbaar = (x,y) => LOOPBAAR.has(tg(x,y));
-
-function bouwWereld(aantalKlassen){
-  wereld.tegels.fill(T.GRAS);
-  wereld.kamers.length = 0; wereld.props.length = 0;
-  const r = prng(hash32('regenboog-' + aantalKlassen));
-
-  // hoofdgebouw
-  const bx = 3, by = 4, bw = 28, bh = 22;
-  for (let y = by; y < by+bh; y++) for (let x = bx; x < bx+bw; x++) zetT(x, y, T.MUUR);
-  // centrale gang
-  for (let y = by+9; y < by+13; y++) for (let x = bx+1; x < bx+bw-1; x++) zetT(x, y, T.GANG);
-
-  const rijen = [{ y0:by+1, y1:by+9, kant:'noord' }, { y0:by+13, y1:by+bh-1, kant:'zuid' }];
-  let n = 0;
-  const namen = ['1A','1B','2A','2B','3A','3B','4A','4B','5A','5B','6A','6B'];
-  for (const rij of rijen){
-    for (let kx = bx+1; kx + 6 <= bx+bw-1 && n < aantalKlassen; kx += 7){
-      const x0 = kx, x1 = kx + 6, y0 = rij.y0, y1 = rij.y1;
-      for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) zetT(x, y, T.KLAS);
-      const dx = x0 + 3, dy = rij.kant === 'noord' ? y1 : y0 - 1;
-      zetT(dx, dy, T.DEUR);
-      wereld.kamers.push({
-        naam:'klas ' + (namen[n] || (n+1)), type:'klas',
-        x0, y0, x1, y1, deur:{ x:dx, y:dy },
-        midden:{ x:(x0+x1)/2 | 0, y:(y0+y1)/2 | 0 },
-      });
-      // banken
-      for (let y = y0+1; y < y1-1; y += 2) for (let x = x0+1; x < x1-1; x += 2)
-        wereld.props.push({ soort:'bank', x, y });
-      wereld.props.push({ soort:'bord', x:x0+3, y:rij.kant === 'noord' ? y0 : y1-1 });
-      n++;
+/* ── tegeltexturen ── */
+const TEGELS = {};
+function bakTegel(naam, basis, stijl, zaad){
+  const { c, g } = nieuw(TW, TH+2);
+  const r = prng(hash32(naam + zaad));
+  g.save(); diamantPad(g, TW/2, TH/2, TW, TH); g.clip();
+  g.fillStyle = basis; g.fillRect(0,0,TW,TH+2);
+  for (let y=0;y<TH;y++) for (let x=0;x<TW;x++){
+    const v = r();
+    if (stijl==='gras'){
+      if (v>.90) g.fillStyle = licht(basis,.16); else if (v>.80) g.fillStyle = donk(basis,.14);
+      else if (v>.965) g.fillStyle = licht(basis,.3); else continue;
+      g.fillRect(x,y,1,v>.965?2:1);
+    } else if (stijl==='asfalt'){
+      if (v>.93) g.fillStyle = licht(basis,.10); else if (v>.86) g.fillStyle = donk(basis,.10); else continue;
+      g.fillRect(x,y,1,1);
+    } else if (stijl==='hout'){
+      if (y%4===0){ g.fillStyle = donk(basis,.18); g.fillRect(x,y,1,1); }
+      else if (v>.94){ g.fillStyle = licht(basis,.12); g.fillRect(x,y,1,1); }
+    } else if (stijl==='lino'){
+      if (v>.955){ g.fillStyle = donk(basis,.08); g.fillRect(x,y,1,1); }
+    } else if (stijl==='zand'){
+      if (v>.88){ g.fillStyle = licht(basis,.14); g.fillRect(x,y,1,1); }
+      else if (v>.82){ g.fillStyle = donk(basis,.10); g.fillRect(x,y,1,1); }
+    } else if (stijl==='ruit'){
+      const bl = ((x>>3)+(y>>2))%2===0;
+      g.fillStyle = bl ? licht(basis,.14) : donk(basis,.10); g.fillRect(x,y,1,1);
+    } else if (stijl==='grind'){
+      if (v>.90){ g.fillStyle = donk(basis,.16); g.fillRect(x,y,1,1); }
+      else if (v>.84){ g.fillStyle = licht(basis,.12); g.fillRect(x,y,1,1); }
     }
   }
+  g.restore();
+  // zachte rand voor leesbaarheid van het raster
+  g.globalAlpha = .16; g.strokeStyle = '#0b1210'; g.lineWidth = 1;
+  diamantPad(g, TW/2, TH/2, TW-1, TH-1); g.stroke(); g.globalAlpha = 1;
+  return c;
+}
+function tegelSet(naam, basis, stijl){ TEGELS[naam] = [0,1,2,3].map(i => bakTegel(naam, basis, stijl, 'v'+i)); }
 
-  // refter, lerarenkamer, bureau directie — rechterkant van het gebouw
-  const blok = (naam, type, x0, y0, x1, y1, deur, tegel) => {
-    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) zetT(x, y, tegel);
-    zetT(deur.x, deur.y, T.DEUR);
-    wereld.kamers.push({ naam, type, x0, y0, x1, y1, deur, midden:{ x:(x0+x1)/2|0, y:(y0+y1)/2|0 } });
-  };
-  blok('refter', 'refter', bx+22, by+1, bx+bw-1, by+9, { x:bx+24, y:by+9 }, T.REFTER);
-  blok('lerarenkamer', 'lerarenkamer', bx+22, by+13, bx+bw-1, by+18, { x:bx+24, y:by+12 }, T.BUREAU);
-  blok('bureau directie', 'bureau', bx+22, by+18, bx+bw-1, by+bh-1, { x:bx+22, y:by+20 }, T.BUREAU);
-  for (let y = by+2; y < by+8; y += 2) for (let x = bx+23; x < bx+bw-2; x += 3)
-    wereld.props.push({ soort:'reftertafel', x, y });
+tegelSet('gras',   '#4c8f3e', 'gras');
+tegelSet('gras2',  '#437f37', 'gras');
+tegelSet('pad',    '#c9b189', 'grind');
+tegelSet('speel',  '#8d9a95', 'asfalt');
+tegelSet('klas',   '#c98f52', 'hout');
+tegelSet('gang',   '#dfd6c2', 'lino');
+tegelSet('refter', '#cdb98f', 'ruit');
+tegelSet('bureau', '#a8c3d8', 'lino');
+tegelSet('zand',   '#e6cf94', 'zand');
+tegelSet('drempel','#a5764e', 'hout');
+tegelSet('sport',  '#d8a45f', 'hout');
 
-  // hoofdingang + pad naar de poort
-  const ingang = { x:bx+16, y:by+bh-1 };
-  zetT(ingang.x, ingang.y, T.DEUR);
-  for (let y = by+bh; y < H-3; y++){ zetT(ingang.x, y, T.PAD); zetT(ingang.x+1, y, T.PAD); }
-  wereld.poort = { x:ingang.x, y:H-4 };
-  wereld.ingang = ingang;
+/* speelplaatsmarkeringen (hinkelpad, voetballijnen) */
+function markering(soort){
+  const { c, g } = nieuw(TW, TH+2);
+  g.drawImage(TEGELS.speel[0], 0, 0);
+  g.strokeStyle = '#f4f1e4'; g.globalAlpha = .8; g.lineWidth = 1;
+  if (soort==='lijn'){ g.beginPath(); g.moveTo(0,TH/2); g.lineTo(TW,TH/2); g.stroke(); }
+  if (soort==='cirkel'){ g.beginPath(); g.ellipse(TW/2,TH/2,12,6,0,0,6.283); g.stroke(); }
+  if (soort==='hink'){ g.strokeStyle='#f2c14e'; diamantPad(g,TW/2,TH/2,TW-10,TH-5); g.stroke(); }
+  g.globalAlpha = 1;
+  return c;
+}
+TEGELS.lijn = [markering('lijn')]; TEGELS.cirkel = [markering('cirkel')]; TEGELS.hink = [markering('hink')];
 
-  // speelplaats rechts van het gebouw
-  const sx0 = bx+bw+2, sy0 = by, sx1 = W-2, sy1 = by+bh+2;
-  for (let y = sy0; y < sy1; y++) for (let x = sx0; x < sx1; x++) zetT(x, y, T.SPEEL);
-  for (let y = sy1-6; y < sy1-2; y++) for (let x = sx0+2; x < sx0+7; x++) zetT(x, y, T.ZAND);
-  wereld.kamers.push({ naam:'speelplaats', type:'speelplaats', x0:sx0, y0:sy0, x1:sx1, y1:sy1,
-    deur:{ x:sx0-1, y:by+10 }, midden:{ x:(sx0+sx1)/2|0, y:(sy0+sy1)/2|0 } });
-  // brede verbinding gang → speelplaats: 220 kinderen door één deur is een file
-  for (let x = bx+bw-1; x <= sx0; x++)
-    for (let y = by+9; y <= by+12; y++) zetT(x, y, T.PAD);
-  for (let y = by+9; y <= by+12; y++) zetT(bx+bw-1, y, T.DEUR);
+/* ── muren: per vlak gebakken zodat aangrenzende muren één massa vormen ── */
+const MH = MUURH + TH + 2;            // canvashoogte van een muurblok
+const MCY = MUURH + TH/2 + 1;         // y van het tegelmidden in dat canvas
+const MUURDY = -MCY;                  // tekenoffset t.o.v. het tegelmidden
 
-  // decor
-  for (let i = 0; i < 26; i++){
-    const x = sx0 + 1 + Math.floor(r()*(sx1-sx0-2)), y = sy0 + 1 + Math.floor(r()*(sy1-sy0-2));
-    if (tg(x,y) === T.SPEEL && r() > .55) wereld.props.push({ soort: r() > .5 ? 'boom' : 'bank', x, y });
-  }
-  for (let i = 0; i < 16; i++){
-    const x = 1 + Math.floor(r()*(bx-1)), y = 2 + Math.floor(r()*(H-6));
-    if (tg(x,y) === T.GRAS) wereld.props.push({ soort:'boom', x, y });
-  }
-  wereld.props.push({ soort:'doel', x:sx1-4, y:sy0+4 });
-  wereld.props.push({ soort:'fietsen', x:ingang.x-6, y:by+bh+2 });
-  wereld.propsIndex = new Map();
-  for (const p of wereld.props) wereld.propsIndex.set(p.y*W+p.x, p);
+function muurPad(g, kant, hgt){
+  const cy = MCY;
+  g.beginPath();
+  if (kant === 'L'){ g.moveTo(0, cy-hgt); g.lineTo(TW/2, cy+TH/2-hgt);
+                     g.lineTo(TW/2, cy+TH/2); g.lineTo(0, cy); }
+  else             { g.moveTo(TW, cy-hgt); g.lineTo(TW/2, cy+TH/2-hgt);
+                     g.lineTo(TW/2, cy+TH/2); g.lineTo(TW, cy); }
+  g.closePath();
 }
 
-/* ── procedurele pixelavatars (16×24 logisch) ─────────────────── */
-const spriteCache = new Map();
-function maakSprite(uiterlijk, richting, frame){
-  const sleutel = uiterlijk.sleutel + '|' + richting + '|' + frame;
-  if (spriteCache.has(sleutel)) return spriteCache.get(sleutel);
-  const c = document.createElement('canvas');
-  c.width = 16; c.height = 24;
-  const g = c.getContext('2d');
-  const px = (x,y,w,h,kl) => { g.fillStyle = kl; g.fillRect(x,y,w,h); };
-  const voor = richting === 'zo';
-  const u = uiterlijk;
-  const donker = (kl, f) => {
-    const n = parseInt(kl.slice(1),16);
-    const r0 = Math.max(0,((n>>16)&255)-f), g0 = Math.max(0,((n>>8)&255)-f), b0 = Math.max(0,(n&255)-f);
-    return 'rgb(' + r0 + ',' + g0 + ',' + b0 + ')';
-  };
-  const stap = frame === 0 ? 0 : (frame === 1 ? 1 : -1);
+/* bakstenen met voegen, in het vlak van de wand meegeschuind */
+function metselwerk(g, kant, kleur, hgt){
+  g.fillStyle = kleur; g.fillRect(0,0,TW,MH);
+  const voeg = donk(kleur,.26), hoog = licht(kleur,.10);
+  for (let ry=0; ry<hgt+TH; ry+=4){
+    const y0 = MCY - hgt + ry;
+    // een baksteenrij loopt schuin mee: 1 px zakken per 2 px breedte
+    for (let x=0; x<TW/2; x++){
+      const gx = kant==='L' ? x : TW/2 + x;
+      const dy = kant==='L' ? Math.floor(x/2) : Math.floor((TW/2-x)/2);
+      g.fillStyle = voeg; g.fillRect(gx, y0+dy, 1, 1);
+      if ((ry/4 + (kant==='L'?0:1)) % 2 === 0 && x % 8 === 0){
+        g.fillStyle = voeg; g.fillRect(gx, y0+dy, 1, 4);
+      } else if ((x*7+ry*13) % 23 === 0){
+        g.fillStyle = hoog; g.fillRect(gx, y0+dy+1, 1, 1);
+      }
+    }
+  }
+}
 
-  // schoenen + benen
-  px(5, 20 + Math.max(0,stap), 2, 3, donker(u.broek, 40));
-  px(9, 20 - Math.min(0,stap), 2, 3, donker(u.broek, 40));
-  px(5, 16, 2, 5, u.broek);
-  px(9, 16, 2, 5, u.broek);
+function bakVlak(kant, variant, kleur){
+  const { c, g } = nieuw(TW, MH);
+  const donkerder = kant==='L' ? .16 : .40;     // licht komt uit het noordwesten
+  const basis = donk(kleur, donkerder);
+  g.save(); muurPad(g, kant, MUURH); g.clip();
+  metselwerk(g, kant, basis, MUURH);
+
+  if (variant==='raam' || variant==='deur'){
+    const isDeur = variant==='deur';
+    const bx = kant==='L' ? 6 : TW/2+4, bw = 10;
+    const schuin = (x)=> kant==='L' ? Math.floor(x/2) : Math.floor((TW/2-(x-TW/2))/2);
+    const top = MCY - MUURH + (isDeur ? 10 : 7), hh = isDeur ? MUURH-10 : 12;
+    const glas = isDeur ? '#7a5233' : '#8fd0ef';
+    for (let x=0;x<bw;x++){
+      const X = bx+x, dy = schuin(X);
+      // kozijn
+      g.fillStyle = donk(kleur,.62); g.fillRect(X, top+dy-2, 1, hh+4);
+      // glas
+      g.fillStyle = glas;           g.fillRect(X, top+dy,   1, hh);
+      // spiegeling schuin over het glas
+      if (!isDeur && x < 5){ g.fillStyle = licht(glas,.55);
+        g.fillRect(X, top+dy+2+x, 1, Math.max(1, 4-x)); }
+      if (!isDeur && x === (bw>>1)){ g.fillStyle = donk(kleur,.5); g.fillRect(X, top+dy, 1, hh); }
+      if (isDeur && x === bw-2){ g.fillStyle = '#e8c85a'; g.fillRect(X, top+dy+hh/2|0, 1, 2); }
+      // vensterbank
+      g.fillStyle = licht(kleur,.34); g.fillRect(X, top+dy+hh, 1, 2);
+    }
+    if (!isDeur){ // bovendorpel als accent
+      for (let x=-2;x<bw+2;x++){ const X=bx+x; g.fillStyle=licht(kleur,.22);
+        g.fillRect(X, top+schuin(X)-4, 1, 2); }
+    }
+  }
+  g.restore();
+  // scherpe hoeklijn op de verticale ribbe
+  g.fillStyle = donk(kleur,.55);
+  g.fillRect(kant==='L'?TW/2-1:TW/2, MCY-MUURH, 1, MUURH+TH/2);
+  return c;
+}
+
+function bakKap(kleur){
+  const { c, g } = nieuw(TW, MH);
+  const top = licht(kleur,.18);
+  g.fillStyle = top; diamantPad(g, TW/2, MCY-MUURH, TW, TH); g.fill();
+  g.fillStyle = licht(top,.14); diamantPad(g, TW/2, MCY-MUURH-1, TW-8, TH-4); g.fill();
+  return c;
+}
+
+const KLEURMUUR = '#c06a45', KLEURANNEX = '#d9b48a';
+const MUUR = {};
+for (const [sleutel, kl] of [['b',KLEURMUUR],['a',KLEURANNEX]])
+  for (const v of ['vlak','raam','deur'])
+    MUUR[sleutel+v] = { L: bakVlak('L',v,kl), R: bakVlak('R',v,kl) };
+MUUR.kapb = bakKap(KLEURMUUR); MUUR.kapa = bakKap(KLEURANNEX);
+
+/* raamgloed voor de avond, per vlak */
+function bakGloed(kant){
+  const { c, g } = nieuw(TW, MH);
+  const bx = kant==='L' ? 6 : TW/2+4;
+  const schuin = (x)=> kant==='L' ? Math.floor(x/2) : Math.floor((TW/2-(x-TW/2))/2);
+  const top = MCY - MUURH + 7;
+  for (let x=0;x<10;x++){ const X=bx+x;
+    g.fillStyle='rgba(255,206,116,.92)'; g.fillRect(X, top+schuin(X), 1, 12); }
+  return c;
+}
+const GLOED = { L: bakGloed('L'), R: bakGloed('R') };
+
+/* ── props ── */
+function bakProp(tekenen, w, h){ const { c, g } = nieuw(w, h); tekenen(g, w, h); return c; }
+const px = (g,x,y,w,h,kl)=>{ g.fillStyle=kl; g.fillRect(x|0,y|0,w|0,h|0); };
+
+const PROPS = {
+  boom: bakProp((g)=>{ const st='#6b4a2f';
+    px(g,13,26,4,12,st); px(g,13,26,1,12,licht(st,.2));
+    const bl=['#2f7d3f','#3c9450','#276a35'];
+    [[15,16,12],[9,20,8],[21,20,8],[15,10,9],[11,13,7],[19,13,7]].forEach(([x,y,r],i)=>{
+      g.fillStyle=bl[i%3]; g.beginPath(); g.arc(x,y,r,0,6.283); g.fill(); });
+    g.fillStyle='#57b06a'; g.beginPath(); g.arc(12,12,5,0,6.283); g.fill();
+    g.fillStyle='#1e5528'; g.beginPath(); g.arc(20,23,5,0,6.283); g.fill();
+  },30,40),
+  boom2: bakProp((g)=>{ const st='#5c4630'; px(g,14,24,3,14,st);
+    const bl=['#3f8f4a','#4fa65c','#2f6f3a'];
+    [[15,14,10],[10,19,7],[20,19,7],[15,8,7]].forEach(([x,y,r],i)=>{
+      g.fillStyle=bl[i%3]; g.beginPath(); g.arc(x,y,r,0,6.283); g.fill(); });
+    g.fillStyle='#f2c14e'; [[11,10],[19,12],[14,17]].forEach(([x,y])=>{ g.fillRect(x,y,1,1); });
+  },30,38),
+  struik: bakProp((g)=>{ g.fillStyle='#2f7d3f'; g.beginPath(); g.arc(9,9,7,0,6.283); g.fill();
+    g.beginPath(); g.arc(16,11,6,0,6.283); g.fill(); g.fillStyle='#49a05a';
+    g.beginPath(); g.arc(8,7,4,0,6.283); g.fill(); },26,18),
+  bloemen: bakProp((g)=>{ px(g,2,8,22,6,'#6b4a2f');
+    ['#f2607a','#f2c14e','#e884d0','#f2f0e0'].forEach((k,i)=>{ px(g,4+i*5,5,3,3,k); px(g,5+i*5,8,1,3,'#3f8f4a'); });
+  },26,16),
+  bank: bakProp((g)=>{ px(g,2,8,20,3,'#a5764e'); px(g,2,8,20,1,'#c39468');
+    px(g,3,11,2,5,'#5a6a64'); px(g,19,11,2,5,'#5a6a64'); px(g,2,4,20,3,'#a5764e'); },24,18),
+  doel: bakProp((g)=>{ px(g,1,2,2,22,'#e8ece9'); px(g,29,2,2,22,'#e8ece9'); px(g,1,2,30,2,'#e8ece9');
+    g.strokeStyle='rgba(230,240,235,.45)'; g.lineWidth=1;
+    for(let x=4;x<29;x+=4){ g.beginPath(); g.moveTo(x,4); g.lineTo(x,23); g.stroke(); }
+    for(let y=6;y<23;y+=4){ g.beginPath(); g.moveTo(2,y); g.lineTo(30,y); g.stroke(); } },32,26),
+  fietsen: bakProp((g)=>{ px(g,0,10,30,3,'#7a8a84');
+    for(let i=0;i<4;i++){ const x=3+i*7, k=['#c9503f','#3f7dc9','#4fae6a','#e0b23f'][i];
+      px(g,x,4,1,8,k); g.strokeStyle='#2b3a36'; g.lineWidth=1;
+      g.beginPath(); g.arc(x-1,13,3,0,6.283); g.stroke(); g.beginPath(); g.arc(x+3,13,3,0,6.283); g.stroke(); }
+  },32,20),
+  lantaarn: bakProp((g)=>{ px(g,6,6,2,26,'#3d4a45'); px(g,3,2,8,5,'#5a6a64'); px(g,4,4,6,3,'#ffe6a8'); },16,34),
+  hek: bakProp((g)=>{ px(g,0,6,16,2,'#6f7d78'); px(g,0,11,16,2,'#6f7d78');
+    for(let x=1;x<16;x+=5) px(g,x,3,2,13,'#8a9691'); },16,18),
+  vlag: bakProp((g)=>{ px(g,7,2,2,30,'#c8cfcb'); px(g,9,4,12,8,'#f2c14e'); px(g,9,4,12,3,'#c9503f'); },24,34),
+  bord: bakProp((g)=>{ px(g,1,1,26,14,'#2f4f43'); px(g,2,2,24,12,'#3d6154');
+    px(g,4,5,10,1,'#dfe7e3'); px(g,4,8,16,1,'#dfe7e3'); px(g,4,11,7,1,'#dfe7e3');
+    px(g,1,15,26,2,'#a5764e'); },28,20),
+  schoolbank: bakProp((g)=>{ px(g,2,6,18,4,'#d9a86a'); px(g,2,6,18,1,'#eec48c');
+    px(g,3,10,2,4,'#8a6a45'); px(g,17,10,2,4,'#8a6a45'); px(g,6,2,10,4,'#c9503f'); },22,16),
+  bureaumeubel: bakProp((g)=>{ px(g,1,5,22,6,'#8a6a45'); px(g,1,5,22,1,'#b08a5c');
+    px(g,2,11,2,5,'#6b5236'); px(g,20,11,2,5,'#6b5236'); px(g,14,2,7,4,'#dfe7e3'); },24,18),
+  reftertafel: bakProp((g)=>{ px(g,1,5,26,4,'#c9b08a'); px(g,1,5,26,1,'#e0cba6');
+    px(g,3,9,2,5,'#8a7a5c'); px(g,23,9,2,5,'#8a7a5c');
+    ['#f2607a','#4fae6a','#3f7dc9'].forEach((k,i)=>px(g,5+i*8,2,4,3,k)); },28,16),
+  kast: bakProp((g)=>{ px(g,2,2,18,18,'#a5764e'); px(g,3,4,16,5,'#c39468'); px(g,3,11,16,5,'#c39468');
+    ['#c9503f','#3f7dc9','#4fae6a','#e0b23f'].forEach((k,i)=>px(g,4+i*4,5,3,3,k)); },22,22),
+  plant: bakProp((g)=>{ px(g,5,12,8,7,'#b85c3e'); g.fillStyle='#3f8f4a';
+    g.beginPath(); g.arc(9,8,6,0,6.283); g.fill(); g.fillStyle='#57b06a';
+    g.beginPath(); g.arc(6,6,3,0,6.283); g.fill(); },18,20),
+  vuilbak: bakProp((g)=>{ px(g,3,4,10,12,'#4f5f59'); px(g,2,2,12,3,'#6f7d78'); },16,18),
+  klimrek: bakProp((g)=>{ const st='#4f7f8f';
+    px(g,2,6,2,26,st); px(g,26,6,2,26,st); px(g,2,6,26,2,st);
+    for(let y=10;y<30;y+=5) px(g,4,y,22,2,'#e0873f');
+    px(g,12,6,2,26,'#c9503f'); },30,34),
+  prikbord: bakProp((g)=>{ px(g,1,1,22,15,'#8a6a45'); px(g,3,3,18,11,'#d8c9a8');
+    ['#f2607a','#4fae6a','#3f7dc9','#e0b23f'].forEach((k,i)=>px(g,4+i*4,5+(i%2)*4,3,4,k)); },24,18),
+  haag: bakProp((g)=>{ const bl=['#2c6f37','#357f41','#245c2e'];
+    for(let x=0;x<32;x+=2) for(let y=0;y<12;y+=2){
+      g.fillStyle=bl[(x*3+y*5)%3]; g.fillRect(x,y+4,2,2); }
+    g.fillStyle='#4d9a55'; for(let x=1;x<32;x+=5) g.fillRect(x,4,2,2); },32,18),
+  picknick: bakProp((g)=>{ px(g,2,6,26,4,'#c39468'); px(g,2,6,26,1,'#dcb489');
+    px(g,0,12,30,3,'#a5764e'); px(g,4,10,2,8,'#8a6a45'); px(g,24,10,2,8,'#8a6a45');
+    px(g,10,1,10,5,'#e0873f'); },30,20),
+  poort: bakProp((g)=>{ px(g,0,4,2,26,'#6f7d78'); px(g,14,4,2,26,'#6f7d78');
+    for(let y=8;y<26;y+=5) px(g,2,y,12,2,'#8a9691');
+    px(g,2,2,12,2,'#f0c04a'); },16,32),
+  zandbakrand: bakProp((g)=>{ px(g,0,6,32,4,'#a5764e'); px(g,0,6,32,1,'#c39468'); },32,12),
+};
+
+/* ── personages ── */
+const HUID=['#f6cfa8','#e5b184','#c98a5c','#a4693f','#7d4a2b','#fadcc0'];
+const HAAR=['#3a2a20','#6b4a2f','#b0763c','#dcb96c','#241f22','#8a4b3a','#cfc7ba','#5d3a5e','#c9503f'];
+const KLEUR=['#3f7dc9','#2f9e78','#c9503f','#8f6bb5','#e0873f','#4f7f8f','#d94f86','#e0b23f','#57b06a','#5fb8e0'];
+const spriteCache = new Map();
+
+function omlijn(g, w, h){
+  const d = g.getImageData(0,0,w,h), p = d.data, uit = new Uint8ClampedArray(p);
+  const A=(x,y)=> (x<0||y<0||x>=w||y>=h) ? 0 : p[(y*w+x)*4+3];
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++){
+    const i=(y*w+x)*4;
+    if (p[i+3]===0 && (A(x-1,y)>128||A(x+1,y)>128||A(x,y-1)>128||A(x,y+1)>128)){
+      uit[i]=18; uit[i+1]=26; uit[i+2]=24; uit[i+3]=225;
+    }
+  }
+  g.putImageData(new ImageData(uit,w,h),0,0);
+}
+
+function maakSprite(u, voor, frame){
+  const sl = u.sleutel+'|'+(voor?'v':'a')+'|'+frame;
+  if (spriteCache.has(sl)) return spriteCache.get(sl);
+  const { c, g } = nieuw(18, 28);
+  const stap = frame===0 ? 0 : (frame===1 ? 1 : frame===2 ? 0 : -1);
+  const bob  = frame===1 || frame===3 ? -1 : 0;
+  const o = 1, klein = u.klein ? 2 : 0;      // kinderen iets kleiner
+  const Y = (v) => v + bob + klein;
+  const H1 = donk(u.huid,.18);
+
+  // benen
+  px(g,o+5,Y(19)+Math.max(0,stap),2,4,donk(u.broek,.35));
+  px(g,o+9,Y(19)-Math.min(0,stap),2,4,donk(u.broek,.35));
+  px(g,o+5,Y(15),2,5,u.broek); px(g,o+9,Y(15),2,5,u.broek);
   // romp
-  px(4, 10, 8, 7, u.kleding);
-  px(4, 10, 8, 1, donker(u.kleding, 25));
-  if (u.streep) px(4, 13, 8, 1, donker(u.kleding, 45));
-  // armen
-  px(3, 11, 1, 5, u.kleding); px(12, 11, 1, 5, u.kleding);
-  px(3, 16, 1, 2, u.huid);    px(12, 16, 1, 2, u.huid);
+  px(g,o+4,Y(9),8,7,u.kleding);
+  px(g,o+4,Y(9),8,1,licht(u.kleding,.22));
+  px(g,o+4,Y(15),8,1,donk(u.kleding,.25));
+  if (u.streep){ px(g,o+4,Y(11),8,1,licht(u.kleding,.3)); px(g,o+4,Y(13),8,1,licht(u.kleding,.3)); }
+  if (u.hesje){ px(g,o+4,Y(9),8,6,'#f2870f'); px(g,o+4,Y(11),8,1,'#f6f3e7'); }
+  // armen (zwaaien mee)
+  const az = stap;
+  px(g,o+3,Y(10)+az,1,5,u.kleding); px(g,o+12,Y(10)-az,1,5,u.kleding);
+  px(g,o+3,Y(15)+az,1,2,u.huid);    px(g,o+12,Y(15)-az,1,2,u.huid);
   // hoofd
-  px(5, 4, 6, 6, u.huid);
-  px(5, 9, 6, 1, donker(u.huid, 30));
+  px(g,o+5,Y(3),6,6,u.huid); px(g,o+5,Y(8),6,1,H1);
+  px(g,o+4,Y(4),1,4,H1); px(g,o+11,Y(4),1,4,H1);
   // haar
-  if (u.haarstijl === 0){ px(4, 3, 8, 3, u.haar); px(4, 6, 1, 2, u.haar); px(11, 6, 1, 2, u.haar); }
-  else if (u.haarstijl === 1){ px(4, 3, 8, 2, u.haar); px(3, 4, 1, 6, u.haar); px(12, 4, 1, 6, u.haar); }
-  else if (u.haarstijl === 2){ px(5, 3, 6, 2, u.haar); }
-  else { px(4, 3, 8, 3, u.haar); px(3, 5, 1, 4, u.haar); px(12, 5, 1, 4, u.haar); px(6, 1, 4, 2, u.haar); }
-  // gezicht (alleen vooraanzicht)
+  const hs=u.haarstijl, hk=u.haar;
+  if (hs===0){ px(g,o+4,Y(2),8,3,hk); px(g,o+4,Y(5),1,2,hk); px(g,o+11,Y(5),1,2,hk); }
+  else if (hs===1){ px(g,o+4,Y(2),8,2,hk); px(g,o+3,Y(3),1,7,hk); px(g,o+12,Y(3),1,7,hk); }
+  else if (hs===2){ px(g,o+5,Y(2),6,2,hk); }
+  else if (hs===3){ px(g,o+4,Y(2),8,3,hk); px(g,o+6,Y(0),4,2,hk); }
+  else if (hs===4){ px(g,o+4,Y(2),8,3,hk); px(g,o+3,Y(4),1,6,hk); px(g,o+12,Y(4),1,6,hk);
+                    px(g,o+2,Y(9),2,2,hk); px(g,o+12,Y(9),2,2,hk); }
+  else { px(g,o+4,Y(2),8,2,hk); px(g,o+11,Y(4),2,5,hk); }
+  // gezicht
   if (voor){
-    px(6, 6, 1, 1, P.nacht); px(9, 6, 1, 1, P.nacht);
-    px(7, 8, 2, 1, donker(u.huid, 55));
-    if (u.bril){ px(5, 6, 2, 1, '#dfe7e3'); px(9, 6, 2, 1, '#dfe7e3'); px(7, 6, 2, 1, '#8fa39c'); }
+    px(g,o+6,Y(5),1,2,'#1e2a26'); px(g,o+9,Y(5),1,2,'#1e2a26');
+    px(g,o+7,Y(7),2,1,donk(u.huid,.4));
+    if (u.bril){ px(g,o+5,Y(5),3,2,'#dfe7e3'); px(g,o+8,Y(5),3,2,'#dfe7e3'); px(g,o+7,Y(5),1,1,'#5a6a64'); }
+    if (u.blos){ px(g,o+5,Y(7),1,1,'#e08c8c'); px(g,o+10,Y(7),1,1,'#e08c8c'); }
   }
   // accessoires
-  if (u.pet){ px(4, 2, 8, 2, u.accent); px(4, 4, 3, 1, donker(u.accent, 30)); }
-  if (u.tas){ px(2, 11, 2, 5, u.accent); }
-  if (u.badge){ px(11, 12, 2, 2, P.wit); }
-  if (u.hesje){ px(4, 10, 8, 4, u.accent); px(4, 12, 8, 1, P.wit); }
+  if (u.pet){ px(g,o+4,Y(1),8,2,u.accent); px(g,o+4,Y(3),4,1,donk(u.accent,.3)); }
+  if (u.rugzak){ px(g,o+(voor?2:3),Y(10),3,6,u.accent); if(!voor) px(g,o+5,Y(10),8,6,u.accent); }
+  if (u.klembord && voor){ px(g,o+11,Y(13),4,5,'#e6e0cc'); px(g,o+11,Y(13),4,1,'#8a6a45'); }
+  if (u.koffie && voor){ px(g,o+12,Y(13),3,3,'#f6f3e7'); }
+  if (u.bezem){ px(g,o+13,Y(6),1,12,'#a5764e'); px(g,o+12,Y(17),4,3,'#e0b23f'); }
+  if (u.badge){ px(g,o+10,Y(11),2,3,'#f6f3e7'); }
 
-  const bm = c;
-  spriteCache.set(sleutel, bm);
-  return bm;
+  omlijn(g,18,28);
+  spriteCache.set(sl,c);
+  return c;
 }
 function maakUiterlijk(id, rol){
-  const r = prng(hash32('avatar|' + id));
-  const kind = rol === 'leerling';
-  const u = {
-    huid: kies(r, HUID), haar: kies(r, HAAR), haarstijl: Math.floor(r()*4),
-    kleding: kies(r, KLEDING), broek: kies(r, ['#2b3a55','#3f3a35','#5a6a64','#2b5f9e','#6b4a2f']),
-    accent: kies(r, KLEDING), bril: r() > .78, pet: kind && r() > .8,
-    tas: kind ? r() > .55 : r() > .8, badge: rol === 'extern', hesje: rol === 'klusjes',
-    streep: r() > .6, klein: kind,
-  };
-  if (rol === 'directie'){ u.kleding = P.diepblauw; u.bril = r() > .4; }
-  if (rol === 'klusjes'){ u.accent = '#f2870f'; }
-  if (rol === 'leraar' && r() > .5) u.kleding = kies(r, ['#1f6f5c','#8f6bb5','#c96f4a','#2b5f9e']);
-  u.sleutel = [u.huid,u.haar,u.haarstijl,u.kleding,u.broek,u.accent,u.bril?1:0,u.pet?1:0,
-               u.tas?1:0,u.badge?1:0,u.hesje?1:0,u.streep?1:0,u.klein?1:0].join('');
+  const r = prng(hash32('u|'+id)), kind = rol==='leerling';
+  const u = { huid:kies(r,HUID), haar:kies(r,HAAR), haarstijl:Math.floor(r()*6),
+    kleding:kies(r,KLEUR), broek:kies(r,['#33415c','#3f3a35','#4f5f59','#2f5f8f','#6b4a2f','#7a4a5c']),
+    accent:kies(r,KLEUR), bril:r()>.8, pet:kind&&r()>.85, rugzak:kind&&r()>.35,
+    streep:r()>.72, klein:kind, blos:kind&&r()>.5,
+    klembord:rol==='directie'||rol==='zorg', koffie:rol==='leraar'&&r()>.7,
+    bezem:rol==='klusjes', hesje:rol==='klusjes', badge:rol==='extern' };
+  if (rol==='directie'){ u.kleding='#2f4f7f'; }
+  if (rol==='extern'){ u.kleding='#5a6a64'; }
+  u.sleutel = Object.values(u).join('|');
   return u;
 }
 
-/* ── pathfinding (A*, 8 richtingen, geen hoeken snijden) ──────── */
-const BUREN = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-function zoekPad(x0, y0, x1, y1){
-  if (!loopbaar(x1,y1)){
-    let beste = null, bd = 1e9;
-    for (const [dx,dy] of BUREN){
-      if (loopbaar(x1+dx, y1+dy)){
-        const d = (x1+dx-x0)**2 + (y1+dy-y0)**2;
-        if (d < bd){ bd = d; beste = [x1+dx, y1+dy]; }
-      }
+/* ── wereld ── */
+const T={GRAS:0,GRAS2:1,PAD:2,SPEEL:3,KLAS:4,GANG:5,REFTER:6,BUREAU:7,ZAND:8,MUUR:9,DEUR:10,
+         BINNENMUUR:11,RAAM:12,LIJN:13,CIRKEL:14,HINK:15,DREMPEL:16,SPORT:17};
+const TEGELNAAM={0:'gras',1:'gras2',2:'pad',3:'speel',4:'klas',5:'gang',6:'refter',7:'bureau',
+                 8:'zand',10:'drempel',13:'lijn',14:'cirkel',15:'hink',16:'drempel',17:'sport'};
+const VAST=new Set([T.MUUR,T.BINNENMUUR,T.RAAM]);
+const wereld={tegels:new Int8Array(W*H),kamers:[],props:[]};
+const tg=(x,y)=>(x<0||y<0||x>=W||y>=H)?T.MUUR:wereld.tegels[y*W+x];
+const zet=(x,y,v)=>{ if(x>=0&&y>=0&&x<W&&y<H) wereld.tegels[y*W+x]=v; };
+const loopbaar=(x,y)=>!VAST.has(tg(x,y));
+
+function bouwWereld(zaad){
+  const r=prng(hash32('school|'+zaad));
+  wereld.kamers.length=0; wereld.props.length=0;
+  wereld.annex=new Uint8Array(W*H);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++) zet(x,y, r()>.80?T.GRAS2:T.GRAS);
+
+  const kamer=(naam,type,x0,y0,x1,y1,vloer,deur,opt={})=>{
+    for(let y=y0-1;y<=y1;y++) for(let x=x0-1;x<=x1;x++) zet(x,y,T.MUUR);
+    for(let y=y0;y<y1;y++) for(let x=x0;x<x1;x++) zet(x,y,vloer);
+    if(deur) zet(deur.x,deur.y,T.DEUR);
+    if(opt.annex) for(let y=y0-1;y<=y1;y++) for(let x=x0-1;x<=x1;x++)
+      if(x>=0&&y>=0&&x<W&&y<H) wereld.annex[y*W+x]=1;
+    const k={naam,type,x0,y0,x1,y1,deur,dak:opt.dak===null?null:(opt.dak||'pan'),
+             annex:!!opt.annex,dakA:1,midden:{x:(x0+x1)/2|0,y:(y0+y1)/2|0}};
+    wereld.kamers.push(k); return k;
+  };
+  const vul=(x0,y0,x1,y1,t)=>{ for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++) zet(x,y,t); };
+
+  /* klas: bord vooraan, banken in rijen met tussengangen, vaste zitplaatsen */
+  const richtKlasIn=(k,kant)=>{
+    const rijen=[], kolommen=[];
+    for(let o=1;o<=(k.y1-k.y0)-2;o++) if((o-1)%3!==2) rijen.push(kant==='noord'?k.y0+o:k.y1-1-o);
+    for(let o=1;o<=(k.x1-k.x0)-2;o++) kolommen.push(k.x0+o);
+    k.zit=[];
+    for(const y of rijen) for(const x of kolommen){
+      k.zit.push({x,y}); wereld.props.push({s:'schoolbank',x,y});
     }
-    if (!beste) return null;
-    x1 = beste[0]; y1 = beste[1];
+    const vy = kant==='noord' ? k.y0 : k.y1-1;
+    k.voor={x:k.x0+3,y:vy};
+    wereld.props.push({s:'bord',x:k.x0+2,y:vy},{s:'kast',x:k.x1-2,y:vy},
+                      {s:'plant',x:k.x0,y:kant==='noord'?k.y1-1:k.y0});
+  };
+
+  /* ── hoofdgebouw: noordvleugel · gang · zuidvleugel ── */
+  vul(3,4,48,28,T.MUUR);
+  const klassen=[];
+  const gang=kamer('gang','gang',4,15,48,18,T.GANG,null);
+  for(const [nm,x0,x1] of [['1A',4,12],['2A',13,21],['3A',22,30],['4A',31,39],['5A',40,48]]){
+    const k=kamer('klas '+nm,'klas',x0,5,x1,14,T.KLAS,{x:x0+4,y:14});
+    richtKlasIn(k,'noord'); klassen.push(k);
   }
-  const start = y0*W+x0, doel = y1*W+x1;
-  if (start === doel) return [];
-  const g = new Map([[start,0]]), vorige = new Map();
-  const open = [[start, Math.abs(x1-x0)+Math.abs(y1-y0)]];
-  const gezien = new Set();
-  let veiligheid = 20000;
-  while (open.length && veiligheid-- > 0){
-    let bi = 0;
-    for (let i = 1; i < open.length; i++) if (open[i][1] < open[bi][1]) bi = i;
-    const [huidig] = open.splice(bi, 1)[0];
-    if (huidig === doel){
-      const pad = []; let k = doel;
-      while (k !== start){ pad.push({ x:k % W, y:(k / W) | 0 }); k = vorige.get(k); }
-      return pad.reverse();
-    }
-    if (gezien.has(huidig)) continue;
-    gezien.add(huidig);
-    const hx = huidig % W, hy = (huidig / W) | 0, hg = g.get(huidig);
-    for (const [dx,dy] of BUREN){
-      const nx = hx+dx, ny = hy+dy;
-      if (!loopbaar(nx,ny)) continue;
-      if (dx && dy && (!loopbaar(hx+dx,hy) || !loopbaar(hx,hy+dy))) continue;
-      const n = ny*W+nx, kost = hg + (dx && dy ? 1.42 : 1);
-      if (g.has(n) && g.get(n) <= kost) continue;
-      g.set(n, kost); vorige.set(n, huidig);
-      open.push([n, kost + Math.hypot(x1-nx, y1-ny)]);
+  for(const [nm,x0,x1] of [['1B',4,12],['2B',13,20],['3B',42,48]]){
+    const k=kamer('klas '+nm,'klas',x0,19,x1,28,T.KLAS,{x:x0+3,y:18});
+    richtKlasIn(k,'zuid'); klassen.push(k);
+  }
+  const refter=kamer('refter','refter',24,19,32,28,T.REFTER,{x:27,y:18});
+  for(let y=20;y<27;y+=3) for(let x=25;x<32;x+=4) wereld.props.push({s:'reftertafel',x,y});
+  const turnzaal=kamer('turnzaal','turnzaal',33,19,41,28,T.SPORT,{x:36,y:18});
+  wereld.props.push({s:'klimrek',x:34,y:21},{s:'klimrek',x:40,y:26},{s:'bank',x:34,y:26},
+                    {s:'doel',x:40,y:21});
+
+  /* inkomhal: steekt naar het zuiden uit, tussen klas 2B en de refter */
+  vul(21,18,22,27,T.GANG); vul(20,18,20,28,T.MUUR); vul(23,18,23,28,T.MUUR);
+  zet(21,28,T.DEUR); zet(22,28,T.DEUR);
+  wereld.kamers.push({naam:'inkomhal',type:'gang',x0:21,y0:18,x1:23,y1:28,dak:'pan',dakA:1,
+    deur:{x:21,y:28},midden:{x:21,y:23}});
+  wereld.props.push({s:'plant',x:21,y:19},{s:'plant',x:22,y:26},{s:'prikbord',x:22,y:19});
+
+  /* ── annex directie en administratie, lichte gevelsteen en leien dak ── */
+  const lk=kamer('lerarenkamer','lerarenkamer',53,5,61,11,T.BUREAU,{x:52,y:8},{annex:1,dak:'lei'});
+  const bu=kamer('bureau directie','bureau',53,12,61,17,T.BUREAU,{x:52,y:14},{annex:1,dak:'lei'});
+  wereld.props.push({s:'bureaumeubel',x:58,y:7},{s:'plant',x:54,y:6},{s:'kast',x:60,y:10},
+                    {s:'bank',x:55,y:9},{s:'reftertafel',x:56,y:9},
+                    {s:'bureaumeubel',x:58,y:14},{s:'plant',x:54,y:16},{s:'kast',x:60,y:13});
+
+  /* ── paden ── */
+  vul(21,29,22,45,T.PAD);                       // oprit van de poort naar de inkom
+  vul(49,16,51,17,T.PAD); zet(48,16,T.DEUR);    // gang → oost
+  vul(51,8,51,17,T.PAD); vul(51,18,52,21,T.PAD);
+  vul(23,33,50,34,T.PAD);                       // dwarspad langs de speelplaats
+  vul(21,33,22,34,T.PAD);
+  wereld.ingang={x:21,y:29}; wereld.poort={x:21,y:45};
+
+  /* ── speelplaats ── */
+  const sx0=52,sy0=20,sx1=63,sy1=43;
+  vul(sx0,sy0,sx1,sy1,T.SPEEL);
+  for(let x=sx0+2;x<sx1-1;x++){ zet(x,sy0+4,T.LIJN); zet(x,sy1-4,T.LIJN); }
+  for(let y=sy0+5;y<sy1-4;y++){ zet(sx0+2,y,T.LIJN); zet(sx1-2,y,T.LIJN); }
+  zet(((sx0+sx1)/2)|0,((sy0+sy1)/2)|0,T.CIRKEL);
+  for(let i=0;i<6;i++) zet(sx0+4+i,sy1-1,T.HINK);
+  vul(sx0+1,sy1-9,sx0+5,sy1-6,T.ZAND);
+  wereld.kamers.push({naam:'speelplaats',type:'speelplaats',x0:sx0,y0:sy0,x1:sx1,y1:sy1,dak:null,
+    deur:{x:sx0-1,y:24},midden:{x:(sx0+sx1)/2|0,y:(sy0+sy1)/2|0}});
+  wereld.props.push({s:'doel',x:sx1-2,y:sy0+7},{s:'doel',x:sx0+3,y:sy1-7},
+    {s:'zandbakrand',x:sx0+1,y:sy1-9},{s:'klimrek',x:sx0+8,y:sy1-7},
+    {s:'vuilbak',x:sx0+1,y:sy0+5},{s:'vuilbak',x:sx1-1,y:sy1-2});
+  for(const [x,y] of [[sx0+1,sy0+2],[sx1-1,sy1-11],[sx0+7,sy0+1],[sx1-6,sy1-1],[sx0+1,sy1-2]])
+    wereld.props.push({s:'bank',x,y});
+  for(const [x,y] of [[sx0+6,sy0+10],[sx1-4,sy0+4],[sx0+3,sy1-3],[sx1-3,sy1-13]])
+    wereld.props.push({s:'lantaarn',x,y});
+
+  /* ── tuin, speelweide en groen ── */
+  vul(4,32,18,45,T.GRAS2);
+  for(let x=4;x<=18;x+=2) wereld.props.push({s:'haag',x,y:32});
+  for(const [x,y] of [[6,36],[10,36],[14,36],[6,42],[10,42],[14,42]])
+    wereld.props.push({s:'bloemen',x,y});
+  wereld.props.push({s:'picknick',x:9,y:38},{s:'picknick',x:14,y:40},
+                    {s:'bank',x:19,y:37},{s:'lantaarn',x:19,y:41});
+  for(const [x,y] of [[5,34],[17,34],[5,44],[17,44],[11,45],[19,33]])
+    wereld.props.push({s:kies(r,['boom','boom2']),x,y});
+
+  /* fietsenstalling, vlaggenmasten en banken bij de inkom */
+  for(let i=0;i<5;i++) wereld.props.push({s:'fietsen',x:26+i*3,y:31});
+  wereld.props.push({s:'vlag',x:24,y:29},{s:'vlag',x:20,y:31},{s:'vuilbak',x:20,y:29});
+  wereld.props.push({s:'lantaarn',x:20,y:38},{s:'lantaarn',x:23,y:43},
+                    {s:'bank',x:24,y:36},{s:'bank',x:31,y:36},{s:'picknick',x:36,y:37});
+  for(let x=26;x<=46;x+=3) wereld.props.push({s:'haag',x,y:36});
+  for(const [x,y] of [[28,40],[34,42],[40,39],[45,43],[44,31],[49,29],[30,44],[38,45]])
+    wereld.props.push({s:kies(r,['boom','boom2']),x,y});
+
+  /* losse bomen en struiken op het domein */
+  for(let i=0;i<46;i++){
+    const x=2+Math.floor(r()*(W-4)), y=2+Math.floor(r()*(H-4));
+    if(tg(x,y)===T.GRAS||tg(x,y)===T.GRAS2)
+      wereld.props.push({s:kies(r,['boom','boom2','boom','struik']),x,y});
+  }
+
+  /* hek rond het domein, met poort onderaan */
+  for(let x=1;x<W-1;x++){
+    wereld.props.push({s:'hek',x,y:1});
+    if(x<21||x>22) wereld.props.push({s:'hek',x,y:H-2});
+  }
+  for(let y=2;y<H-2;y++){ wereld.props.push({s:'hek',x:1,y}); wereld.props.push({s:'hek',x:W-2,y}); }
+  wereld.props.push({s:'poort',x:21,y:H-2},{s:'poort',x:22,y:H-2});
+
+  wereld.klassen=klassen; wereld.refter=refter; wereld.lerarenkamer=lk; wereld.bureau=bu;
+  wereld.gang=gang; wereld.turnzaal=turnzaal;
+  wereld.speelplaats=wereld.kamers.find(k=>k.type==='speelplaats');
+  wereld.props.sort((a,b)=>(a.x+a.y)-(b.x+b.y));
+
+  // gevelmasker: muren die aan de buitenlucht raken krijgen ramen
+  const BUITEN=new Set([T.GRAS,T.GRAS2,T.PAD,T.SPEEL,T.ZAND,T.LIJN,T.CIRKEL,T.HINK]);
+  wereld.gevel=new Uint8Array(W*H);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    if(wereld.tegels[y*W+x]!==T.MUUR) continue;
+    if(BUITEN.has(tg(x-1,y))||BUITEN.has(tg(x+1,y))||BUITEN.has(tg(x,y-1))||BUITEN.has(tg(x,y+1)))
+      wereld.gevel[y*W+x]=1;
+  }
+  wereld.daken=wereld.kamers.filter(k=>k.dak);
+}
+
+/* ── pathfinding ── */
+const BUREN=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+function zoekPad(x0,y0,x1,y1){
+  x0=clamp(Math.round(x0),0,W-1); y0=clamp(Math.round(y0),0,H-1);
+  x1=clamp(Math.round(x1),0,W-1); y1=clamp(Math.round(y1),0,H-1);
+  if(!loopbaar(x1,y1)){ let b=null,bd=1e9;
+    for(const [dx,dy] of BUREN) if(loopbaar(x1+dx,y1+dy)){ const d=(x1+dx-x0)**2+(y1+dy-y0)**2;
+      if(d<bd){bd=d;b=[x1+dx,y1+dy];} }
+    if(!b) return null; x1=b[0]; y1=b[1]; }
+  const start=y0*W+x0, doel=y1*W+x1; if(start===doel) return [];
+  const g=new Map([[start,0]]), vor=new Map(), open=[[start,0]], gezien=new Set();
+  let vg=14000;
+  while(open.length && vg-->0){
+    let bi=0; for(let i=1;i<open.length;i++) if(open[i][1]<open[bi][1]) bi=i;
+    const [h]=open.splice(bi,1)[0];
+    if(h===doel){ const p=[]; let k=doel; while(k!==start){ p.push({x:k%W,y:(k/W)|0}); k=vor.get(k); } return p.reverse(); }
+    if(gezien.has(h)) continue; gezien.add(h);
+    const hx=h%W, hy=(h/W)|0, hg=g.get(h);
+    for(const [dx,dy] of BUREN){
+      const nx=hx+dx, ny=hy+dy; if(!loopbaar(nx,ny)) continue;
+      if(dx&&dy&&(!loopbaar(hx+dx,hy)||!loopbaar(hx,hy+dy))) continue;
+      const n=ny*W+nx, kost=hg+(dx&&dy?1.42:1);
+      if(g.has(n)&&g.get(n)<=kost) continue;
+      g.set(n,kost); vor.set(n,h); open.push([n,kost+Math.hypot(x1-nx,y1-ny)]);
     }
   }
   return null;
 }
 
-/* ── dagritme ─────────────────────────────────────────────────── */
-const BLOKKEN = [
-  { v:0,   naam:'nacht',      activiteit:'weg' },
-  { v:480, naam:'aankomst',   activiteit:'aankomst' },
-  { v:505, naam:'lesblok 1',  activiteit:'les' },
-  { v:615, naam:'speeltijd',  activiteit:'speelplaats' },
-  { v:630, naam:'lesblok 2',  activiteit:'les' },
-  { v:725, naam:'middagpauze',activiteit:'middag' },
-  { v:785, naam:'lesblok 3',  activiteit:'les' },
-  { v:920, naam:'einde school',activiteit:'naarhuis' },
-  { v:975, naam:'lege school', activiteit:'weg' },
-];
-const blokVan = (m) => { let b = BLOKKEN[0]; for (const x of BLOKKEN) if (m >= x.v) b = x; return b; };
-const klokTekst = (m) => String(Math.floor(m/60) % 24).padStart(2,'0') + ':' + String(Math.floor(m) % 60).padStart(2,'0');
+/* ── dagritme ── */
+const BLOKKEN=[{v:0,naam:'nacht',a:'weg'},{v:478,naam:'aankomst',a:'aankomst'},
+  {v:505,naam:'lesblok 1',a:'les'},{v:615,naam:'speeltijd',a:'speelplaats'},
+  {v:630,naam:'lesblok 2',a:'les'},{v:725,naam:'middagpauze',a:'middag'},
+  {v:785,naam:'lesblok 3',a:'les'},{v:920,naam:'einde school',a:'naarhuis'},{v:975,naam:'lege school',a:'weg'}];
+const blokVan=m=>{ let b=BLOKKEN[0]; for(const x of BLOKKEN) if(m>=x.v) b=x; return b; };
+const klokT=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(Math.floor(m)%60).padStart(2,'0');
 
-const VOORNAMEN = ['Els','Karim','Lien','Nora','Jonas','Sofie','Piet','Anke','Bart','Carla','Mia','Youssef','Dirk','Greta','Ines','Tom','Fatima','Wout','Amina','Seppe','Lore','Ravi','Emma','Milan','Noor','Jules','Ayla','Stan','Febe','Arne'];
-const ACHTERNAMEN = ['Peeters','Janssens','Maes','Willems','Claes','Goossens','Wouters','De Smet','Dupont','Aerts','Mertens','Van Damme','Declerck','Vermeulen','El Amrani','Benali','Dierckx','Jacobs'];
-const VAKKEN = ['wiskunde','taal','WO','muzo','LO','techniek'];
+const VN=['Els','Karim','Lien','Nora','Jonas','Sofie','Piet','Anke','Bart','Carla','Mia','Youssef','Dirk','Greta','Ines','Tom','Fatima','Wout','Amina','Seppe','Lore','Ravi','Emma','Milan','Noor','Jules','Ayla','Stan','Febe','Arne','Kato','Vic','Lena','Sam'];
+const AN=['Peeters','Janssens','Maes','Willems','Claes','Goossens','Wouters','De Smet','Aerts','Mertens','Van Damme','Declerck','Vermeulen','El Amrani','Benali','Dierckx','Jacobs','Lambrechts'];
 
-let agenten = [];
-let volgendeId = 0;
-
-function maakAgent(rol, r, kamer){
-  const id = 'a' + (volgendeId++);
-  const naam = kies(r, VOORNAMEN) + ' ' + kies(r, ACHTERNAMEN);
-  const start = wereld.poort;
-  const a = {
-    id, rol, naam,
-    uiterlijk: maakUiterlijk(id, rol),
-    x: start.x + (r()*9 - 4.5), y: start.y + (r()*7 - 2),
-    richting:'zo', frame:0, framet:0,
-    pad:null, padi:0, doel:null, activiteit:'weg', kamer,
-    snelheid: rol === 'leerling' ? 2.4 + r()*.8 : 2.0 + r()*.6,
-    offset: Math.floor(r()*7) - 3,
-    micro:0, praat:0, signaal:null, zichtbaar:false, bezield:false,
-    toezicht: rol === 'leraar' && r() > .62,
-  };
-  return a;
+let agenten=[], volgId=0;
+function maakAgent(rol,r,kamer){
+  const id='a'+(volgId++);
+  return { id, rol, naam:kies(r,VN)+' '+kies(r,AN), uiterlijk:maakUiterlijk(id,rol),
+    x:wereld.poort.x+(r()*7-3.5), y:wereld.poort.y+(r()*4), rx:0, ry:0,
+    voor:true, frame:0, ft:r()*4, pad:null, padi:0, doel:null, act:'weg', kamer,
+    snel:(rol==='leerling'?2.6:2.1)+r()*.7, off:Math.floor(r()*9)-4, micro:r()*5,
+    praat:0, sig:null, zicht:false, blok:'', bal:false, ziek:false,
+    toezicht: rol==='leraar'&&r()>.6 };
 }
-
-function bevolk(aantalLeerlingen, aantalPersoneel){
-  const r = prng(hash32('bevolking|' + aantalLeerlingen + '|' + aantalPersoneel));
-  agenten = []; volgendeId = 0;
-  const klassen = wereld.kamers.filter(k => k.type === 'klas');
-
-  // één leraar per klas, daarna extra personeel
-  klassen.forEach((k, i) => {
-    const a = maakAgent('leraar', r, k);
-    a.vak = VAKKEN[i % VAKKEN.length];
+function bevolk(nLl,nPers){
+  const r=prng(hash32('bev|'+nLl+'|'+nPers)); agenten=[]; volgId=0;
+  wereld.klassen.forEach(k=>{ const a=maakAgent('leraar',r,k); agenten.push(a); });
+  const dir=maakAgent('directie',r,wereld.bureau); dir.naam='Anke Willems'; agenten.push(dir);
+  agenten.push(maakAgent('secretariaat',r,wereld.bureau));
+  agenten.push(maakAgent('klusjes',r,wereld.speelplaats));
+  while(agenten.length < Math.max(wereld.klassen.length+3, nPers))
+    agenten.push(maakAgent('zorg',r,kies(r,wereld.klassen)));
+  for(let i=0;i<2;i++){ const e=maakAgent('extern',r,wereld.bureau); e.venster=[600+i*50,690+i*50]; agenten.push(e); }
+  const perKlas=new Map();
+  for(let i=0;i<nLl;i++){
+    const k=wereld.klassen[i%wereld.klassen.length];
+    const a=maakAgent('leerling',r,k);
+    const n=(perKlas.get(k)||0); perKlas.set(k,n+1);
+    a.zit = k.zit && k.zit.length ? k.zit[n%k.zit.length] : null;
     agenten.push(a);
-  });
-  const directie = maakAgent('directie', r, wereld.kamers.find(k => k.type === 'bureau'));
-  directie.naam = 'Anke Willems';
-  agenten.push(directie);
-  agenten.push(Object.assign(maakAgent('secretariaat', r, wereld.kamers.find(k => k.type === 'bureau')), {}));
-  agenten.push(maakAgent('klusjes', r, wereld.kamers.find(k => k.type === 'speelplaats')));
-  while (agenten.filter(a => a.rol === 'leraar' || a.rol === 'zorg').length < Math.max(klassen.length, aantalPersoneel - 3)){
-    const z = maakAgent('zorg', r, kies(r, klassen));
-    agenten.push(z);
   }
-  for (let i = 0; i < 2; i++){
-    const e = maakAgent('extern', r, wereld.kamers.find(k => k.type === 'bureau'));
-    e.venster = [600 + i*40, 700 + i*40];
-    agenten.push(e);
-  }
-  // leerlingen verdeeld over de klassen
-  for (let i = 0; i < aantalLeerlingen; i++){
-    const k = klassen[i % klassen.length];
-    agenten.push(maakAgent('leerling', r, k));
-  }
-
-  // signalen: een paar leraren dragen een echt platformsignaal
-  const leraren = agenten.filter(a => a.rol === 'leraar');
-  if (leraren[0]) leraren[0].signaal = { ernst:'krit', tekst:'TADD-beoordeling vóór 30/6', niveau:4 };
-  if (leraren[1]) leraren[1].signaal = { ernst:'let', tekst:'drempel nadert (288/290)', niveau:2 };
-  if (leraren[2]) leraren[2].signaal = { ernst:'let', tekst:'gesprek > 2 jaar geleden', niveau:2 };
-  if (leraren[3]) leraren[3].signaal = { ernst:'ok', tekst:'beoordeling geregistreerd', niveau:0 };
+  const lr=agenten.filter(a=>a.rol==='leraar');
+  if(lr[0]) lr[0].sig={e:'krit',t:'TADD-beoordeling vóór 30/6',n:4};
+  if(lr[1]) lr[1].sig={e:'let',t:'drempel nadert (288/290)',n:2};
+  if(lr[2]) lr[2].sig={e:'let',t:'gesprek > 2 jaar geleden',n:2};
+  if(lr[3]) lr[3].sig={e:'ok',t:'beoordeling geregistreerd',n:0};
 }
-
-/* ── bestemming per agent en tijdstip ─────────────────────────── */
-function bepaalDoel(a, minuten){
-  const b = blokVan(minuten + a.offset);
-  const act = b.activiteit;
-  const r = prng(hash32(a.id + '|' + b.naam + '|' + Math.floor(minuten/40)));
-  const speel = wereld.kamers.find(k => k.type === 'speelplaats');
-  const refter = wereld.kamers.find(k => k.type === 'refter');
-  const lerarenkamer = wereld.kamers.find(k => k.type === 'lerarenkamer');
-  const bureau = wereld.kamers.find(k => k.type === 'bureau');
-  const inKamer = (k) => ({
-    x: k.x0 + 1 + Math.floor(r()*(k.x1-k.x0-2)),
-    y: k.y0 + 1 + Math.floor(r()*(k.y1-k.y0-2)),
-  });
-
-  if (a.rol === 'extern'){
-    if (a.venster && minuten >= a.venster[0] && minuten <= a.venster[1]) return { doel:inKamer(bureau), act:'bezoek' };
-    return { doel:{ x:wereld.poort.x, y:wereld.poort.y+2 }, act:'weg' };
+function bepaalDoel(a,m){
+  const b=blokVan(m+a.off), act=b.a;
+  const r=prng(hash32(a.id+'|'+b.naam+'|'+Math.floor(m/35)));
+  const inK=k=>({x:k.x0+Math.floor(r()*(k.x1-k.x0)),y:k.y0+Math.floor(r()*(k.y1-k.y0))});
+  const sp=wereld.speelplaats;
+  if(a.ziek) return {doel:{x:wereld.poort.x,y:wereld.poort.y+1},act:'ziek'};
+  if(a.rol==='extern'){
+    if(a.venster&&m>=a.venster[0]&&m<=a.venster[1]) return {doel:inK(wereld.bureau),act:'bezoek'};
+    return {doel:{x:wereld.poort.x,y:wereld.poort.y+1},act:'weg'};
   }
-  if (act === 'weg' || act === 'naarhuis'){
-    if (a.rol === 'directie' && act === 'naarhuis') return { doel:inKamer(bureau), act:'bureau' };
-    return { doel:{ x:wereld.poort.x + (r()*4-2|0), y:wereld.poort.y + 2 }, act:'weg' };
+  if(act==='weg'||act==='naarhuis'){
+    if(a.rol==='directie'&&act==='naarhuis') return {doel:inK(wereld.bureau),act:'bureau'};
+    return {doel:{x:wereld.poort.x+(r()*4-2|0),y:wereld.poort.y+1},act:'weg'};
   }
-  if (act === 'aankomst'){
-    if (a.rol === 'leerling') return { doel:inKamer(speel), act:'speelplaats' };
-    if (a.rol === 'klusjes') return { doel:inKamer(speel), act:'klus' };
-    return { doel:inKamer(a.kamer || lerarenkamer), act:'voorbereiden' };
+  if(act==='aankomst'){
+    if(a.rol==='leerling') return {doel:inK(sp),act:'speelplaats'};
+    if(a.rol==='klusjes') return {doel:inK(sp),act:'klus'};
+    if(a.rol==='directie') return {doel:{x:wereld.ingang.x,y:wereld.ingang.y+1},act:'onthaal'};
+    return {doel:inK(wereld.lerarenkamer),act:'koffie'};
   }
-  if (act === 'speelplaats'){
-    if (a.rol === 'leraar' && !a.toezicht) return { doel:inKamer(lerarenkamer), act:'koffie' };
-    return { doel:inKamer(speel), act: a.toezicht && a.rol !== 'leerling' ? 'toezicht' : 'speelplaats' };
+  if(act==='speelplaats'){
+    if(a.rol==='leraar'&&!a.toezicht) return {doel:inK(wereld.lerarenkamer),act:'koffie'};
+    return {doel:inK(sp),act:(a.rol!=='leerling'&&a.toezicht)?'toezicht':'spelen'};
   }
-  if (act === 'middag'){
-    if (a.rol === 'leerling') return r() > .45 ? { doel:inKamer(refter), act:'eten' } : { doel:inKamer(speel), act:'speelplaats' };
-    if (a.toezicht) return { doel:inKamer(speel), act:'toezicht' };
-    return { doel:inKamer(lerarenkamer), act:'pauze' };
+  if(act==='middag'){
+    if(a.rol==='leerling') return r()>.5?{doel:inK(wereld.refter),act:'eten'}:{doel:inK(sp),act:'spelen'};
+    if(a.toezicht) return {doel:inK(sp),act:'toezicht'};
+    return {doel:inK(wereld.lerarenkamer),act:'pauze'};
   }
-  // lesblok
-  if (a.rol === 'directie') return r() > .55 ? { doel:inKamer(bureau), act:'bureau' } : { doel:inKamer(kies(r, wereld.kamers.filter(k=>k.type==='klas'))), act:'klasbezoek' };
-  if (a.rol === 'secretariaat') return { doel:inKamer(bureau), act:'administratie' };
-  if (a.rol === 'klusjes') return { doel:inKamer(kies(r, wereld.kamers)), act:'klus' };
-  if (a.rol === 'zorg') return { doel:inKamer(kies(r, wereld.kamers.filter(k=>k.type==='klas'))), act:'zorg' };
-  return { doel:inKamer(a.kamer), act: a.rol === 'leerling' ? 'les' : 'lesgeven' };
+  if(a.rol==='leerling'&&a.zit) return {doel:{x:a.zit.x,y:a.zit.y},act:'les'};
+  if(a.rol==='leraar'&&a.kamer&&a.kamer.voor) return {doel:{x:a.kamer.voor.x,y:a.kamer.voor.y},act:'lesgeven'};
+  if(a.rol==='directie') return r()>.5?{doel:inK(wereld.bureau),act:'bureau'}:{doel:inK(kies(r,wereld.klassen)),act:'klasbezoek'};
+  if(a.rol==='secretariaat') return {doel:inK(wereld.bureau),act:'administratie'};
+  if(a.rol==='klusjes') return {doel:inK(kies(r,wereld.kamers)),act:'klus'};
+  if(a.rol==='zorg') return {doel:inK(kies(r,wereld.klassen)),act:'zorg'};
+  return {doel:inK(a.kamer),act:a.rol==='leerling'?'les':'lesgeven'};
 }
+function zetPad(a,d){ const p=zoekPad(a.x,a.y,d.x,d.y);
+  if(p&&p.length){a.pad=p;a.padi=0;} else {a.pad=null;a.x=d.x;a.y=d.y;} a.doel=d; }
 
-function zetPad(a, doel){
-  const pad = zoekPad(Math.round(a.x), Math.round(a.y), doel.x, doel.y);
-  if (pad && pad.length){ a.pad = pad; a.padi = 0; }
-  else { a.pad = null; a.x = doel.x; a.y = doel.y; }
-  a.doel = doel;
+/* ── renderdoel: low-res buffer, nearest-neighbour opgeschaald ── */
+const doek=document.getElementById('doek'), ctx=doek.getContext('2d',{alpha:false});
+let SCH=1, buf=null, bctx=null, BW=0, BH=0;
+let cam={x:0,y:0};
+let vignet=null;
+function maakBuffer(){
+  BW=Math.ceil(innerWidth/SCH); BH=Math.ceil(innerHeight/SCH);
+  const n=nieuw(BW,BH); buf=n.c; bctx=n.g;
+  const v=nieuw(BW,BH);
+  const vg=v.g.createRadialGradient(BW/2,BH/2,Math.min(BW,BH)*.38,BW/2,BH/2,Math.max(BW,BH)*.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(4,10,8,.55)');
+  v.g.fillStyle=vg; v.g.fillRect(0,0,BW,BH); vignet=v.c;
+  doek.width=innerWidth; doek.height=innerHeight;
+  doek.style.width=innerWidth+'px'; doek.style.height=innerHeight+'px';
+  ctx.imageSmoothingEnabled=false;
 }
+const S=(gx,gy)=>({x:Math.round((gx-gy)*(TW/2)+cam.x), y:Math.round((gx+gy)*(TH/2)+cam.y)});
+function naarRaster(bx,by){ const a=(bx-cam.x)/(TW/2), b=(by-cam.y)/(TH/2);
+  return {x:(a+b)/2,y:(b-a)/2}; }
 
-/* ── camera & doek ────────────────────────────────────────────── */
-const doek = document.getElementById('doek');
-const ctx = doek.getContext('2d', { alpha:false });
-let cam = { x:0, y:0, zoom:0.8 };
-let DPR = 1;
-function pasMaatAan(){
-  DPR = Math.min(2, window.devicePixelRatio || 1);
-  doek.width = Math.floor(innerWidth * DPR);
-  doek.height = Math.floor(innerHeight * DPR);
-  doek.style.width = innerWidth + 'px';
-  doek.style.height = innerHeight + 'px';
+const spel={min:492,snel:1,modus:'spiegel',klimaat:80,weer:'zon',ll:240,pers:20,
+  sel:null,bez:null,onthul:false,kracht:null,sleep:null,eff:[],bal:null,lb:'',dt:0,dak:true};
+
+/* ── sfeer: wolkenschaduwen, bladeren, vogels, regen ── */
+const wolken=[], bladeren=[], vogels=[], druppels=[];
+for(let i=0;i<7;i++) wolken.push({x:Math.random()*2400-600,y:Math.random()*1400-300,
+  r:70+Math.random()*130,s:6+Math.random()*8});
+for(let i=0;i<26;i++) bladeren.push({x:Math.random()*2000,y:Math.random()*1400,
+  vx:6+Math.random()*10,vy:3+Math.random()*5,f:Math.random()*6.28,k:kies(prng(i*7),['#e0873f','#c9503f','#e0b23f','#8f6b3f'])});
+for(let i=0;i<3;i++) vogels.push({x:Math.random()*2000,y:Math.random()*600,vx:22+Math.random()*14,f:Math.random()*6});
+
+function zonKleur(m){
+  if(m<500) return ['#f2a65a','#ffd9a0',.30];
+  if(m<560) return ['#ffe6b0','#fff4d8',.10];
+  if(m<880) return ['#ffffff','#ffffff',0];
+  if(m<950) return ['#f2a65a','#ffcf90',.22];
+  return ['#3a4a7a','#5a6ea8',.42];
 }
-addEventListener('resize', pasMaatAan);
-
-/* ── spelstaat ────────────────────────────────────────────────── */
-const spel = {
-  minuten: 492, snelheid: 1, modus:'spiegel', klimaat: 78, weer:'zon',
-  leerlingen: 220, personeel: 18, klassen: 8,
-  selectie: null, bezield: null, onthul: false, sleep: null, kracht: null,
-  bijeen: null, effecten: [], bal: null, laatsteBlok: '',
-};
-
-/* ── tegelkleuren (worden vervangen door kit-art, art-bible.md) ─ */
-const TEGELKLEUR = {
-  [T.GRAS]:  ['#3f7a4a','#457f50','#3a7145'],
-  [T.PAD]:   ['#b9ad92','#c2b69b','#b2a68c'],
-  [T.GANG]:  ['#cfc3ae','#d6cab5','#c8bca7'],
-  [T.KLAS]:  ['#d8b98c','#dfc094','#d1b285'],
-  [T.SPEEL]: ['#9aa8a2','#a3b1ab','#93a19b'],
-  [T.REFTER]:['#c9b3d1','#d0bad8','#c2acca'],
-  [T.ZAND]:  ['#e8d5a9','#efdcb0','#e1cea2'],
-  [T.DEUR]:  ['#8f5a3c','#96613f','#88553a'],
-  [T.BUREAU]:['#a9c4d8','#b0cbdf','#a2bdd1'],
-  [T.MUUR]:  ['#c96f4a','#d0764f','#c26845'],
-};
-const varKleur = (t, x, y) => { const a = TEGELKLEUR[t] || TEGELKLEUR[T.GRAS]; return a[(x*7 + y*13) % a.length]; };
-
-function tekenRuit(sx, sy, kleur, z){
-  const hw = (TW/2) * z, hh = (TH/2) * z;
-  ctx.beginPath();
-  ctx.moveTo(sx, sy - hh); ctx.lineTo(sx + hw, sy); ctx.lineTo(sx, sy + hh); ctx.lineTo(sx - hw, sy);
-  ctx.closePath(); ctx.fillStyle = kleur; ctx.fill();
+function tekenLucht(){
+  const m=spel.min, storm=spel.weer==='storm', nacht=spel.weer==='nacht'||m>950;
+  const g=bctx.createLinearGradient(0,0,0,BH);
+  if(storm){ g.addColorStop(0,'#3a4550'); g.addColorStop(1,'#242e33'); }
+  else if(nacht){ g.addColorStop(0,'#26314f'); g.addColorStop(1,'#3d4a5f'); }
+  else if(m<520){ g.addColorStop(0,'#f7b06a'); g.addColorStop(.5,'#a8d8ea'); g.addColorStop(1,'#cfe8d8'); }
+  else { g.addColorStop(0,'#63b8e8'); g.addColorStop(.55,'#a5dcee'); g.addColorStop(1,'#cfe8d8'); }
+  bctx.fillStyle=g; bctx.fillRect(0,0,BW,BH);
 }
-function schaduwKleur(kleur, f){
-  const n = parseInt(kleur.slice(1), 16);
-  const r0 = Math.max(0, ((n>>16)&255) * f | 0), g0 = Math.max(0, ((n>>8)&255) * f | 0), b0 = Math.max(0, (n&255) * f | 0);
-  return 'rgb(' + r0 + ',' + g0 + ',' + b0 + ')';
-}
-function tekenBlok(sx, sy, hoogte, kleur, z, alpha){
-  const hw = (TW/2) * z, hh = (TH/2) * z, hgt = hoogte * z;
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = schaduwKleur(kleur, .72);            // linkervlak
-  ctx.beginPath(); ctx.moveTo(sx - hw, sy); ctx.lineTo(sx, sy + hh);
-  ctx.lineTo(sx, sy + hh - hgt); ctx.lineTo(sx - hw, sy - hgt); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = schaduwKleur(kleur, .55);            // rechtervlak
-  ctx.beginPath(); ctx.moveTo(sx + hw, sy); ctx.lineTo(sx, sy + hh);
-  ctx.lineTo(sx, sy + hh - hgt); ctx.lineTo(sx + hw, sy - hgt); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = kleur;                                // bovenvlak
-  ctx.beginPath(); ctx.moveTo(sx, sy - hh - hgt); ctx.lineTo(sx + hw, sy - hgt);
-  ctx.lineTo(sx, sy + hh - hgt); ctx.lineTo(sx - hw, sy - hgt); ctx.closePath(); ctx.fill();
-  ctx.globalAlpha = 1;
-}
-
-const PROPKLEUR = { bank:'#8a5a3b', bord:'#2f4f43', reftertafel:'#b9925f', boom:'#2f6b3d', doel:'#dfe7e3', fietsen:'#5a6a64' };
-function tekenProp(p, sx, sy, z){
-  if (p.soort === 'boom'){
-    ctx.fillStyle = '#6b4a2f';
-    ctx.fillRect(sx - 3*z, sy - 20*z, 6*z, 20*z);
-    ctx.fillStyle = '#2f6b3d';
-    ctx.beginPath(); ctx.arc(sx, sy - 26*z, 16*z, 0, 6.283); ctx.fill();
-    ctx.fillStyle = '#3f8a4d';
-    ctx.beginPath(); ctx.arc(sx - 5*z, sy - 31*z, 10*z, 0, 6.283); ctx.fill();
-  } else if (p.soort === 'doel'){
-    ctx.strokeStyle = '#dfe7e3'; ctx.lineWidth = 3*z;
-    ctx.strokeRect(sx - 18*z, sy - 26*z, 36*z, 26*z);
-  } else {
-    const h = p.soort === 'bord' ? 20 : 11;
-    tekenBlok(sx, sy, h, PROPKLEUR[p.soort] || '#8a5a3b', z * .62, 1);
+function tekenWolkschaduw(dt){
+  if(spel.weer==='nacht') return;
+  bctx.fillStyle='rgba(20,40,30,'+(spel.weer==='storm'?.16:.07)+')';
+  for(const w of wolken){
+    w.x+=w.s*dt; if(w.x>2600) w.x=-700;
+    const sx=Math.round(w.x*.5+cam.x*.9), sy=Math.round(w.y*.5+cam.y*.9);
+    if(sx<-300||sx>BW+300) continue;
+    bctx.beginPath(); bctx.ellipse(sx,sy,w.r,w.r*.42,0,0,6.283); bctx.fill();
+    bctx.beginPath(); bctx.ellipse(sx+w.r*.6,sy+w.r*.1,w.r*.6,w.r*.3,0,0,6.283); bctx.fill();
   }
 }
+function tekenDeeltjes(dt){
+  // bladeren
+  if(spel.weer!=='nacht'){
+    for(const b of bladeren){
+      b.x-=b.vx*dt*(spel.weer==='storm'?3:1); b.y+=b.vy*dt; b.f+=dt*3;
+      if(b.x<-100){b.x=BW+100;b.y=Math.random()*BH;}
+      if(b.y>BH+50) b.y=-30;
+      bctx.fillStyle=b.k;
+      bctx.fillRect(Math.round(b.x),Math.round(b.y+Math.sin(b.f)*3),2,2);
+    }
+  }
+  // vogels
+  for(const v of vogels){
+    v.x+=v.vx*dt; v.f+=dt*7; if(v.x>BW+80) v.x=-80;
+    const y=v.y+Math.sin(v.f*.4)*6, w=Math.sin(v.f)>0?2:1;
+    bctx.fillStyle='#2b3a36';
+    bctx.fillRect(Math.round(v.x),Math.round(y),2,1);
+    bctx.fillRect(Math.round(v.x)-2,Math.round(y)-w,2,1);
+    bctx.fillRect(Math.round(v.x)+2,Math.round(y)-w,2,1);
+  }
+  // regen
+  const hev=spel.weer==='storm'?3:(spel.klimaat<45?1:0);
+  if(hev){
+    while(druppels.length<70*hev) druppels.push({x:Math.random()*BW,y:Math.random()*BH,s:240+Math.random()*260});
+    bctx.strokeStyle='rgba(200,224,240,.55)'; bctx.lineWidth=1; bctx.beginPath();
+    for(const d of druppels){ d.y+=d.s*dt; d.x+=34*dt;
+      if(d.y>BH){d.y=-10;d.x=Math.random()*BW;}
+      bctx.moveTo(d.x|0,d.y|0); bctx.lineTo((d.x|0)-2,(d.y|0)-7); }
+    bctx.stroke();
+  } else druppels.length=0;
+}
 
-/* ── licht & weer ─────────────────────────────────────────────── */
-function lichtOverlay(){
-  const m = spel.minuten;
-  let kl = null;
-  if (m < 505) kl = ['rgba(255,190,120,0.20)'];
-  else if (m > 900) kl = ['rgba(255,150,90,0.18)'];
-  if (spel.klimaat < 45) kl = ['rgba(60,70,90,' + (0.16 + (45 - spel.klimaat)/220) + ')'];
-  if (spel.weer === 'storm') kl = ['rgba(30,40,60,0.34)'];
-  if (kl){ ctx.fillStyle = kl[0]; ctx.fillRect(0, 0, doek.width, doek.height); }
-  if (spel.klimaat > 70 && spel.weer !== 'storm'){
-    ctx.fillStyle = 'rgba(255,225,150,0.07)'; ctx.fillRect(0, 0, doek.width, doek.height);
+/* ── hoofdtekening ── */
+const Sf=(gx,gy)=>({x:(gx-gy)*(TW/2)+cam.x, y:(gx+gy)*(TH/2)+cam.y});
+const muurAchtig=(x,y)=>{ const t=tg(x,y);
+  return t===T.MUUR||t===T.DEUR||t===T.BINNENMUUR||t===T.RAAM; };
+
+/* De hele grondlaag (vloer + slagschaduw) wordt één keer gebakken en daarna
+   als één blit getekend: scheelt duizenden tekenopdrachten per beeld.       */
+let grond=null;
+const GRONDX=()=>H*(TW/2), GRONDY=()=>TH;
+function bakGrond(){
+  const gw=(W+H)*(TW/2), gh=(W+H)*(TH/2)+TH*2;
+  const n=nieuw(gw,gh); grond=n.c; const g=n.g;
+  const P=(gx,gy)=>({x:(gx-gy)*(TW/2)+GRONDX(), y:(gx+gy)*(TH/2)+GRONDY()});
+  for(let gy=0;gy<H;gy++) for(let gx=0;gx<W;gx++){
+    const t=tg(gx,gy); if(VAST.has(t)) continue;
+    const p=P(gx,gy); const set=TEGELS[TEGELNAAM[t]]||TEGELS.gras;
+    g.drawImage(set[(gx*3+gy*5)%set.length], p.x-TW/2, p.y-TH/2);
+  }
+  // slagschaduw: licht uit het noordwesten, dus alles valt naar het zuidoosten
+  const gezien=new Set(), vlek=[];
+  const leg=(nx,ny,a)=>{ const k=ny*W+nx;
+    if(nx<0||ny<0||nx>=W||ny>=H||muurAchtig(nx,ny)||gezien.has(k)) return;
+    gezien.add(k); vlek.push({x:nx,y:ny,a}); };
+  for(let gy=0;gy<H;gy++) for(let gx=0;gx<W;gx++) if(muurAchtig(gx,gy)){
+    leg(gx+1,gy+1,.24); leg(gx+2,gy+2,.12); }
+  for(const p of wereld.props) if(p.s==='boom'||p.s==='boom2') leg(p.x+1,p.y+1,.15);
+  for(const v of vlek){ const p=P(v.x,v.y);
+    g.globalAlpha=v.a; g.fillStyle='#0e2119';
+    diamantPad(g,p.x,p.y,TW,TH); g.fill(); }
+  g.globalAlpha=1;
+  aardrand(g,P);
+}
+/* de rand van het domein als een plak aarde — geeft het diorama dikte */
+function aardrand(g,P){
+  const rand=[];
+  for(let x=0;x<W;x++) rand.push([x,H-1]);
+  for(let y=H-1;y>=0;y--) rand.push([W-1,y]);
+  const dikte=9;
+  for(const [gx,gy] of rand){
+    const p=P(gx,gy);
+    // zijkant van de plak
+    g.beginPath();
+    g.moveTo(p.x-TW/2,p.y); g.lineTo(p.x,p.y+TH/2);
+    g.lineTo(p.x+TW/2,p.y); g.lineTo(p.x+TW/2,p.y+dikte);
+    g.lineTo(p.x,p.y+TH/2+dikte); g.lineTo(p.x-TW/2,p.y+dikte);
+    g.closePath();
+    g.fillStyle = gx===W-1 ? '#4a3524' : '#5c422c'; g.fill();
+    g.fillStyle='rgba(0,0,0,.22)'; g.fillRect(p.x-TW/2,p.y+TH/2+dikte-2,TW,2);
+    // graszode bovenop de rand
+    g.fillStyle='#3c7433';
+    g.beginPath(); g.moveTo(p.x-TW/2,p.y); g.lineTo(p.x,p.y+TH/2);
+    g.lineTo(p.x+TW/2,p.y); g.lineTo(p.x+TW/2,p.y+2);
+    g.lineTo(p.x,p.y+TH/2+2); g.lineTo(p.x-TW/2,p.y+2); g.closePath(); g.fill();
   }
 }
-const druppels = [];
-function tekenRegen(dt){
-  const hevig = spel.weer === 'storm' ? 3 : (spel.klimaat < 45 ? 1 : 0);
-  if (!hevig){ druppels.length = 0; return; }
-  while (druppels.length < 60 * hevig) druppels.push({ x:Math.random()*doek.width, y:Math.random()*doek.height, s:400+Math.random()*500 });
-  ctx.strokeStyle = 'rgba(190,215,235,0.5)'; ctx.lineWidth = 1.4 * DPR;
-  ctx.beginPath();
-  for (const d of druppels){
-    d.y += d.s * dt * DPR; d.x += 60 * dt * DPR;
-    if (d.y > doek.height){ d.y = -20; d.x = Math.random()*doek.width; }
-    ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - 3*DPR, d.y - 11*DPR);
-  }
-  ctx.stroke();
+
+/* muurtegels wijzigen niet: één keer verzamelen */
+const muren=[];
+function bouwSchaduw(){ bakGrond(); muren.length=0;
+  for(let gy=0;gy<H;gy++) for(let gx=0;gx<W;gx++) if(muurAchtig(gx,gy)) muren.push({gx,gy});
 }
 
-/* ── tekenen ──────────────────────────────────────────────────── */
+/* gebakken schaduwvlek onder props en figuren (sneller dan een pad per beeld) */
+function bakVlek(w,h,a){ const {c,g}=nieuw(w,h);
+  g.globalAlpha=a; g.fillStyle='#0a1410';
+  g.beginPath(); g.ellipse(w/2,h/2,w/2,h/2,0,0,6.283); g.fill(); return c; }
+const VLEK=[8,12,16,20,26,32].map(w=>bakVlek(w,Math.max(4,Math.round(w*.45)),.22));
+const vlekVoor=w=>VLEK[clamp(Math.round(w/8)-1,0,VLEK.length-1)];
+
+/* gebakken lichtvlek voor bloom */
+function bakGlans(straal, kleur){
+  const d=straal*2, {c,g}=nieuw(d,d);
+  const rg=g.createRadialGradient(straal,straal,0,straal,straal,straal);
+  rg.addColorStop(0,kleur); rg.addColorStop(.4,mix(kleur,'#000000',.55)); rg.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=rg; g.beginPath(); g.arc(straal,straal,straal,0,6.283); g.fill();
+  return c;
+}
+const GLANS=bakGlans(26,'rgba(255,196,110,.55)'), GLANSK=bakGlans(16,'rgba(255,224,150,.6)');
+
+/* ── daken ── */
+const DAKKLEUR={pan:'#a8402e', lei:'#5b6672'};
+function dakVlak(P0,P1,P2,P3,kl,helder){
+  const basis = helder>=0 ? licht(kl,helder) : donk(kl,-helder);
+  bctx.beginPath(); bctx.moveTo(P0.x,P0.y); bctx.lineTo(P1.x,P1.y);
+  bctx.lineTo(P2.x,P2.y); bctx.lineTo(P3.x,P3.y); bctx.closePath();
+  bctx.fillStyle=basis; bctx.fill();
+  bctx.save(); bctx.clip();
+  const rijen=clamp(Math.round(Math.hypot(P3.x-P0.x,P3.y-P0.y)/3),3,40);
+  bctx.lineWidth=1;
+  for(let i=1;i<rijen;i++){ const t=i/rijen;
+    bctx.strokeStyle = i%2 ? 'rgba(20,8,4,.20)' : 'rgba(255,236,210,.08)';
+    bctx.beginPath();
+    bctx.moveTo((P0.x+(P3.x-P0.x)*t)|0,(P0.y+(P3.y-P0.y)*t)|0);
+    bctx.lineTo((P1.x+(P2.x-P1.x)*t)|0,(P1.y+(P2.y-P1.y)*t)|0); bctx.stroke(); }
+  const kolom=clamp(Math.round(Math.hypot(P1.x-P0.x,P1.y-P0.y)/5),3,40);
+  bctx.strokeStyle='rgba(20,8,4,.13)';
+  for(let j=1;j<kolom;j++){ const t=j/kolom;
+    bctx.beginPath();
+    bctx.moveTo((P0.x+(P1.x-P0.x)*t)|0,(P0.y+(P1.y-P0.y)*t)|0);
+    bctx.lineTo((P3.x+(P2.x-P3.x)*t)|0,(P3.y+(P2.y-P3.y)*t)|0); bctx.stroke(); }
+  bctx.restore();
+  // dakvoet met dikte
+  bctx.beginPath(); bctx.moveTo(P0.x,P0.y); bctx.lineTo(P1.x,P1.y);
+  bctx.lineTo(P1.x,P1.y+3); bctx.lineTo(P0.x,P0.y+3); bctx.closePath();
+  bctx.fillStyle=donk(kl,.52); bctx.fill();
+}
+function dakGevel(A,B,Nk,kl){
+  bctx.beginPath(); bctx.moveTo(A.x,A.y); bctx.lineTo(B.x,B.y); bctx.lineTo(Nk.x,Nk.y);
+  bctx.closePath(); bctx.fillStyle=donk(kl,.34); bctx.fill();
+  bctx.strokeStyle=licht(kl,.30); bctx.lineWidth=1;
+  bctx.beginPath(); bctx.moveTo(A.x,A.y); bctx.lineTo(Nk.x,Nk.y); bctx.lineTo(B.x,B.y); bctx.stroke();
+}
+function tekenDak(k,alfa){
+  if(alfa<=.02) return;
+  const kl=DAKKLEUR[k.dak]||DAKKLEUR.pan, ov=.4;
+  const bx0=k.x0-1, by0=k.y0-1, bx1=k.x1, by1=k.y1;
+  const hk=(gx,gy)=>{ const p=Sf(gx,gy); return {x:Math.round(p.x), y:Math.round(p.y)-MUURH}; };
+  const Nh=hk(bx0-.5-ov,by0-.5-ov), Eh=hk(bx1+.5+ov,by0-.5-ov),
+        Zh=hk(bx1+.5+ov,by1+.5+ov), Wh=hk(bx0-.5-ov,by1+.5+ov);
+  if(Math.max(Eh.x,Zh.x)<-40||Math.min(Nh.x,Wh.x)>BW+40) return;
+  if(Zh.y<-60||Nh.y>BH+60) return;
+  const spanX=bx1-bx0+1, spanY=by1-by0+1;
+  const RH=clamp(6+Math.min(spanX,spanY)*1.8,10,32);
+  const md=(a,b)=>({x:Math.round((a.x+b.x)/2), y:Math.round((a.y+b.y)/2)-RH});
+  bctx.globalAlpha=alfa;
+  if(spanX>=spanY){                       // nok evenwijdig aan gx
+    const A=md(Nh,Wh), B=md(Eh,Zh);
+    dakVlak(Wh,Zh,B,A,kl,-.16);           // zuidwestvlak, in de schaduw
+    dakVlak(Nh,Eh,B,A,kl,.14);            // noordoostvlak, in het licht
+    dakGevel(Nh,Wh,A,kl); dakGevel(Eh,Zh,B,kl);
+    nokKap(A,B,kl); schouw(A,B,kl,.3);
+  } else {                                // nok evenwijdig aan gy
+    const A=md(Nh,Eh), B=md(Wh,Zh);
+    dakVlak(Eh,Zh,B,A,kl,-.22);
+    dakVlak(Nh,Wh,B,A,kl,.20);
+    dakGevel(Nh,Eh,A,kl); dakGevel(Wh,Zh,B,kl);
+    nokKap(A,B,kl); schouw(A,B,kl,.25);
+  }
+  bctx.globalAlpha=1;
+}
+function nokKap(A,B,kl){
+  bctx.strokeStyle=licht(kl,.34); bctx.lineWidth=3;
+  bctx.beginPath(); bctx.moveTo(A.x,A.y); bctx.lineTo(B.x,B.y); bctx.stroke();
+  bctx.strokeStyle=donk(kl,.4); bctx.lineWidth=1;
+  bctx.beginPath(); bctx.moveTo(A.x,A.y+2); bctx.lineTo(B.x,B.y+2); bctx.stroke();
+}
+function schouw(A,B,kl,t){
+  const x=Math.round(A.x+(B.x-A.x)*t), y=Math.round(A.y+(B.y-A.y)*t);
+  bctx.fillStyle=donk('#b8724f',.18); bctx.fillRect(x-3,y-14,6,14);
+  bctx.fillStyle=donk('#b8724f',.42); bctx.fillRect(x,y-14,3,14);
+  bctx.fillStyle='#5a4a42'; bctx.fillRect(x-4,y-16,8,3);
+}
+
 function teken(dt){
-  const z = cam.zoom * DPR;
-  const cx = doek.width/2 + cam.x * DPR, cy = doek.height/2 + cam.y * DPR;
-  const S = (gx, gy) => ({ x: cx + (gx - gy) * (TW/2) * z, y: cy + (gx + gy) * (TH/2) * z });
+  tekenLucht();
+  tekenWolkschaduw(dt);
 
-  // hemel
-  const grad = ctx.createLinearGradient(0, 0, 0, doek.height);
-  const donker = spel.weer === 'storm' || spel.klimaat < 45;
-  grad.addColorStop(0, donker ? '#2b3742' : '#7fc4e8');
-  grad.addColorStop(1, donker ? '#1b2422' : '#bfe3d6');
-  ctx.fillStyle = grad; ctx.fillRect(0, 0, doek.width, doek.height);
+  // vloer + slagschaduw: één blit van de gebakken grondlaag
+  if(grond) bctx.drawImage(grond, Math.round(cam.x-GRONDX()), Math.round(cam.y-GRONDY()));
 
-  // vloerlaag
-  for (let gy = 0; gy < H; gy++){
-    for (let gx = 0; gx < W; gx++){
-      const t = tg(gx, gy);
-      if (t === T.MUUR) continue;
-      const p = S(gx, gy);
-      if (p.x < -TW*z || p.x > doek.width + TW*z || p.y < -TH*z*4 || p.y > doek.height + TH*z*4) continue;
-      tekenRuit(p.x, p.y, varKleur(t, gx, gy), z);
-      if (t === T.SPEEL && ((gx+gy) % 6 === 0)){ ctx.fillStyle = 'rgba(255,255,255,.06)'; ctx.fill(); }
-    }
+  // objecten diepte-gesorteerd, alleen wat in beeld staat
+  const obj=[];
+  const inBeeld=(gx,gy,marge)=>{ const sx=(gx-gy)*(TW/2)+cam.x, sy=(gx+gy)*(TH/2)+cam.y;
+    return sx>-marge&&sx<BW+marge&&sy>-marge-90&&sy<BH+marge+60; };
+  for(const m of muren) if(inBeeld(m.gx,m.gy,TW)) obj.push({d:m.gx+m.gy,s:'m',gx:m.gx,gy:m.gy});
+  for(const p of wereld.props) if(inBeeld(p.x,p.y,TW*1.5)) obj.push({d:p.x+p.y+.2,s:'p',p,gx:p.x,gy:p.y});
+  for(const a of agenten) if(a.zicht&&inBeeld(a.x,a.y,TW)) obj.push({d:a.x+a.y+.4,s:'a',a,gx:a.x,gy:a.y});
+  if(spel.bal) obj.push({d:spel.bal.x+spel.bal.y+.5,s:'b',gx:spel.bal.x,gy:spel.bal.y});
+  const focus=spel.bez||spel.sel;
+  for(const k of wereld.daken){
+    const open = !spel.dak || (focus && focus.x>=k.x0-1 && focus.x<=k.x1 && focus.y>=k.y0-1 && focus.y<=k.y1);
+    k.dakA += ((open?0:1)-k.dakA)*Math.min(1,dt*7);
+    obj.push({d:k.x1+k.y1+.7,s:'d',k,gx:k.x1,gy:k.y1});
   }
+  obj.sort((u,v)=>u.d-v.d);
 
-  // objectlaag: muren, props, agenten — diepte-gesorteerd
-  const objecten = [];
-  for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++)
-    if (tg(gx, gy) === T.MUUR) objecten.push({ d:gx+gy, soort:'muur', gx, gy });
-  for (const p of wereld.props) objecten.push({ d:p.x+p.y, soort:'prop', p, gx:p.x, gy:p.y });
-  for (const a of agenten) if (a.zichtbaar) objecten.push({ d:a.x+a.y, soort:'agent', a, gx:a.x, gy:a.y });
-  objecten.sort((u, v) => u.d - v.d || (u.soort === 'muur' ? -1 : 1));
-
-  const focus = spel.bezield || spel.selectie;
-  for (const o of objecten){
-    const p = S(o.gx, o.gy);
-    if (p.x < -TW*z*2 || p.x > doek.width + TW*z*2 || p.y < -160*z || p.y > doek.height + 120*z) continue;
-    if (o.soort === 'muur'){
-      let alpha = 1;
-      if (focus && o.d > focus.x + focus.y + 0.5 && Math.abs(o.gx - focus.x) < 9 && Math.abs(o.gy - focus.y) < 9) alpha = .28;
-      tekenBlok(p.x, p.y, 24, varKleur(T.MUUR, o.gx, o.gy), z, alpha);
-    } else if (o.soort === 'prop'){
-      tekenProp(o.p, p.x, p.y, z);
-    } else {
-      tekenAgent(o.a, p.x, p.y, z);
-    }
+  const donkerNu=spel.weer==='nacht'||spel.min>930||spel.min<430||spel.weer==='storm';
+  const glans=[];
+  for(const o of obj){
+    if(o.s==='d'){ tekenDak(o.k,o.k.dakA); continue; }
+    const p=S(o.gx,o.gy);
+    if(p.x<-TW*2||p.x>BW+TW*2||p.y<-120||p.y>BH+70) continue;
+    if(o.s==='m'){
+      const an=wereld.annex[o.gy*W+o.gx]===1, pre=an?'a':'b';
+      const deur=tg(o.gx,o.gy)===T.DEUR;
+      const raam=!deur && wereld.gevel[o.gy*W+o.gx]===1 && ((o.gx*7+o.gy*11)%3===0);
+      const set=MUUR[pre+(deur?'deur':raam?'raam':'vlak')];
+      let al=1;
+      if(focus&&o.d>focus.x+focus.y+.5&&Math.abs(o.gx-focus.x)<9&&Math.abs(o.gy-focus.y)<9) al=.22;
+      bctx.globalAlpha=al;
+      const yy=p.y+MUURDY, zL=!muurAchtig(o.gx,o.gy+1), zR=!muurAchtig(o.gx+1,o.gy);
+      bctx.drawImage(MUUR['kap'+pre],p.x-TW/2,yy);
+      if(zL) bctx.drawImage(set.L,p.x-TW/2,yy);
+      if(zR) bctx.drawImage(set.R,p.x-TW/2,yy);
+      if(raam&&donkerNu){
+        if(zL) bctx.drawImage(GLOED.L,p.x-TW/2,yy);
+        if(zR) bctx.drawImage(GLOED.R,p.x-TW/2,yy);
+        glans.push({x:p.x,y:yy+MCY-MUURH+12,g:GLANSK});
+      }
+      bctx.globalAlpha=1;
+    } else if(o.s==='p'){
+      const spr=PROPS[o.p.s]; if(!spr) continue;
+      if(o.p.s!=='hek'&&o.p.s!=='zandbakrand'&&o.p.s!=='haag'){
+        const v=vlekVoor(spr.width*.6);
+        bctx.drawImage(v,p.x+2-v.width/2,p.y+TH/2-1-v.height/2);
+      }
+      bctx.drawImage(spr,p.x-spr.width/2,p.y+TH/2-spr.height);
+      if(o.p.s==='lantaarn'&&donkerNu) glans.push({x:p.x-1,y:p.y+TH/2-spr.height+5,g:GLANS});
+    } else if(o.s==='b'){
+      bctx.fillStyle='rgba(10,20,16,.2)'; bctx.beginPath();
+      bctx.ellipse(p.x,p.y+4,4,2,0,0,6.283); bctx.fill();
+      bctx.fillStyle='#f6f3e7'; bctx.beginPath(); bctx.arc(p.x,p.y-2,3,0,6.283); bctx.fill();
+      bctx.fillStyle='#2b3a36'; bctx.fillRect(p.x-1,p.y-3,2,2);
+    } else tekenAgent(o.a,p.x,p.y);
   }
 
   // pad van de bezielde
-  if (spel.bezield && spel.bezield.pad){
-    ctx.fillStyle = 'rgba(86,192,162,.55)';
-    for (let i = spel.bezield.padi; i < spel.bezield.pad.length; i += 2){
-      const q = S(spel.bezield.pad[i].x, spel.bezield.pad[i].y);
-      ctx.beginPath(); ctx.arc(q.x, q.y, 3*z, 0, 6.283); ctx.fill();
+  if(spel.bez&&spel.bez.pad){
+    for(let i=spel.bez.padi;i<spel.bez.pad.length;i+=2){
+      const q=S(spel.bez.pad[i].x,spel.bez.pad[i].y);
+      bctx.fillStyle='rgba(95,211,173,.5)'; bctx.fillRect(q.x-1,q.y-1,2,2);
     }
   }
-  // effecten (zegen, bel)
-  for (const e of spel.effecten){
-    const q = S(e.x, e.y);
-    ctx.globalAlpha = Math.max(0, e.tijd);
-    ctx.fillStyle = e.kleur; ctx.font = (18*z) + 'px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(e.teken, q.x, q.y - (1 - e.tijd) * 40 * z - 30*z);
-    ctx.globalAlpha = 1;
+  for(const e of spel.eff){
+    const q=S(e.x,e.y);
+    bctx.globalAlpha=Math.max(0,e.t);
+    bctx.font='bold 12px system-ui'; bctx.textAlign='center';
+    bctx.fillStyle=e.k; bctx.fillText(e.tk,q.x,q.y-26-(1-e.t)*22);
+    bctx.globalAlpha=1;
   }
 
-  lichtOverlay();
-  tekenRegen(dt);
+  tekenDeeltjes(dt);
+
+  // kleurgradatie + vignet
+  const [tint,,al]=zonKleur(spel.min);
+  let a2=al; if(spel.weer==='storm') a2=Math.max(a2,.34); if(spel.weer==='nacht') a2=.46;
+  if(spel.klimaat<45) a2=Math.max(a2,(45-spel.klimaat)/150);
+  if(a2>0){ bctx.globalCompositeOperation='multiply';
+    bctx.fillStyle=(spel.weer==='storm'||spel.weer==='nacht'||spel.min>950)?'#4a5a86':tint;
+    bctx.globalAlpha=a2; bctx.fillRect(0,0,BW,BH);
+    bctx.globalAlpha=1; bctx.globalCompositeOperation='source-over'; }
+
+  // bloom: vensters en lantaarns gloeien ná de gradatie
+  if(glans.length){ bctx.globalCompositeOperation='lighter';
+    for(const gl of glans){
+      if(gl.x<-40||gl.x>BW+40||gl.y<-40||gl.y>BH+40) continue;
+      bctx.drawImage(gl.g,gl.x-gl.g.width/2,gl.y-gl.g.height/2); }
+    bctx.globalCompositeOperation='source-over'; }
+
+  if(spel.klimaat>72&&spel.weer==='zon'){ bctx.globalCompositeOperation='lighter';
+    bctx.fillStyle='rgba(255,226,150,.06)'; bctx.fillRect(0,0,BW,BH);
+    bctx.globalCompositeOperation='source-over'; }
+  if(vignet) bctx.drawImage(vignet,0,0);
+
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(buf,0,0,BW,BH,0,0,doek.width,doek.height);
 }
 
-function tekenAgent(a, sx, sy, z){
-  // schaduw
-  ctx.fillStyle = 'rgba(0,0,0,.22)';
-  ctx.beginPath(); ctx.ellipse(sx, sy + 2*z, 9*z, 4.5*z, 0, 0, 6.283); ctx.fill();
-
-  const schaal = (a.uiterlijk.klein ? 1.55 : 2) * z;
-  const spr = maakSprite(a.uiterlijk, a.richting === 'no' || a.richting === 'nw' ? 'no' : 'zo', a.frame);
-  const gespiegeld = a.richting === 'zw' || a.richting === 'nw';
-  const bw = 16 * schaal, bh = 24 * schaal;
-  ctx.imageSmoothingEnabled = false;
-  if (gespiegeld){
-    ctx.save(); ctx.translate(sx, 0); ctx.scale(-1, 1);
-    ctx.drawImage(spr, -bw/2, sy - bh + 3*z, bw, bh); ctx.restore();
-  } else {
-    ctx.drawImage(spr, sx - bw/2, sy - bh + 3*z, bw, bh);
+function tekenAgent(a,x,y){
+  const v=VLEK[0]; bctx.drawImage(v,x-v.width/2,y+TH/2-2-v.height/2);
+  const spr=maakSprite(a.uiterlijk,a.voor,a.frame);
+  if(a.spiegel){ bctx.save(); bctx.translate(x,0); bctx.scale(-1,1);
+    bctx.drawImage(spr,-9,y-24); bctx.restore(); }
+  else bctx.drawImage(spr,x-9,y-24);
+  if(spel.sel===a||spel.bez===a){
+    bctx.strokeStyle=spel.bez===a?'#f0c04a':'#5fd3ad'; bctx.lineWidth=1;
+    bctx.beginPath(); bctx.ellipse(x,y+TH/2-2,7,3.4,0,0,6.283); bctx.stroke();
   }
-
-  // selectie-ring
-  if (spel.selectie === a || spel.bezield === a){
-    ctx.strokeStyle = spel.bezield === a ? '#f2c14e' : '#56c0a2';
-    ctx.lineWidth = 2 * z;
-    ctx.beginPath(); ctx.ellipse(sx, sy + 2*z, 12*z, 6*z, 0, 0, 6.283); ctx.stroke();
+  if(a.sig&&a.sig.e!=='ok'&&(spel.onthul||spel.sel===a)){
+    const k=a.sig.e==='krit'?'#f0709c':'#f0c04a', by=y-30;
+    bctx.fillStyle='#f6f3e7'; bctx.fillRect(x-6,by-9,12,10);
+    bctx.fillRect(x-1,by+1,2,2);
+    bctx.fillStyle=k; bctx.font='bold 8px system-ui'; bctx.textAlign='center';
+    bctx.fillText(a.sig.e==='krit'?'!':'•',x,by-1);
   }
-  // signaal-ballon
-  if (a.signaal && (spel.onthul || spel.selectie === a) && a.signaal.ernst !== 'ok'){
-    const kl = a.signaal.ernst === 'krit' ? '#e2678f' : '#e0b84f';
-    const by = sy - bh - 6*z;
-    ctx.fillStyle = '#f6f3e7';
-    ctx.beginPath(); ctx.roundRect(sx - 11*z, by - 15*z, 22*z, 16*z, 4*z); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(sx - 3*z, by + 1*z); ctx.lineTo(sx, by + 5*z); ctx.lineTo(sx + 3*z, by + 1*z); ctx.fill();
-    ctx.fillStyle = kl; ctx.font = 'bold ' + (11*z) + 'px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText(a.signaal.ernst === 'krit' ? '!' : '•', sx, by - 3*z);
-  }
-  // praatballon
-  if (a.praat > 0){
-    ctx.fillStyle = 'rgba(246,243,231,.92)';
-    ctx.beginPath(); ctx.roundRect(sx + 6*z, sy - 44*z, 16*z, 10*z, 3*z); ctx.fill();
-    ctx.fillStyle = '#5a6a64'; ctx.font = (9*z) + 'px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText('···', sx + 14*z, sy - 36*z);
-  }
+  if(a.praat>0){ bctx.fillStyle='rgba(246,243,231,.9)'; bctx.fillRect(x+5,y-32,10,7);
+    bctx.fillStyle='#5a6a64'; bctx.fillRect(x+7,y-29,1,1); bctx.fillRect(x+9,y-29,1,1); bctx.fillRect(x+11,y-29,1,1); }
 }
 
-/* ── simulatie ────────────────────────────────────────────────── */
-const herplanRij = [];
-function werkAgentBij(a, dt){
-  const blok = blokVan(spel.minuten + a.offset).naam;
-  if (a.blok !== blok){
-    a.blok = blok;
-    if (!a.bezield && !herplanRij.includes(a)) herplanRij.push(a);
-  }
-  if (a.praat > 0) a.praat -= dt;
-
-  if (a.pad && a.padi < a.pad.length){
-    a.zichtbaar = true;
-    const n = a.pad[a.padi];
-    const dx = n.x - a.x, dy = n.y - a.y;
-    const afst = Math.hypot(dx, dy);
-    const stap = a.snelheid * dt * Math.min(4, spel.snelheid || 1);
-    if (afst <= stap){ a.x = n.x; a.y = n.y; a.padi++; }
-    else {
-      a.x += dx/afst * stap; a.y += dy/afst * stap;
-      a.richting = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'zo' : 'nw') : (dy > 0 ? 'zw' : 'no');
-    }
-    a.framet += dt * 8;
-    a.frame = 1 + (Math.floor(a.framet) % 2);
-    if (a.padi >= a.pad.length){
-      a.pad = null;
-      if (a.activiteit === 'weg') a.zichtbaar = false;
-    }
+/* ── simulatie ── */
+const herplan=[];
+function werkAgent(a,dt){
+  const bk=blokVan(spel.min+a.off).naam;
+  if(a.blok!==bk&&!a.bezield){ a.blok=bk; if(!herplan.includes(a)) herplan.push(a); }
+  if(a.praat>0) a.praat-=dt;
+  if(a.pad&&a.padi<a.pad.length){
+    a.zicht=true;
+    const n=a.pad[a.padi], dx=n.x-a.x, dy=n.y-a.y, d=Math.hypot(dx,dy);
+    const st=a.snel*dt*Math.min(4,spel.snel||1);
+    if(d<=st){a.x=n.x;a.y=n.y;a.padi++;}
+    else{ a.x+=dx/d*st; a.y+=dy/d*st;
+      if(Math.abs(dx)>Math.abs(dy)){a.voor=dx>0;a.spiegel=false;} else {a.voor=dy<0?false:true;a.spiegel=dy>0;}
+      if(dx<0&&Math.abs(dx)>Math.abs(dy)){a.voor=false;a.spiegel=true;} }
+    a.ft+=dt*7; a.frame=1+(Math.floor(a.ft)%4);
+    if(a.padi>=a.pad.length){ a.pad=null; if(a.act==='weg'||a.act==='ziek') a.zicht=false; }
   } else {
-    a.frame = 0;
-    // micro-beweging binnen de kamer: kleine onrust = leven
-    a.micro -= dt;
-    if (a.micro <= 0 && a.zichtbaar && !a.bezield){
-      a.micro = 3 + Math.random() * 6;
-      if (Math.random() > .55 && a.doel){
-        const nx = Math.round(a.x + (Math.random()*2-1)*2), ny = Math.round(a.y + (Math.random()*2-1)*2);
-        if (loopbaar(nx, ny) && tg(nx,ny) === tg(Math.round(a.x), Math.round(a.y))) zetPad(a, { x:nx, y:ny });
+    a.frame=0; a.micro-=dt;
+    if(a.micro<=0&&a.zicht&&!a.bezield){
+      a.micro=2.5+Math.random()*6;
+      if(Math.random()>.5&&a.doel){
+        const nx=Math.round(a.x+(Math.random()*2-1)*2), ny=Math.round(a.y+(Math.random()*2-1)*2);
+        if(loopbaar(nx,ny)&&tg(nx,ny)===tg(Math.round(a.x),Math.round(a.y))) zetPad(a,{x:nx,y:ny});
       }
     }
   }
 }
-
-function verwerkHerplan(){
-  let n = 0;
-  while (herplanRij.length && n < 14){
-    const a = herplanRij.shift();
-    const { doel, act } = bepaalDoel(a, spel.minuten);
-    a.activiteit = act;
-    if (act !== 'weg') a.zichtbaar = true;
-    zetPad(a, doel);
-    n++;
-  }
-}
-
-let praatTeller = 0;
+let praatT=0;
 function werkBij(dt){
-  const stap = dt * (spel.snelheid || 0);
-  if (spel.snelheid > 0){
-    spel.minuten += stap;
-    if (spel.minuten > 1010){ spel.minuten = 470; agenten.forEach(a => { a.blok = ''; }); }
-  }
-  verwerkHerplan();
-  for (const a of agenten) werkAgentBij(a, dt);
+  if(spel.snel>0){ spel.min+=dt*spel.snel;
+    if(spel.min>1010){ spel.min=470; agenten.forEach(a=>{a.blok='';a.ziek=false;}); } }
+  let n=0, budget=spel.spring?200:16;
+  while(herplan.length&&n<budget){ const a=herplan.shift();
+    const {doel,act}=bepaalDoel(a,spel.min); a.act=act;
+    if(act!=='weg'&&act!=='ziek') a.zicht=true;
+    if(spel.spring){ a.pad=null; a.padi=0; a.doel=doel; a.x=doel.x; a.y=doel.y; }
+    else zetPad(a,doel);
+    n++; }
+  if(spel.spring&&n>0&&!herplan.length) spel.spring=false;
+  for(const a of agenten) werkAgent(a,dt);
 
-  // praatjes: leven in de brouwerij
-  praatTeller -= dt;
-  if (praatTeller <= 0){
-    praatTeller = 1.2;
-    const zichtbaar = agenten.filter(a => a.zichtbaar && !a.pad);
-    for (let i = 0; i < Math.min(24, zichtbaar.length); i++){
-      const a = zichtbaar[Math.floor(Math.random() * zichtbaar.length)];
-      const b = zichtbaar[Math.floor(Math.random() * zichtbaar.length)];
-      if (a !== b && Math.hypot(a.x-b.x, a.y-b.y) < 1.8 && Math.random() > .5){ a.praat = 2.4; }
-    }
-  }
-  // effecten
-  for (const e of spel.effecten) e.tijd -= dt * .8;
-  spel.effecten = spel.effecten.filter(e => e.tijd > 0);
+  praatT-=dt;
+  if(praatT<=0){ praatT=1.1; const z=agenten.filter(a=>a.zicht&&!a.pad);
+    for(let i=0;i<20&&z.length>1;i++){ const a=z[(Math.random()*z.length)|0], b=z[(Math.random()*z.length)|0];
+      if(a!==b&&Math.hypot(a.x-b.x,a.y-b.y)<1.9&&Math.random()>.45) a.praat=2.2; } }
 
-  // bal op de speelplaats tijdens pauzes
-  const blok = blokVan(spel.minuten).activiteit;
-  if ((blok === 'speelplaats' || blok === 'middag') && !spel.bal){
-    const sp = wereld.kamers.find(k => k.type === 'speelplaats');
-    spel.bal = { x:sp.midden.x, y:sp.midden.y, dx:0, dy:0, t:0 };
-  }
-  if (spel.bal){
-    spel.bal.t -= dt;
-    if (spel.bal.t <= 0){
-      const sp = wereld.kamers.find(k => k.type === 'speelplaats');
-      spel.bal.t = 1.5 + Math.random()*2;
-      spel.bal.dx = (sp.x0 + Math.random()*(sp.x1-sp.x0) - spel.bal.x) * .35;
-      spel.bal.dy = (sp.y0 + Math.random()*(sp.y1-sp.y0) - spel.bal.y) * .35;
-    }
-    spel.bal.x += spel.bal.dx * dt; spel.bal.y += spel.bal.dy * dt;
-    if (blok !== 'speelplaats' && blok !== 'middag') spel.bal = null;
-  }
-  if (spel.bezield){ cam.x = -(spel.bezield.x - spel.bezield.y) * (TW/2) * cam.zoom;
-                     cam.y = -(spel.bezield.x + spel.bezield.y) * (TH/2) * cam.zoom; }
+  for(const e of spel.eff) e.t-=dt*.75;
+  spel.eff=spel.eff.filter(e=>e.t>0);
+
+  const bl=blokVan(spel.min).a;
+  if((bl==='speelplaats'||bl==='middag')&&!spel.bal){
+    const sp=wereld.speelplaats; spel.bal={x:sp.midden.x,y:sp.midden.y,dx:0,dy:0,t:0}; }
+  if(spel.bal){ spel.bal.t-=dt;
+    if(spel.bal.t<=0){ const sp=wereld.speelplaats; spel.bal.t=1+Math.random()*1.6;
+      spel.bal.dx=(sp.x0+2+Math.random()*(sp.x1-sp.x0-4)-spel.bal.x)*.5;
+      spel.bal.dy=(sp.y0+2+Math.random()*(sp.y1-sp.y0-4)-spel.bal.y)*.5; }
+    spel.bal.x+=spel.bal.dx*dt; spel.bal.y+=spel.bal.dy*dt;
+    if(bl!=='speelplaats'&&bl!=='middag') spel.bal=null; }
+
+  if(spel.bez){ cam.x=BW/2-(spel.bez.x-spel.bez.y)*(TW/2); cam.y=BH/2-(spel.bez.x+spel.bez.y)*(TH/2); }
 }
 
-/* ── invoer ───────────────────────────────────────────────────── */
-let sleepStart = null, gesleept = false;
-function schermNaarRaster(sx, sy){
-  const z = cam.zoom;
-  const wx = (sx - innerWidth/2 - cam.x), wy = (sy - innerHeight/2 - cam.y);
-  const g = naarRaster(wx / z, wy / z);
-  return { x: Math.round(g.gx), y: Math.round(g.gy) };
+/* ── invoer ── */
+let sl=null, gesleept=false;
+const bufPos=e=>({x:e.clientX/SCH, y:e.clientY/SCH});
+function agentOp(e){
+  const p=bufPos(e); let b=null,bd=13;
+  for(const a of agenten){ if(!a.zicht) continue;
+    const s=S(a.x,a.y), d=Math.hypot(s.x-p.x,s.y-p.y+10);
+    if(d<bd){bd=d;b=a;} }
+  return b;
 }
-function agentOpScherm(sx, sy){
-  let beste = null, bd = 34;
-  for (const a of agenten){
-    if (!a.zichtbaar) continue;
-    const px = innerWidth/2 + cam.x + (a.x - a.y) * (TW/2) * cam.zoom;
-    const py = innerHeight/2 + cam.y + (a.x + a.y) * (TH/2) * cam.zoom;
-    const d = Math.hypot(px - sx, py - sy - 18 * cam.zoom);
-    if (d < bd){ bd = d; beste = a; }
-  }
-  return beste;
-}
-doek.addEventListener('pointerdown', (e) => {
-  sleepStart = { x:e.clientX, y:e.clientY, camx:cam.x, camy:cam.y }; gesleept = false;
-  if (spel.kracht === 'verplaats'){
-    const a = agentOpScherm(e.clientX, e.clientY);
-    if (a && a.rol !== 'leerling'){ spel.sleep = a; zeg('Sleep ' + a.naam + ' naar een klaslokaal.'); }
-  }
-});
-doek.addEventListener('pointermove', (e) => {
-  if (!sleepStart) return;
-  const dx = e.clientX - sleepStart.x, dy = e.clientY - sleepStart.y;
-  if (Math.abs(dx) + Math.abs(dy) > 4) gesleept = true;
-  if (spel.sleep){
-    const g = schermNaarRaster(e.clientX, e.clientY);
-    spel.sleep.x = g.x; spel.sleep.y = g.y; spel.sleep.pad = null;
-  } else if (!spel.bezield){
-    cam.x = sleepStart.camx + dx; cam.y = sleepStart.camy + dy;
-  }
-});
-doek.addEventListener('pointerup', (e) => {
-  if (spel.sleep){
-    const g = schermNaarRaster(e.clientX, e.clientY);
-    const kamer = wereld.kamers.find(k => k.type === 'klas' && g.x >= k.x0 && g.x < k.x1 && g.y >= k.y0 && g.y < k.y1);
-    if (kamer){
-      spel.sleep.kamer = kamer; spel.sleep.blok = '';
-      zeg(spel.modus === 'spiegel'
-        ? '✋ ' + spel.sleep.naam + ' → ' + kamer.naam + '. In spiegelmodus wordt dit een échte vervangingstoewijzing, met bevestiging en auditregel.'
-        : '✋ ' + spel.sleep.naam + ' → ' + kamer.naam + '. Zandbak: niets wordt bewaard.');
-    }
-    spel.sleep = null; sleepStart = null; return;
-  }
-  if (!gesleept){
-    const a = agentOpScherm(e.clientX, e.clientY);
-    if (a){ spel.selectie = a; tekenPaneel(); }
-    else if (spel.bezield){
-      const g = schermNaarRaster(e.clientX, e.clientY);
-      if (loopbaar(g.x, g.y)) zetPad(spel.bezield, g);
-    } else { spel.selectie = null; tekenPaneel(); }
-  }
-  sleepStart = null;
-});
-doek.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const oud = cam.zoom;
-  cam.zoom = Math.max(.35, Math.min(2.2, cam.zoom * (e.deltaY > 0 ? .9 : 1.1)));
-  if (!spel.bezield){
-    const mx = e.clientX - innerWidth/2, my = e.clientY - innerHeight/2;
-    cam.x = mx - (mx - cam.x) * (cam.zoom / oud);
-    cam.y = my - (my - cam.y) * (cam.zoom / oud);
-  }
-}, { passive:false });
+doek.addEventListener('pointerdown',e=>{ sl={x:e.clientX,y:e.clientY,cx:cam.x,cy:cam.y}; gesleept=false;
+  if(spel.kracht==='verplaats'){ const a=agentOp(e);
+    if(a&&a.rol!=='leerling'){ spel.sleep=a; zeg('Sleep '+a.naam+' naar een klaslokaal.'); } } });
+doek.addEventListener('pointermove',e=>{ if(!sl) return;
+  const dx=e.clientX-sl.x, dy=e.clientY-sl.y;
+  if(Math.abs(dx)+Math.abs(dy)>4) gesleept=true;
+  if(spel.sleep){ const g=naarRaster(bufPos(e).x,bufPos(e).y);
+    spel.sleep.x=Math.round(g.x); spel.sleep.y=Math.round(g.y); spel.sleep.pad=null; }
+  else if(!spel.bez){ cam.x=sl.cx+dx/SCH; cam.y=sl.cy+dy/SCH; } });
+doek.addEventListener('pointerup',e=>{
+  if(spel.sleep){ const g=naarRaster(bufPos(e).x,bufPos(e).y);
+    const k=wereld.klassen.find(k=>g.x>=k.x0&&g.x<k.x1&&g.y>=k.y0&&g.y<k.y1);
+    if(k){ spel.sleep.kamer=k; spel.sleep.blok=''; spel.sleep.ziek=false;
+      zeg(spel.modus==='spiegel' ? '✋ '+spel.sleep.naam+' → '+k.naam+'. In spiegelmodus wordt dit een échte vervangingstoewijzing, met bevestiging en auditregel.'
+        : '✋ '+spel.sleep.naam+' → '+k.naam+'. Zandbak: niets wordt bewaard.'); }
+    spel.sleep=null; sl=null; return; }
+  if(!gesleept){ const a=agentOp(e);
+    if(a){ spel.sel=a; paneel(); }
+    else if(spel.bez){ const g=naarRaster(bufPos(e).x,bufPos(e).y);
+      if(loopbaar(Math.round(g.x),Math.round(g.y))) zetPad(spel.bez,{x:Math.round(g.x),y:Math.round(g.y)}); }
+    else { spel.sel=null; paneel(); } }
+  sl=null; });
+addEventListener('resize',()=>{ maakBuffer(); if(!spel.bez) centreer(); });
 
-/* ── krachten ─────────────────────────────────────────────────── */
-function zeg(t){
-  const el = document.getElementById('toast');
-  el.textContent = t; el.classList.add('zichtbaar');
-  clearTimeout(zeg.t); zeg.t = setTimeout(() => el.classList.remove('zichtbaar'), 4600);
+/* ── UI ── */
+function zeg(t){ const el=document.getElementById('toast'); el.textContent=t;
+  el.classList.add('zichtbaar'); clearTimeout(zeg.t);
+  zeg.t=setTimeout(()=>el.classList.remove('zichtbaar'),4800); }
+const eff=(x,y,tk,k)=>spel.eff.push({x,y,tk,k,t:1});
+const ROL={leraar:'leerkracht',leerling:'leerling',directie:'directeur',zorg:'zorgleerkracht',
+  klusjes:'klusjesman',secretariaat:'secretariaat',extern:'externe'};
+function paneel(){
+  const kop=document.getElementById('paneelkop'), inh=document.getElementById('paneelinhoud'), a=spel.sel;
+  if(a){ kop.textContent=a.naam;
+    const s=a.sig?'<span class="sig '+a.sig.e+'">'+(a.sig.e==='krit'?'niveau '+a.sig.n:a.sig.e==='ok'?'in orde':'let op')+'</span> '+a.sig.t
+      :'<span class="mini">geen openstaande signalen</span>';
+    inh.innerHTML='<div class="rij"><span>Rol</span><b>'+(ROL[a.rol]||a.rol)+'</b></div>'+
+      '<div class="rij"><span>Nu</span><b>'+a.act+'</b></div>'+
+      '<div class="rij"><span>Plek</span><b>'+(a.kamer?a.kamer.naam:'—')+'</b></div>'+
+      (a.toezicht?'<div class="rij"><span>Toezicht</span><b>ja</b></div>':'')+
+      '<div style="margin:.45rem 0 .1rem">'+s+'</div>'+
+      '<button class="knopje vol" data-a="bezielen">👁️ Kruip in dit lijf</button>'+
+      '<button class="knopje" data-a="zegen">💚 Waardering geven</button>'+
+      '<p class="mini" style="margin:.5rem 0 0">Uiterlijk = hash van het persoon-id: altijd dezelfde figuur, zonder extra persoonsgegeven.</p>';
+  } else { kop.textContent='De school';
+    const t=r=>agenten.filter(x=>x.rol===r).length, aanw=agenten.filter(x=>x.zicht).length;
+    const sig=agenten.filter(x=>x.sig&&x.sig.e!=='ok').length;
+    const kw=spel.klimaat>75?'bloeiend':spel.klimaat>55?'goed':spel.klimaat>40?'onder druk':'zorgwekkend';
+    inh.innerHTML='<div class="rij"><span>Leerlingen</span><b>'+t('leerling')+'</b></div>'+
+      '<div class="rij"><span>Leerkrachten</span><b>'+(t('leraar')+t('zorg'))+'</b></div>'+
+      '<div class="rij"><span>Overig personeel</span><b>'+(t('directie')+t('secretariaat')+t('klusjes'))+'</b></div>'+
+      '<div class="rij"><span>Nu aanwezig</span><b>'+aanw+'</b></div>'+
+      '<div class="rij"><span>Open signalen</span><b>'+sig+'</b></div>'+
+      '<div style="margin-top:.5rem"><span class="mini">Schoolklimaat — '+kw+'</span><div class="balkje"><i style="width:'+
+      spel.klimaat+'%;background:'+(spel.klimaat>55?'var(--merk)':spel.klimaat>40?'var(--amber)':'var(--karmozijn)')+'"></i></div></div>'+
+      '<p class="mini">Weer en kleur volgen dit klimaat: geen sfeerbeeld maar de staat van je verplichtingen, geaggregeerd.</p>'; }
 }
-function effect(x, y, teken, kleur){ spel.effecten.push({ x, y, teken, kleur, tijd:1 }); }
+document.getElementById('paneelinhoud').addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]'); if(b) document.querySelector('.kracht[data-kracht="'+b.dataset.a+'"]').click(); });
 
-document.querySelectorAll('.kracht').forEach(k => k.addEventListener('click', () => {
-  const soort = k.dataset.kracht;
-  if (soort === 'bezielen'){
-    if (spel.bezield){ spel.bezield.bezield = false; spel.bezield = null; doek.classList.remove('bezield'); zeg('Je verlaat het lichaam. Je bent weer boven de school.'); }
-    else if (spel.selectie){
-      spel.bezield = spel.selectie; spel.bezield.bezield = true; doek.classList.add('bezield');
-      cam.zoom = Math.max(cam.zoom, 1.25);
-      zeg('👁️ Je bent nu ' + spel.selectie.naam + '. Klik op de vloer om te lopen — de school leeft door om je heen.');
-    } else zeg('Klik eerst iemand aan.');
-  }
-  if (soort === 'onthullen'){
-    spel.onthul = !spel.onthul;
-    zeg(spel.onthul ? '✨ Alle openstaande signalen zijn zichtbaar boven de hoofden.' : 'Signalen weer verborgen.');
-  }
-  if (soort === 'bijeen'){
-    const mid = spel.bezield || spel.selectie || { x:wereld.kamers.find(c=>c.type==='speelplaats').midden.x, y:wereld.kamers.find(c=>c.type==='speelplaats').midden.y };
-    let n = 0;
-    for (const a of agenten){
-      if (!a.zichtbaar || a === spel.bezield) continue;
-      if (Math.hypot(a.x-mid.x, a.y-mid.y) < 9 && n < 40){
-        zetPad(a, { x:Math.round(mid.x + (Math.random()*4-2)), y:Math.round(mid.y + (Math.random()*4-2)) });
-        a.blok = 'bijeen'; n++;
-      }
-    }
-    effect(mid.x, mid.y, '🔔', '#f2c14e');
-    zeg('🔔 ' + n + ' mensen komen samen. (In spiegelmodus: een gesprek of overleg plannen.)');
-  }
-  if (soort === 'verplaats'){
-    spel.kracht = spel.kracht === 'verplaats' ? null : 'verplaats';
-    k.setAttribute('aria-pressed', String(spel.kracht === 'verplaats'));
-    zeg(spel.kracht ? '✋ Pak een leerkracht op en laat hem los op een klaslokaal.' : 'Hand losgelaten.');
-  }
-  if (soort === 'vooruit'){
-    const nu = spel.minuten;
-    const volgend = BLOKKEN.find(b => b.v > nu) || BLOKKEN[1];
-    spel.minuten = volgend.v > nu ? volgend.v : 480;
-    agenten.forEach(a => { a.blok = ''; });
-    zeg('⏩ Doorgespoeld naar ' + volgend.naam + ' (' + klokTekst(spel.minuten) + ').');
-  }
-  if (soort === 'zegen'){
-    const a = spel.selectie || spel.bezield;
-    if (!a) return zeg('Klik eerst iemand aan.');
-    effect(a.x, a.y, '💚', '#7fd694');
-    spel.klimaat = Math.min(100, spel.klimaat + 2);
-    zeg('💚 Waardering voor ' + a.naam + '. (In het platform: een kudo of een gespreksnotitie — Fase 2.)');
-    tekenPaneel();
-  }
-  if (soort !== 'verplaats'){ document.querySelector('.kracht[data-kracht="verplaats"]').setAttribute('aria-pressed','false'); spel.kracht = null; }
+document.querySelectorAll('.kracht').forEach(k=>k.addEventListener('click',()=>{
+  const s=k.dataset.kracht;
+  if(s==='bezielen'){
+    if(spel.bez){ spel.bez.bezield=false; spel.bez=null; doek.classList.remove('bezield');
+      centreer(); zeg('Je verlaat het lichaam.'); }
+    else if(spel.sel){ spel.bez=spel.sel; spel.bez.bezield=true; doek.classList.add('bezield');
+      if(SCH<3) zetZoom(3); zeg('👁️ Je bent nu '+spel.sel.naam+'. Klik op de vloer om te lopen.'); }
+    else zeg('Klik eerst iemand aan.'); }
+  if(s==='onthullen'){ spel.onthul=!spel.onthul; k.setAttribute('aria-pressed',String(spel.onthul));
+    zeg(spel.onthul?'✨ Alle openstaande signalen zijn zichtbaar.':'Signalen verborgen.'); }
+  if(s==='bijeen'){ const m=spel.bez||spel.sel||wereld.speelplaats.midden; let n=0;
+    for(const a of agenten){ if(!a.zicht||a===spel.bez) continue;
+      if(Math.hypot(a.x-m.x,a.y-m.y)<10&&n<45){ zetPad(a,{x:Math.round(m.x+(Math.random()*5-2.5)),y:Math.round(m.y+(Math.random()*5-2.5))});
+        a.blok='bijeen'; n++; } }
+    eff(m.x,m.y,'🔔','#f0c04a'); zeg('🔔 '+n+' mensen komen samen.'); }
+  if(s==='verplaats'){ spel.kracht=spel.kracht==='verplaats'?null:'verplaats';
+    k.setAttribute('aria-pressed',String(!!spel.kracht));
+    zeg(spel.kracht?'✋ Pak een leerkracht op en laat los op een klas.':'Hand losgelaten.'); }
+  if(s==='vooruit'){ const v=BLOKKEN.find(b=>b.v>spel.min)||BLOKKEN[1];
+    spel.min=v.v>spel.min?v.v:478; agenten.forEach(a=>a.blok='');
+    zeg('⏩ '+v.naam+' — '+klokT(spel.min)); }
+  if(s==='zegen'){ const a=spel.sel||spel.bez; if(!a) return zeg('Klik eerst iemand aan.');
+    eff(a.x,a.y,'💚','#8ce39f'); spel.klimaat=Math.min(100,spel.klimaat+2);
+    document.getElementById('tc-kl').value=spel.klimaat; zeg('💚 Waardering voor '+a.naam+'.'); paneel(); }
 }));
 
-/* ── panelen ──────────────────────────────────────────────────── */
-const ROLNAAM = { leraar:'leerkracht', leerling:'leerling', directie:'directeur', zorg:'zorgleerkracht',
-                  klusjes:'klusjesman', secretariaat:'secretariaat', extern:'externe' };
-function tekenPaneel(){
-  const kop = document.getElementById('paneelkop'), inh = document.getElementById('paneelinhoud');
-  const a = spel.selectie;
-  if (a){
-    kop.textContent = a.naam;
-    const sig = a.signaal
-      ? '<span class="sig ' + a.signaal.ernst + '">' + (a.signaal.ernst === 'krit' ? 'niveau ' + a.signaal.niveau : a.signaal.ernst === 'ok' ? 'in orde' : 'let op') + '</span> ' + a.signaal.tekst
-      : '<span class="mini">geen openstaande signalen</span>';
-    inh.innerHTML =
-      '<div class="rij"><span>Rol</span><b>' + (ROLNAAM[a.rol] || a.rol) + '</b></div>' +
-      '<div class="rij"><span>Nu bezig met</span><b>' + a.activiteit + '</b></div>' +
-      '<div class="rij"><span>Plek</span><b>' + (a.kamer ? a.kamer.naam : '—') + '</b></div>' +
-      (a.vak ? '<div class="rij"><span>Vak</span><b>' + a.vak + '</b></div>' : '') +
-      (a.toezicht ? '<div class="rij"><span>Toezicht</span><b>ja</b></div>' : '') +
-      '<div style="margin:.5rem 0 .2rem">' + sig + '</div>' +
-      '<button class="knopje vol" data-actie="bezielen">👁️ Kruip in dit lijf</button>' +
-      '<button class="knopje" data-actie="zegen">💚 Waardering geven</button>' +
-      '<p class="mini" style="margin:.6rem 0 0">Avatar is afgeleid uit een hash van het persoon-id: altijd dezelfde figuur, zonder één extra persoonsgegeven.</p>';
-  } else {
-    kop.textContent = 'De school';
-    const tel = (rol) => agenten.filter(x => x.rol === rol).length;
-    const aanwezig = agenten.filter(x => x.zichtbaar).length;
-    const signalen = agenten.filter(x => x.signaal && x.signaal.ernst !== 'ok').length;
-    const klimaatwoord = spel.klimaat > 75 ? 'bloeiend' : spel.klimaat > 55 ? 'goed' : spel.klimaat > 40 ? 'onder druk' : 'zorgwekkend';
-    inh.innerHTML =
-      '<div class="rij"><span>Leerlingen</span><b>' + tel('leerling') + '</b></div>' +
-      '<div class="rij"><span>Leerkrachten</span><b>' + (tel('leraar') + tel('zorg')) + '</b></div>' +
-      '<div class="rij"><span>Overig personeel</span><b>' + (tel('directie') + tel('secretariaat') + tel('klusjes')) + '</b></div>' +
-      '<div class="rij"><span>Externen op school</span><b>' + agenten.filter(x => x.rol === 'extern' && x.zichtbaar).length + '</b></div>' +
-      '<div class="rij"><span>Nu aanwezig</span><b>' + aanwezig + '</b></div>' +
-      '<div class="rij"><span>Open signalen</span><b>' + signalen + '</b></div>' +
-      '<div style="margin-top:.6rem"><span class="mini">Schoolklimaat — ' + klimaatwoord + '</span>' +
-      '<div class="balkje"><i style="width:' + spel.klimaat + '%;background:' +
-        (spel.klimaat > 55 ? 'var(--merk)' : spel.klimaat > 40 ? 'var(--amber)' : 'var(--karmozijn)') + '"></i></div></div>' +
-      '<p class="mini">Het weer en de kleuren volgen dit klimaat: het is geen sfeerbeeld maar de staat van je verplichtingen, geaggregeerd — nooit per persoon.</p>';
+document.querySelectorAll('[data-modus]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-modus]').forEach(x=>x.removeAttribute('aria-pressed'));
+  b.setAttribute('aria-pressed','true'); spel.modus=b.dataset.modus;
+  const tc=document.getElementById('tycoon'); tc.classList.toggle('aan',spel.modus!=='spiegel');
+  tc.querySelectorAll('input[type=range]').forEach(i=>i.disabled=spel.modus==='zandbak');
+  zeg(spel.modus==='spiegel'?'🪞 Spiegel: de echte school van vandaag. Handelingen schrijven mét audit.'
+    :spel.modus==='zandbak'?'🧪 Zandbak: wat-als op echte cijfers. Niets wordt bewaard.'
+    :'🎮 Vrij spel: fictieve school, echte Vlaamse regels. Alles mag.'); }));
+document.querySelectorAll('[data-snel]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('[data-snel]').forEach(x=>x.removeAttribute('aria-pressed'));
+  b.setAttribute('aria-pressed','true'); spel.snel=+b.dataset.snel; }));
+function zetZoom(v){ SCH=v; document.querySelectorAll('[data-zoom]').forEach(x=>
+    x.setAttribute('aria-pressed',String(+x.dataset.zoom===v)));
+  const oudBW=BW,oudBH=BH; maakBuffer();
+  cam.x+=(BW-oudBW)/2; cam.y+=(BH-oudBH)/2; }
+document.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>zetZoom(+b.dataset.zoom)));
+document.getElementById('dakknop').addEventListener('click',e=>{ spel.dak=!spel.dak;
+  e.currentTarget.setAttribute('aria-pressed',String(spel.dak));
+  zeg(spel.dak?'🏠 Daken terug op het gebouw.':'👁️ Daken weg — je kijkt in elk lokaal.'); });
+document.getElementById('tijdbalk').addEventListener('input',e=>{
+  spel.min=+e.target.value; spel.spring=true; agenten.forEach(a=>a.blok=''); });
+const kop=(id,w,fn)=>{ const el=document.getElementById(id);
+  el.addEventListener('input',()=>{ document.getElementById(w).textContent=el.value; fn(+el.value); }); };
+kop('tc-ll','tc-llw',v=>{spel.ll=v;herbouw();});
+kop('tc-lk','tc-lkw',v=>{spel.pers=v;herbouw();});
+document.getElementById('tc-kl').addEventListener('input',e=>{ spel.klimaat=+e.target.value;
+  document.getElementById('tc-klw').textContent=spel.klimaat>75?'bloeiend':spel.klimaat>55?'goed':spel.klimaat>40?'onder druk':'zorgwekkend';
+  if(spel.klimaat>45&&spel.weer==='storm') spel.weer='zon'; paneel(); });
+document.querySelectorAll('.geb').forEach(g=>g.addEventListener('click',()=>{
+  const s=g.dataset.geb;
+  if(s==='griep'){ let n=0; for(const a of agenten.filter(a=>a.rol==='leraar')){ if(n>=4) break;
+      a.ziek=true; a.blok=''; n++; } spel.klimaat=Math.max(0,spel.klimaat-16);
+    zeg('🤧 Griepgolf: '+n+' klassen zonder leerkracht. Gebruik ✋ Verplaats.'); }
+  if(s==='feest'){ const m=wereld.speelplaats.midden; let n=0;
+    for(const a of agenten){ if(a.zicht&&n<160){ zetPad(a,{x:Math.round(m.x+(Math.random()*10-5)),y:Math.round(m.y+(Math.random()*12-6))});
+      a.blok='feest'; n++; } } eff(m.x,m.y,'🎉','#f0c04a'); spel.klimaat=Math.min(100,spel.klimaat+8);
+    zeg('🎉 Schoolfeest! Iedereen naar de speelplaats.'); }
+  if(s==='storm'){ spel.weer='storm'; zeg('⛈️ Storm boven de school.'); }
+  if(s==='zon'){ spel.weer='zon'; spel.klimaat=Math.min(100,spel.klimaat+10); zeg('☀️ Stralende dag.'); }
+  if(s==='nacht'){ spel.weer='nacht'; zeg('🌙 Avondlicht — de ramen gloeien.'); }
+  document.getElementById('tc-kl').value=spel.klimaat; paneel(); }));
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Lerarenkamer — het intranet van de school.
+   Geen losse folder maar de plek waar het team samenkomt: prikbord, wie is
+   wie, welke plannen er liggen en welke beleidskeuzes de directie maakt.
+   Elke keuze verwijst naar het kader waarin ze genomen moet worden, en werkt
+   meteen door in de simulatie.                                              */
+
+const AMBTEN={
+  leraar:['onderwijzer','kleuteronderwijzer','leermeester L.O.','leermeester NCZ','leermeester r.-k. godsdienst'],
+  zorg:['zorgcoördinator','zorgleerkracht','leerkracht ondersteuningsnetwerk'],
+  directie:['directeur'], secretariaat:['administratief medewerker'],
+  klusjes:['klusjesman/-vrouw'], extern:['externe ondersteuner'] };
+const DREMPEL=290;                      // TADD: 290 kalenderdagen (PERS/2019/03)
+
+function dossier(a){
+  if(a.dos) return a.dos;
+  const r=prng(hash32(a.id+'|dossier'));
+  const lijst=AMBTEN[a.rol]||['personeelslid'];
+  const onderwijs = a.rol==='leraar'||a.rol==='zorg';
+  let dagen=Math.floor(40+r()*950);
+  // een vooraf gezet signaal bepaalt mee het dossier, anders spreken ze elkaar tegen
+  if(a.sig&&/288\/290/.test(a.sig.t)) dagen=288;
+  else if(a.sig&&/beoordeling/.test(a.sig.t)) dagen=DREMPEL+Math.floor(r()*380);
+  let statuut;
+  if(a.rol==='directie') statuut='vastbenoemd';
+  else if(a.rol==='extern') statuut='externe dienst';
+  else if(!onderwijs) statuut = dagen>=760 ? 'vastbenoemd' : 'contractueel';
+  else statuut = dagen>=760 ? 'vastbenoemd' : dagen>=DREMPEL ? 'TADD' : 'TABD';
+  let sig=a.sig;
+  if(!sig){
+    if(statuut==='TABD'&&dagen>=DREMPEL-45) sig={e:'let',t:'drempel TADD nadert ('+dagen+'/'+DREMPEL+')'};
+    else if(statuut==='TADD'&&r()>.70) sig={e:'krit',t:'beoordeling vóór 30/06 — nog niet ingepland'};
+    else if(onderwijs&&r()>.86) sig={e:'let',t:'functioneringsgesprek > 2 jaar geleden'};
+    else sig={e:'ok',t:'niets openstaand'};
+  }
+  a.dos={ ambt:kies(r,lijst), dagen, statuut, sig, onderwijs,
+    opdracht: onderwijs ? [24,24,24,20,18,12,6][Math.floor(r()*7)] : null,
+    beurten: (onderwijs||a.rol==='klusjes') ? Math.floor(r()*16) : null,
+    sinds:(2016+Math.floor(r()*10))+'-09-01' };
+  return a.dos;
+}
+const personeel=()=>agenten.filter(a=>a.rol!=='leerling');
+
+/* ── prikbord ── */
+const VASTE_BRIEFJES=[
+  {k:'nieuw',s:'📌',t:'Pedagogische studiedag — dinsdag 14 oktober',
+   p:'Halve dag rond differentiatie in de klas. Voormiddag les volgens rooster, namiddag vrij voor de leerlingen. Wie opvang doet, tekent in bij het secretariaat.',
+   m:['directie','12/09'] },
+  {k:'',s:'🏊',t:'Zwemkalender tweede trimester',
+   p:'L3 en L4 elke donderdag, bus vertrekt om 13u10 aan de poort. Het zwembadtijdslot en de bus zijn externe ankers: verschuiven kan niet, vervangen wel.',
+   m:['leermeester L.O.','08/09'] },
+  {k:'',s:'🏃',t:'Sportdag 22 mei — zes begeleiders gezocht',
+   p:'Vrijwillig. Wie meegaat, valt die dag weg uit de toezichtbeurtrol; dat wordt automatisch verrekend in de tellers.',
+   m:['werkgroep sport','05/09'] },
+  {k:'nieuw',s:'👋',t:'Welkom aan onze nieuwe collega',
+   p:'Youssef Benali start als leermeester L.O. Zijn dienstanciënniteit begint vandaag te lopen — de TADD-teller staat op 0/290.',
+   m:['directie','01/09'] },
+  {k:'let',s:'🔥',t:'Brandoefening deze week',
+   p:'Onaangekondigd, ergens tussen dinsdag en donderdag. Verzamelpunt: de speelplaats aan de doelen. Klaslijsten meenemen.',
+   m:['preventieadviseur','09/09'] },
+  {k:'',s:'📖',t:'Nascholing formatief evalueren — 3 plaatsen vrij',
+   p:'Drie halve dagen, gespreid over het schooljaar. Inschrijven via het secretariaat; de vervanging wordt intern geregeld.',
+   m:['nascholingsplan','04/09'] },
+  {k:'let',s:'⚖️',t:'LOC-vergadering 12 november',
+   p:'Agenda: aanwendingscriteria van het lestijdenpakket, de beurtrol voor toezichten en het voorstel rond middagtoezicht. Opmerkingen vooraf welkom.',
+   m:['LOC-secretaris','10/09'] },
+  {k:'',s:'☕',t:'Koffiekas',
+   p:'Nog altijd €1 per kop, nog altijd niemand die de machine ontkalkt. Vrijwilligers melden zich bij de klusjesdienst.',
+   m:['iedereen','elke dag'] },
+];
+function prikbord(){
+  const b=[];
+  const open=personeel().filter(a=>dossier(a).sig.e!=='ok');
+  const krit=open.filter(a=>dossier(a).sig.e==='krit');
+  if(krit.length) b.push({k:'krit',s:'⏳',t:krit.length+' beoordeling'+(krit.length>1?'en':'')+' zonder datum',
+    p:'Voor '+krit.slice(0,3).map(a=>a.naam).join(', ')+(krit.length>3?' en anderen':'')+
+      ' loopt de TADD-termijn af op 30 juni. Zonder registratie geldt de beoordeling stilzwijgend als positief — dat is een beslissing die je dan niet meer zelf neemt.',
+    m:['deadline-engine','vandaag']});
+  if(open.length>krit.length) b.push({k:'let',s:'📈',t:(open.length-krit.length)+' dossiers naderen een drempel',
+    p:'Dienstanciënniteit is een teller die stil doorloopt. Wie de 290 kalenderdagen passeert, komt in aanmerking voor TADD — ook als niemand eraan dacht.',
+    m:['deadline-engine','vandaag']});
+  const ziek=agenten.filter(a=>a.ziek).length;
+  if(ziek) b.push({k:'krit',s:'🤧',t:ziek+' collega’s ziek gemeld',
+    p:'Vervangingen lopen via de 10-werkdagenregel: onder die drempel geen vervanger, daarboven met reaffectatiecheck. Verdeel de klas of zet de zorgleerkracht in — en log het, want anders bestaat het niet.',
+    m:['dagrooster','vandaag']});
+  if(spel.weer==='storm') b.push({k:'let',s:'⛈️',t:'Speeltijd binnen',
+    p:'Bij dit weer blijven de klassen binnen. Toezicht schuift mee naar de gangen — de beurtrol blijft gelden.',
+    m:['directie','nu']});
+  if(spel.klimaat>=78) b.push({k:'',s:'💚',t:'Het loopt goed',
+    p:'Het schoolklimaat staat op '+Math.round(spel.klimaat)+'/100. Dat is geen sfeerbeeld maar de geaggregeerde stand van je verplichtingen: weinig open signalen, billijk verdeelde beurten, plannen op tijd herzien.',
+    m:['dashboard','nu']});
+  return b.concat(VASTE_BRIEFJES);
+}
+
+/* ── plannen en deelplannen ── */
+const PLANNEN=[
+  {n:'Schoolwerkplan',st:'actueel',h:'30/06/2025',w:'schoolteam · advies schoolraad',
+   o:'Pedagogisch project, onderwijsaanbod, de wijze van evalueren en de leerlingenbegeleiding, samen in één document dat het team draagt.',
+   b:'Decreet basisonderwijs, art. 47'},
+  {n:'Beleid op leerlingenbegeleiding',st:'actueel',h:'15/05/2025',w:'zorgteam · CLB · schoolraad',
+   o:'De vier begeleidingsdomeinen — leren en studeren, onderwijsloopbaan, psychisch en sociaal functioneren, preventieve gezondheidszorg — met een continuüm van zorg.',
+   b:'Decreet leerlingenbegeleiding (2018) · samenwerkingsafspraken CLB'},
+  {n:'Taalbeleid en taalscreening',st:'te herzien',h:'2022',w:'taalwerkgroep · directie',
+   o:'Hoe de school omgaat met taalvaardigheid, meertaligheid en de verplichte screening bij de start van het lager onderwijs.',
+   b:'Decreet basisonderwijs · omzendbrief taalscreening'},
+  {n:'Globaal preventieplan (5 jaar) + jaaractieplan',st:'actueel',h:'01/01/2026',w:'preventieadviseur · comité PBW',
+   o:'Risicoanalyse, maatregelen en jaarlijkse acties rond welzijn op het werk. Inclusief psychosociale risico’s — werkdruk hoort daar expliciet bij.',
+   b:'Codex over het welzijn op het werk, boek I'},
+  {n:'Nascholingsplan',st:'actueel',h:'01/09/2025',w:'directie · overleg LOC',
+   o:'Welke professionalisering de school prioriteert, hoe ze wordt toegekend en hoe vervanging tijdens nascholing geregeld raakt.',
+   b:'Decreet rechtspositie · CAO-afspraken professionalisering'},
+  {n:'Evaluatiebeleid en functiebeschrijvingen',st:'te herzien',h:'2021',w:'directie · onderhandeling LOC',
+   o:'Elk personeelslid heeft een functiebeschrijving; evaluatie bouwt daarop voort. Voor TADD is de beoordeling een aparte, wettelijk geregelde figuur.',
+   b:'Decreet rechtspositie art. 73bis e.v. · omzendbrief PERS/2019/03'},
+  {n:'Aanwendingscriteria lestijdenpakket',st:'actueel',h:'20/06/2025',w:'onderhandeling LOC · schoolraad',
+   o:'Hoe lestijden, uren en punten verdeeld worden over klassen, zorg, ICT en beleidsondersteuning. Dit móet via het overlegorgaan — het is geen directiebeslissing alleen.',
+   b:'Decreet participatie op school · decreet rechtspositie'},
+  {n:'Arbeidsreglement + individuele dienstroosters',st:'actueel',h:'01/09/2025',w:'onderhandeling LOC',
+   o:'Het wekelijkse dienstrooster van elk personeelslid is bijlage bij het arbeidsreglement. Wie toezicht draait en wanneer, hoort daar zichtbaar in.',
+   b:'Wet arbeidsreglementen · decreet rechtspositie'},
+  {n:'Schoolkalender en vakantieregeling',st:'te herzien',h:'2025',w:'directie · schoolraad',
+   o:'Vanaf 1/9/2026 verdwijnen de facultatieve verlofdagen, gelden er maximaal drie halve pedagogische studiedagen in het basisonderwijs en komt er een opvangplicht.',
+   b:'Regelboek schooljaar 2026-2027 (⚠️ te valideren)'},
+  {n:'Verwerkingsregister en DPIA',st:'ontbreekt',h:'—',w:'DPO · schoolbestuur',
+   o:'Leerling- en personeelsgegevens verwerken vraagt een register en, bij risicovolle verwerkingen, een gegevensbeschermingseffectbeoordeling. Een simulatie op echte personeelscijfers valt daar mee onder.',
+   b:'AVG art. 30 en 35 · AI Act art. 5 (emotieherkenning op het werk verboden)'},
+  {n:'Beleid tegen pesten en welbevinden',st:'actueel',h:'11/2025',w:'zorgteam · leerlingenraad',
+   o:'Preventie, signalering en herstel. Gekoppeld aan de begeleidingsdomeinen uit het decreet leerlingenbegeleiding.',
+   b:'Decreet leerlingenbegeleiding · Onderwijsspiegel 2026'},
+  {n:'Digitaal beleidsplan (ICT)',st:'te herzien',h:'2023',w:'ICT-coördinator · schoolteam',
+   o:'Digitale sprong, mediawijsheid, toestellenbeleid en wie welke systemen beheert. Ook: welke leerlingdata waar terechtkomt.',
+   b:'Digisprong · AVG'},
+];
+
+/* ── beleidskeuzes die de simulatie sturen ── */
+const KEUZES=[
+  {id:'middag',t:'Middagtoezicht',k:0,
+   r:'Overleg in het lokaal comité · omzendbrieven BaO/97/8 en JUR1/11/AVW (⚠️ te valideren)',
+   o:[{l:'Vergoed, aparte toezichters',d:5,
+       g:'Middagtoezicht valt wettelijk buiten de schoolopdracht: je vergoedt het apart en mag er ook niet-personeelsleden voor inzetten. Het team houdt zijn pauze.'},
+      {l:'Deel van de schoolopdracht',d:-7,
+       g:'Goedkoper, maar het wringt: de middagpauze telt niet mee in de 26 klokuren schoolopdracht. Reken op discussie in het LOC — en op collega’s die nooit meer stil zitten.'}]},
+  {id:'beurt',t:'Verdeling van de toezichtbeurten',k:0,
+   r:'Transparantie via schoolraad/LOC · aanwendingscriteria zijn onderhandelingsmaterie',
+   o:[{l:'Billijk: laagste teller eerst',d:6,
+       g:'Elke beurt telt mee in een zichtbare teller. Op de vraag "waarom sta ik er wéér op?" bestaat een antwoord dat iedereen kan nalezen.'},
+      {l:'Vaste ploegen per week',d:-3,
+       g:'Voorspelbaar, maar wie ooit in de zware week belandde, blijft erin. Ongelijkheid stapelt zich stil op.'},
+      {l:'Vrijwillig invullen',d:-5,
+       g:'De gewilligen dragen alles. Werkt tot de eerste uitval — dan valt het systeem in één keer om.'}]},
+  {id:'verv',t:'Vervangingen bij afwezigheid',k:0,
+   r:'10-werkdagenregel met reaffectatiecheck · lerarenplatform (Bao/2018/01) (⚠️ te valideren)',
+   o:[{l:'Intern eerst, dan extern',d:3,
+       g:'Zorgleerkracht of beleidsondersteuner springt in. Snel en vertrouwd — maar je zorguren sneuvelen als eerste, en dat blijft vaak ongelogd.'},
+      {l:'Extern eerst',d:1,
+       g:'De zorg blijft draaien. Vraagt een pool die je moet onderhouden, en bij korte afwezigheden vindt niemand iemand.'},
+      {l:'Lerarenplatform',d:4,
+       g:'Vaste vervangers met een volwaardige aanstelling. Duurder in organisatie, veel stabieler voor de klassen — en hun anciënniteit loopt gewoon door.'}]},
+  {id:'tadd',t:'TADD-beoordelingen',k:0,
+   r:'Omzendbrief PERS/2019/03 · beoordeling ná 290 kalenderdagen / 200 effectief gepresteerde dagen',
+   o:[{l:'Jaarlijks gesprek met iedereen',d:6,
+       g:'Meer werk, maar niemand hoort voor het eerst op 29 juni dat er werkpunten zijn. De beoordeling wordt een bevestiging in plaats van een verrassing.'},
+      {l:'Alleen bij het bereiken van de drempel',d:-4,
+       g:'Minimaal wat moet. Het risico is de stilzwijgend positieve beoordeling: de termijn verstrijkt en de beslissing neemt zichzelf.'}]},
+  {id:'plage',t:'Plage-uren',k:0,
+   r:'Aanwendingscriteria via LOC · opdrachtbreuken met verschillende noemers',
+   o:[{l:'Gelijk verdelen over het team',d:4,
+       g:'Iedereen draagt evenveel boven de opdracht. Zichtbaar in de tellers, dus controleerbaar.'},
+      {l:'Bij wie het rooster het toelaat',d:-2,
+       g:'Roostertechnisch elegant, sociaal scheef: dezelfde namen komen elk jaar boven.'}]},
+  {id:'over',t:'Personeelsvergadering',k:0,
+   r:'Vergaderingen tellen mee in de opdracht · afspraken via arbeidsreglement',
+   o:[{l:'Kort en op vaste momenten',d:3,
+       g:'Voorspelbaar plannen, minder planlast. 83% van de onderwijsprofessionals noemt planlast een probleem (Onderwijsinspectie 2024).'},
+      {l:'Wanneer nodig',d:-3,
+       g:'Flexibel voor de directie, onvoorspelbaar voor iedereen met kinderopvang of een tweede school.'}]},
+  {id:'trans',t:'Wat het team mag inkijken',k:0,
+   r:'AVG: doelbinding en minimale gegevens · dienstroosters horen bij het arbeidsreglement',
+   o:[{l:'Rooster en tellers open voor iedereen',d:7,
+       g:'De kern van draagvlak: wie de verdeling kan nalezen, hoeft ze niet te vertrouwen. Persoonlijke dossiergegevens blijven uiteraard afgeschermd.'},
+      {l:'Alleen het eigen rooster',d:-2,
+       g:'Veilig gevoel, maar elke discussie over billijkheid gaat dan over vermoedens in plaats van cijfers.'}]},
+];
+const keuzeStand={}; KEUZES.forEach(k=>keuzeStand[k.id]=0);
+
+/* ── weekbeeld ── */
+function weekVoor(a){
+  const r=prng(hash32(a.id+'|week'));
+  const dagen=['ma','di','wo','do','vr'], blokken=['08:30','10:15','13:00','14:45'];
+  const rooster=[];
+  for(const d of dagen){
+    const rij=[];
+    for(let i=0;i<blokken.length;i++){
+      if(d==='wo'&&i>=2) rij.push({k:'vrij',t:'vrij'});
+      else if(r()>.82) rij.push({k:'toe',t:'toezicht'});
+      else if(r()>.93) rij.push({k:'vrij',t:'springuur'});
+      else rij.push({k:'les',t:'les'});
+    }
+    rooster.push({d,rij});
+  }
+  return {blokken,rooster};
+}
+
+/* ── weergave ── */
+const lk=document.getElementById('lk'), lkInhoud=document.getElementById('lkinhoud');
+let lkTab='prikbord', lkZoek='', lkAlleenSignaal=false;
+const ontsnap=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function toonLk(){
+  if(lkTab==='prikbord'){
+    lkInhoud.innerHTML='<p class="lkuitleg">Het prikbord van de lerarenkamer. Bovenaan hangt wat het systeem zelf ziet — openstaande dossiers, ziektemeldingen, het weer. Daaronder wat mensen er zelf op prikken.</p><div class="prik">'+
+      prikbord().map(b=>'<article class="briefje '+b.k+'"><span class="speld">'+b.s+'</span>'+
+        '<h3>'+ontsnap(b.t)+'</h3><p>'+ontsnap(b.p)+'</p>'+
+        '<div class="meta"><span>'+ontsnap(b.m[0])+'</span><span>'+ontsnap(b.m[1])+'</span></div></article>').join('')+
+      '</div>';
+  }
+  else if(lkTab==='team'){
+    let lijst=personeel();
+    if(lkZoek) lijst=lijst.filter(a=>(a.naam+' '+dossier(a).ambt).toLowerCase().includes(lkZoek.toLowerCase()));
+    if(lkAlleenSignaal) lijst=lijst.filter(a=>dossier(a).sig.e!=='ok');
+    const ernst={krit:0,let:1,ok:2};
+    lijst=lijst.slice().sort((a,b)=>ernst[dossier(a).sig.e]-ernst[dossier(b).sig.e]||a.naam.localeCompare(b.naam));
+    lkInhoud.innerHTML='<p class="lkuitleg">Iedereen die op deze school werkt, met de teller die stil doorloopt. Klik een rij om die persoon in de school op te zoeken.</p>'+
+      '<div style="display:flex;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap">'+
+      '<input id="lkzoek" placeholder="Zoek op naam of ambt…" value="'+ontsnap(lkZoek)+'" '+
+      'style="flex:1;min-width:180px;background:#1a2723;border:1px solid var(--lijn);border-radius:8px;padding:.35rem .6rem;color:inherit;font-size:.74rem">'+
+      '<button id="lkfilter" aria-pressed="'+lkAlleenSignaal+'" class="lkfbtn" style="border:1px solid var(--lijn);background:'+(lkAlleenSignaal?'var(--merk-diep)':'rgba(255,255,255,.03)')+';border-radius:8px;padding:.35rem .7rem;font-size:.72rem">Alleen signalen</button></div>'+
+      '<table class="lktab"><thead><tr><th>Naam</th><th>Ambt</th><th>Statuut</th><th>Opdracht</th>'+
+      '<th>Dienstanciënniteit</th><th>Toezicht</th><th>Signaal</th></tr></thead><tbody>'+
+      lijst.map(a=>{ const d=dossier(a), pct=Math.min(100,Math.round(d.dagen/DREMPEL*100));
+        const jaar=d.sinds.slice(0,4);
+        const anc = d.statuut==='externe dienst' ? '<span class="leeg">niet van toepassing</span>'
+          : d.statuut==='vastbenoemd' ? '<span class="leeg">vast benoemd · in dienst sinds '+jaar+'</span>'
+          : !d.onderwijs ? '<span class="leeg">in dienst sinds '+jaar+'</span>'
+          : '<div class="ancien"><div class="balk" title="'+d.dagen+' van '+DREMPEL+' kalenderdagen">'+
+            '<i style="width:'+pct+'%'+(d.dagen<DREMPEL?';background:var(--amber)':'')+'"></i></div>'+
+            '<span>'+(d.dagen>=DREMPEL?'drempel bereikt ('+d.dagen+' d.)':d.dagen+'/'+DREMPEL)+'</span></div>';
+        return '<tr data-pid="'+a.id+'"><td>'+ontsnap(a.naam)+'</td><td>'+ontsnap(d.ambt)+'</td>'+
+        '<td><span class="vlag '+(d.statuut==='vastbenoemd'?'v-ok':d.statuut==='TADD'?'v-let':'v-rust')+'">'+d.statuut+'</span></td>'+
+        '<td>'+(d.opdracht?'<b>'+d.opdracht+'</b>/24':'<span class="leeg">—</span>')+'</td>'+
+        '<td>'+anc+'</td>'+
+        '<td>'+(d.beurten===null?'<span class="leeg">—</span>':'<b>'+d.beurten+'</b>')+'</td>'+
+        '<td><span class="vlag v-'+(d.sig.e==='ok'?'ok':d.sig.e)+'">'+ontsnap(d.sig.t)+'</span></td></tr>';
+      }).join('')+'</tbody></table>';
+    const z=document.getElementById('lkzoek');
+    z.addEventListener('input',()=>{ lkZoek=z.value; const p=z.selectionStart; toonLk();
+      const n=document.getElementById('lkzoek'); n.focus(); n.setSelectionRange(p,p); });
+    document.getElementById('lkfilter').addEventListener('click',()=>{ lkAlleenSignaal=!lkAlleenSignaal; toonLk(); });
+    lkInhoud.querySelectorAll('tr[data-pid]').forEach(tr=>tr.addEventListener('click',()=>{
+      const a=agenten.find(x=>x.id===tr.dataset.pid); if(!a) return;
+      sluitLk(); spel.sel=a; spel.bez=null;
+      cam.x=BW/2-(a.x-a.y)*(TW/2); cam.y=BH/2-(a.x+a.y)*(TH/2);
+      paneel(); zeg('👁️ '+a.naam+' — gevonden in '+(a.kamer?a.kamer.naam:'de school')+'.');
+    }));
+  }
+  else if(lkTab==='plannen'){
+    const kl={actueel:'v-ok','te herzien':'v-let',ontbreekt:'v-krit'};
+    lkInhoud.innerHTML='<p class="lkuitleg">De plannen en deelplannen die een Vlaamse school moet kunnen voorleggen. Niet als afvinklijst: elk plan zegt wie erover beslist, want dat bepaalt of een keuze van jou is of van het overlegorgaan. Bronnen zijn aangeduid; waar ⚠️ staat, moet de tekst nog tegen de primaire bron gelegd worden.</p><div class="kaarten">'+
+      PLANNEN.map(p=>'<article class="plan"><h3>'+ontsnap(p.n)+
+        '<span class="vlag '+kl[p.st]+'">'+p.st+'</span></h3>'+
+        '<p>'+ontsnap(p.o)+'</p>'+
+        '<span class="bron"><b>Beslist door:</b> '+ontsnap(p.w)+'<br><b>Laatst herzien:</b> '+p.h+
+        '<br><b>Kader:</b> '+ontsnap(p.b)+'</span></article>').join('')+'</div>';
+  }
+  else if(lkTab==='beleid'){
+    lkInhoud.innerHTML='<p class="lkuitleg">Keuzes die een directeur echt maakt. Ze werken meteen door in de simulatie — het schoolklimaat is geen sfeermeter maar de geaggregeerde stand van je verplichtingen. Onderaan elke keuze staat in welk kader ze thuishoort.</p><div class="kaarten">'+
+      KEUZES.map(k=>{ const i=keuzeStand[k.id];
+        return '<article class="keuze" data-kid="'+k.id+'"><h3>'+ontsnap(k.t)+'</h3><div class="opties">'+
+          k.o.map((o,j)=>'<button data-ki="'+j+'" aria-pressed="'+(j===i)+'">'+ontsnap(o.l)+'</button>').join('')+
+          '</div><p class="gevolg">'+ontsnap(k.o[i].g)+'</p>'+
+          '<span class="lkraad">⚖️ '+ontsnap(k.r)+'</span></article>'; }).join('')+'</div>';
+    lkInhoud.querySelectorAll('.keuze').forEach(el=>el.querySelectorAll('[data-ki]').forEach(b=>
+      b.addEventListener('click',()=>zetKeuze(el.dataset.kid,+b.dataset.ki))));
+  }
+  else if(lkTab==='week'){
+    const kand=personeel().filter(a=>a.rol==='leraar'||a.rol==='zorg');
+    const wie=(spel.sel&&spel.sel.rol!=='leerling')?spel.sel:kand[0];
+    if(!wie){ lkInhoud.innerHTML='<p class="lkuitleg">Nog geen personeel in beeld.</p>'; return; }
+    const w=weekVoor(wie), d=dossier(wie);
+    const tel=w.rooster.reduce((s,r)=>s+r.rij.filter(c=>c.k==='toe').length,0);
+    lkInhoud.innerHTML='<p class="lkuitleg">Het wekelijkse dienstrooster is bijlage bij het arbeidsreglement — het hoort dus zichtbaar te zijn, niet alleen bij de directie. Kies iemand in het tabblad Team om zijn of haar week te bekijken.</p>'+
+      '<h3 style="margin:.2rem 0 .6rem;font-size:.9rem">'+ontsnap(wie.naam)+' <span style="color:var(--gedempt);font-size:.72rem;font-weight:400">· '+ontsnap(d.ambt)+' · '+d.opdracht+'/24 lestijden · '+tel+' toezichtbeurten deze week</span></h3>'+
+      '<div class="lkweek"><div class="kop"></div>'+w.blokken.map(b=>'<div class="kop">'+b+'</div>').join('')+
+      w.rooster.map(r=>'<div class="kop">'+r.d+'</div>'+r.rij.map(c=>'<div class="'+c.k+'">'+c.t+'</div>').join('')).join('')+
+      '</div><p class="lkuitleg" style="margin-top:.9rem">Billijkheidsteller over het trimester: <b>'+d.beurten+'</b> beurten. Wie de tellers kan nalezen, hoeft de verdeling niet te vertrouwen — dat is precies waarom ze open staan.</p>';
   }
 }
-document.getElementById('paneelinhoud').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-actie]');
-  if (!b) return;
-  document.querySelector('.kracht[data-kracht="' + b.dataset.actie + '"]').click();
-});
-
-/* ── modi & tycoon ────────────────────────────────────────────── */
-document.querySelectorAll('.modi button').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.modi button').forEach(x => x.setAttribute('aria-pressed','false'));
-  b.setAttribute('aria-pressed','true');
-  spel.modus = b.dataset.modus;
-  const tc = document.getElementById('tycoon');
-  tc.classList.toggle('aan', spel.modus !== 'spiegel');
-  tc.querySelectorAll('input[type=range]').forEach(i => { i.disabled = spel.modus === 'zandbak'; });
-  zeg(spel.modus === 'spiegel' ? '🪞 Spiegel: dit is de echte school van vandaag. Handelingen schrijven mét audit.'
-    : spel.modus === 'zandbak' ? '🧪 Zandbak: wat-als op de echte cijfers. Er wordt nooit iets bewaard.'
-    : '🎮 Vrij spel: fictieve school, echte Vlaamse regels. Hier mag alles.');
-}));
-const koppel = (id, waardeId, fn) => {
-  const el = document.getElementById(id);
-  el.addEventListener('input', () => { document.getElementById(waardeId).textContent = el.value; fn(+el.value); });
-};
-koppel('tc-leerlingen', 'tc-ll-waarde', (v) => { spel.leerlingen = v; herbouw(); });
-koppel('tc-leraren', 'tc-lk-waarde', (v) => { spel.personeel = v; herbouw(); });
-document.getElementById('tc-klimaat').addEventListener('input', (e) => {
-  spel.klimaat = +e.target.value;
-  document.getElementById('tc-kl-waarde').textContent =
-    spel.klimaat > 75 ? 'bloeiend' : spel.klimaat > 55 ? 'goed' : spel.klimaat > 40 ? 'onder druk' : 'zorgwekkend';
-  if (spel.klimaat > 45 && spel.weer === 'storm') spel.weer = 'zon';
-  tekenPaneel();
-});
-document.querySelectorAll('.gebeurtenis').forEach(g => g.addEventListener('click', () => {
-  const s = g.dataset.gebeurtenis;
-  if (s === 'griep'){
-    const leraren = agenten.filter(a => a.rol === 'leraar');
-    let n = 0;
-    for (const a of leraren){ if (n >= 4) break; a.zichtbaar = false; a.pad = null; a.ziek = true; a.blok = 'ziek'; n++; }
-    spel.klimaat = Math.max(0, spel.klimaat - 18);
-    zeg('🤧 Griepgolf: ' + n + ' klassen zonder leerkracht. Gebruik ✋ Verplaats om te herschikken.');
-  }
-  if (s === 'inspectie'){
-    const e2 = agenten.find(a => a.rol === 'extern');
-    if (e2){ e2.venster = [spel.minuten - 5, spel.minuten + 120]; e2.blok = ''; e2.zichtbaar = true; }
-    zeg('🔍 De doorlichting komt binnen. Alles wat je registreerde, telt nu.');
-  }
-  if (s === 'zon'){ spel.weer = 'zon'; spel.klimaat = Math.min(100, spel.klimaat + 12); zeg('☀️ Prachtige dag — iedereen naar buiten.'); }
-  if (s === 'storm'){ spel.weer = 'storm'; zeg('⛈️ Storm: de speelplaats loopt leeg.'); }
-  document.getElementById('tc-klimaat').value = spel.klimaat;
-  tekenPaneel();
-}));
-
-/* ── klok-bediening ───────────────────────────────────────────── */
-document.querySelectorAll('.snelheid button').forEach(b => b.addEventListener('click', () => {
-  document.querySelectorAll('.snelheid button').forEach(x => x.setAttribute('aria-pressed','false'));
-  b.setAttribute('aria-pressed','true');
-  spel.snelheid = +b.dataset.snel;
-}));
-document.getElementById('tijdbalk').addEventListener('input', (e) => {
-  spel.minuten = +e.target.value;
-  agenten.forEach(a => { a.blok = ''; });
-});
-
-/* ── opstart & hoofdlus ───────────────────────────────────────── */
-function herbouw(){
-  spel.klassen = Math.max(2, Math.min(8, Math.round(spel.leerlingen / 28)));
-  bouwWereld(spel.klassen);
-  bevolk(spel.leerlingen, spel.personeel);
-  spel.selectie = null; spel.bezield = null; doek.classList.remove('bezield');
-  agenten.forEach(a => { a.blok = ''; });
-  tekenPaneel();
+function zetKeuze(id,i){
+  const k=KEUZES.find(x=>x.id===id); if(!k||keuzeStand[id]===i) return;
+  const vorig=k.o[keuzeStand[id]].d, nieuwe=k.o[i].d;
+  keuzeStand[id]=i;
+  spel.klimaat=clamp(Math.round(spel.klimaat-vorig+nieuwe),0,100);
+  const sch=document.getElementById('tc-kl'); if(sch) sch.value=spel.klimaat;
+  const w=document.getElementById('tc-klw');
+  if(w) w.textContent=spel.klimaat>75?'bloeiend':spel.klimaat>55?'goed':spel.klimaat>40?'onder druk':'zorgwekkend';
+  if(spel.klimaat<45&&spel.weer==='zon') spel.weer='storm';
+  if(spel.klimaat>=55&&spel.weer==='storm') spel.weer='zon';
+  toonLk(); paneel();
+  zeg('⚖️ '+k.t+': '+k.o[i].l+' — schoolklimaat '+(nieuwe-vorig>0?'+':'')+(nieuwe-vorig)+'.');
 }
+function openLk(tab){
+  if(tab) lkTab=tab;
+  lk.classList.add('aan'); lk.setAttribute('aria-hidden','false');
+  document.querySelectorAll('[data-lktab]').forEach(b=>
+    b.setAttribute('aria-pressed',String(b.dataset.lktab===lkTab)));
+  toonLk();
+}
+function sluitLk(){ lk.classList.remove('aan'); lk.setAttribute('aria-hidden','true'); }
+document.getElementById('lkknop').addEventListener('click',()=>openLk());
+document.getElementById('lkdicht').addEventListener('click',sluitLk);
+document.querySelectorAll('[data-lktab]').forEach(b=>b.addEventListener('click',()=>openLk(b.dataset.lktab)));
+lk.addEventListener('click',e=>{ if(e.target===lk) sluitLk(); });
+addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='l'||e.key==='L'){ lk.classList.contains('aan')?sluitLk():openLk(); }
+  if(e.key==='Escape') sluitLk();
+});
+
+/* ── opstart ── */
 function centreer(){
-  // kader de hele school in: schermruimte-omhullende van alle niet-grastegels
-  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-  for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++){
-    if (tg(gx, gy) === T.GRAS) continue;
-    const p = naarScherm(gx, gy);
-    x0 = Math.min(x0, p.x - TW/2); x1 = Math.max(x1, p.x + TW/2);
-    y0 = Math.min(y0, p.y - TH*1.6); y1 = Math.max(y1, p.y + TH);
+  // kadreer op wat gebouwd is, niet op het lege gras eromheen
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  for(let gy=0;gy<H;gy++) for(let gx=0;gx<W;gx++){
+    const t=wereld.tegels[gy*W+gx];
+    if(t===T.GRAS||t===T.GRAS2) continue;
+    const px=(gx-gy)*(TW/2), py=(gx+gy)*(TH/2);
+    x0=Math.min(x0,px-TW); x1=Math.max(x1,px+TW);
+    y0=Math.min(y0,py-MUURH-34); y1=Math.max(y1,py+TH);
   }
-  const marge = 1.10;
-  cam.zoom = Math.max(.42, Math.min(1.1, Math.min(innerWidth / ((x1-x0) * marge), (innerHeight - 150) / ((y1-y0) * marge))));
-  cam.x = -((x0 + x1) / 2) * cam.zoom;
-  cam.y = -((y0 + y1) / 2) * cam.zoom;
+  cam.x=Math.round(BW/2-(x0+x1)/2); cam.y=Math.round(BH/2-(y0+y1)/2);
 }
-addEventListener('resize', () => { if (!spel.bezield) centreer(); });
+function herbouw(){ bouwWereld('regenboog'); bouwSchaduw(); bevolk(spel.ll,spel.pers);
+  spel.sel=null; spel.bez=null; doek.classList.remove('bezield');
+  spel.spring=true; agenten.forEach(a=>a.blok=''); paneel(); }
+maakBuffer(); herbouw(); centreer();
 
-pasMaatAan();
-herbouw();
-centreer();
-
-let vorige = performance.now(), fpsAcc = 0, fpsN = 0, paneelTik = 1.5;
+let vorig=performance.now(), fa=0, fn=0, pt=1.5;
 function lus(nu){
-  const dt = Math.min(.05, (nu - vorige) / 1000);
-  vorige = nu;
+  const dt=Math.min(.05,(nu-vorig)/1000); vorig=nu;
   werkBij(dt);
-  teken(dt);
-
-  document.getElementById('klok').textContent = klokTekst(spel.minuten);
-  const b = blokVan(spel.minuten);
-  if (b.naam !== spel.laatsteBlok){
-    spel.laatsteBlok = b.naam;
-    document.getElementById('dagdeel').textContent = b.naam;
-    if (b.naam === 'speeltijd' || b.naam === 'middagpauze') effect(wereld.ingang.x, wereld.ingang.y, '🔔', '#f2c14e');
-    tekenPaneel();
-  }
-  document.getElementById('tijdbalk').value = Math.round(spel.minuten);
-
-  paneelTik -= dt;
-  if (paneelTik <= 0){ paneelTik = 1.5; if (!spel.selectie) tekenPaneel(); }
-
-  fpsAcc += dt; fpsN++;
-  if (fpsAcc > .5){
-    document.getElementById('fps').textContent =
-      Math.round(fpsN / fpsAcc) + ' fps · ' + agenten.filter(a => a.zichtbaar).length + ' figuren';
-    fpsAcc = 0; fpsN = 0;
-  }
+  if(!lk.classList.contains('aan')) teken(dt);
+  document.getElementById('klok').textContent=klokT(spel.min);
+  const b=blokVan(spel.min);
+  if(b.naam!==spel.lb){ spel.lb=b.naam; document.getElementById('dagdeel').textContent=b.naam;
+    if(b.naam==='speeltijd'||b.naam==='middagpauze') eff(wereld.ingang.x,wereld.ingang.y,'🔔','#f0c04a');
+    paneel(); }
+  document.getElementById('tijdbalk').value=Math.round(spel.min);
+  pt-=dt; if(pt<=0){ pt=1.5; if(!spel.sel) paneel(); }
+  fa+=dt; fn++;
+  if(fa>.5){ document.getElementById('fps').textContent=Math.round(fn/fa)+' fps · '+
+    agenten.filter(a=>a.zicht).length+' figuren'; fa=0; fn=0; }
   requestAnimationFrame(lus);
 }
 requestAnimationFrame(lus);
 })();
 </script>
-
-</body>
-</html>

@@ -121,6 +121,24 @@ blijven procedureel (K2) — prompted art is voor de *herkenbare* dingen:
 gebouwdelen, meubels, speelplaats, decor, en een handvol hero-personages.
 Volledige specificatie en kant-en-klare prompts: `art-bible.md`.
 
+**K9 — De lerarenkamer als intranet.** De school heeft één plek waar het team
+samenkomt, en die verdient een eigen scherm binnen de simulatie: **prikbord,
+team, plannen, beleidskeuzes, weekbeeld.** Het prikbord mengt twee bronnen —
+wat het systeem zelf ziet (openstaande dossiers, ziektemeldingen, weer) en wat
+mensen er zelf op prikken (studiedag, zwemkalender, LOC-agenda). Het
+teamoverzicht toont per personeelslid ambt, statuut, opdracht,
+dienstanciënniteit tegen de TADD-drempel en het openstaande signaal; klikken
+zoekt die persoon op in de wereld. Het tabblad *Plannen* somt de plannen en
+deelplannen op die een Vlaamse school moet kunnen voorleggen, telkens mét het
+kader én **wie erover beslist** — dat laatste is het punt: het maakt zichtbaar
+welke keuzes van de directeur zijn en welke via LOC of schoolraad moeten.
+*Beleidskeuzes* zijn geen instellingen maar dilemma's met gevolgen: elke optie
+verschuift het schoolklimaat en draagt haar juridische kader mee
+(middagtoezicht binnen of buiten de schoolopdracht, beurtrol billijk of vast,
+vervangingen intern/extern/lerarenplatform, TADD-gesprekken jaarlijks of enkel
+bij de drempel, plage-uren, transparantie van roosters). Zo wordt de spelknop
+letterlijk de beleidsknop.
+
 ## 4. Technische realisatie
 
 **Lagen.**
