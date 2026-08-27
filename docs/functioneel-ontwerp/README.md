@@ -24,6 +24,9 @@ De modules F t.e.m. J (waardering, professionalisering, welbevinden, leerlingbeg
 | [regelparameters.md](regelparameters.md) | Decretale drempels en termijnen als configuratie met ingangsdatum | § 5.2, § 5.4, § 5.5, § 6, ontwerpprincipe 7 |
 | [datamodel.md](datamodel.md) | Entiteiten en relaties van het MVP, multi-tenant-scoping, audittrail | § 9 |
 | [wireframes.md](wireframes.md) | Low-fi wireframes van de kernflows, te valideren met directies | § 11, § 12 (Fase 0) |
+| [planning.md](planning.md) | Module-familie P: schoolkalender, toezichten, vervangingen, roosters | § 5.3, marktonderzoek aug. 2026 |
+| [welzijn.md](welzijn.md) | Module-familie W: bevragingen op naam vs. vertrouwelijk-geaggregeerd, welzijn personeel en leerlingen, kanaal (PWA → extensie) | § 5.8, § 5.9, onderzoek [../onderzoek/welzijn/](../onderzoek/welzijn/README.md) |
+| [simulatielaag.md](simulatielaag.md) | Module-familie S: De Levende School (spel- en simulatielaag) | — |
 | [../dpia/dpia-aanzet.md](../dpia/dpia-aanzet.md) | Aanzet gegevensbeschermingseffectbeoordeling Fase 1 (personeelsluik) | § 8 |
 
 ## Status en werkwijze
