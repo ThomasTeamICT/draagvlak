@@ -100,6 +100,7 @@
   .chip.let{background:var(--amber-zacht);color:var(--amber)}
   .chip.ok{background:var(--ok-zacht);color:var(--ok)}
   .chip.stil{background:var(--merk-zacht);color:var(--merk)}
+  .chip.uit{background:transparent;border:1px solid var(--lijn);color:var(--gedempt)}
   .chip.neutraal{background:var(--bg);color:var(--gedempt);border:1px solid var(--lijn)}
 
   .knop{border:1px solid var(--merk);background:var(--merk);color:#fff;
@@ -243,6 +244,7 @@
   <button data-doel="opdrachten">Opdrachten</button>
   <button data-doel="kalender">Kalender</button>
   <button data-doel="toezichten">Toezichten</button>
+  <button data-doel="vervangingen">Vervangingen</button>
   <span class="verrek"></span>
   <button data-doel="leraar" class="stil">Als leraar (Els)</button>
   <button data-doel="beheer" class="stil">Beheer</button>
@@ -569,6 +571,62 @@
       <li>Is "suggestie + zichtbare tellers, mens beslist" de juiste balans, of mag het systeem harder verdelen?</li>
       <li>Welke toezichtsoorten heeft jouw school (ochtend, speeltijden, refter, rijen, avond) en wie mag erin staan?</li>
       <li>Moet een halve pedagogische studiedag het middagtoezicht schrappen of net niet? (Nu: elke kalenderperiode blokkeert de hele dag.)</li>
+    </ul>
+  </details>
+</section>
+
+<!-- ═════════ VERVANGINGEN (P3) ═════════ -->
+<section class="scherm" id="vervangingen" aria-labelledby="vv-h">
+  <p class="eyebrow">Planning · module P3</p>
+  <h1 id="vv-h">Vervangingen <span class="echt">✓ werkt echt</span></h1>
+  <p class="sublijn">Iemand valt uit — en binnen het uur wil je weten wélk kanaal openstaat. De assistent hieronder is <b>dezelfde logica als in het platform</b>: hij telt werkdagen (weekend en schoolvakanties niet mee, de vakantiebrug wél), kent het lerarenplatform en het contingent, en zegt wat er eerst gecheckt moet worden. Het advies is een suggestie — jij beslist, en elke beslissing krijgt een auditregel.</p>
+
+  <div class="kaart" style="margin-bottom:1rem">
+    <h2>De melding</h2>
+    <p style="margin:.2rem 0 .7rem">Kies een situatie om door te rekenen:</p>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap" id="vv-scenarios">
+      <button class="knop" data-vvscen="kort" aria-pressed="true">Els — ziek, 3 dagen</button>
+      <button class="knop spook" data-vvscen="lang">Els — ziek, 2 weken</button>
+      <button class="knop spook" data-vvscen="brug">Lien — ziek rond de herfstvakantie</button>
+    </div>
+    <div style="display:flex;gap:1.4rem;flex-wrap:wrap;margin-top:.9rem;align-items:center">
+      <label style="display:flex;gap:.45rem;align-items:center;font-size:.9rem">
+        <input type="checkbox" id="vv-platform" checked> platformlid (Karim) is vrij
+      </label>
+      <label style="display:flex;gap:.45rem;align-items:center;font-size:.9rem">
+        contingent vervangingseenheden: <input type="range" id="vv-contingent" min="0" max="20" value="8" style="width:130px">
+        <b class="cijfer" id="vv-contingent-w">8</b>
+      </label>
+    </div>
+  </div>
+
+  <div class="kaart" style="margin-bottom:1rem">
+    <h2>Het advies <span class="gedempt" id="vv-reeks" style="font-weight:400;font-size:.85rem"></span></h2>
+    <div id="vv-opties" style="display:flex;flex-direction:column;gap:.5rem;margin:.6rem 0"></div>
+    <div id="vv-checks"></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem">
+    <div class="kaart">
+      <h2>Wie kan invallen?</h2>
+      <p class="gedempt" style="font-size:.84rem;margin:.2rem 0 .6rem">Platformlid eerst, dan billijkheid (laagste teller). Redenen én bezwaren staan erbij — de volgorde is navertelbaar.</p>
+      <div style="overflow-x:auto"><table class="vlak" style="min-width:380px">
+        <thead><tr><th>Kandidaat</th><th>Waarom (niet)?</th></tr></thead>
+        <tbody id="vv-kandidaten"></tbody>
+      </table></div>
+    </div>
+    <div class="kaart">
+      <h2>Geen vervanger? Noodscenario's</h2>
+      <p class="gedempt" style="font-size:.84rem;margin:.2rem 0 .6rem">Elk scenario benoemt zijn verlies. Vastleggen zonder benoemd verlies weigert het platform — dát is het punt: de onzichtbare kost van het lerarentekort wordt aantoonbaar.</p>
+      <div id="vv-nood" style="display:flex;flex-direction:column;gap:.5rem"></div>
+    </div>
+  </div>
+
+  <details class="valideer"><summary>Validatievragen bij dit scherm</summary>
+    <ul>
+      <li>Klopt de kanaalvolgorde (platform → aanstelling → eenheden → intern) met jullie praktijk?</li>
+      <li>⚠ De 10-werkdagendrempel, de reaffectatiecheck en het contingent zijn uit secundaire bronnen — welke omzendbriefteksten hanteert jullie personeelsdienst?</li>
+      <li>Wat moet er gebeuren met het gelogde verlies (zorguren die wegvielen)? Maandrapport voor het LOC?</li>
     </ul>
   </details>
 </section>
@@ -1025,6 +1083,121 @@ Totaal: 308 dagen · 295 effectief   (drempels: 290 / 200)</pre>
     });
   }
 })();
+
+  /* vervangingen (P3): een-op-een-port van bepaalKanaal + stelVervangersVoor uit @draagvlak/planregels */
+  const vvEl = document.getElementById("vv-opties");
+  if (vvEl) {
+    const HERFST = new Set(["2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31"]);
+    const werkdagen = (start, einde, vrij) => {
+      const uit = [];
+      for (let t = Date.parse(start + "T00:00Z"); t <= Date.parse(einde + "T00:00Z"); t += 86400000) {
+        const d = new Date(t), iso = d.toISOString().slice(0, 10), wd = d.getUTCDay();
+        if (wd === 0 || wd === 6 || vrij.has(iso)) continue;
+        uit.push(iso);
+      }
+      return uit;
+    };
+    const SCEN = {
+      kort: { wie: "Els", periodes: [["2026-02-02","2026-02-04"]], vrij: new Set() },
+      lang: { wie: "Els", periodes: [["2026-02-02","2026-02-13"]], vrij: new Set() },
+      brug: { wie: "Lien", periodes: [["2025-10-20","2025-10-24"],["2025-11-03","2025-11-07"]], vrij: HERFST },
+    };
+    let vvKeuze = "kort";
+    function vvReken() {
+      const s = SCEN[vvKeuze];
+      const dagen = new Set();
+      s.periodes.forEach(([a, b]) => werkdagen(a, b, s.vrij).forEach((d) => dagen.add(d)));
+      const wd = dagen.size, drempel = 10, bereikt = wd >= drempel;
+      const platformVrij = document.getElementById("vv-platform").checked;
+      const contingent = +document.getElementById("vv-contingent").value;
+      const eenhedenNodig = wd;
+
+      const opties = [
+        { k: "Lerarenplatform", mogelijk: platformVrij,
+          reden: platformVrij ? "Karim is vrij — daar is hij net voor aangesteld, kost de school geen extra middelen"
+                              : "het platform bestaat, maar er is nu geen lid vrij" },
+        { k: "Tijdelijke aanstelling", mogelijk: bereikt,
+          reden: bereikt ? "de reeks haalt de drempel van " + drempel + " werkdagen"
+                         : "nog " + (drempel - wd) + " werkdagen te kort voor de drempel van " + drempel },
+        { k: "Vervangingseenheden", mogelijk: contingent >= eenhedenNodig && eenhedenNodig > 0,
+          reden: contingent >= eenhedenNodig ? eenhedenNodig + " van de " + contingent + " resterende eenheden volstaan"
+                                             : eenhedenNodig + " eenheden nodig, nog " + contingent + " over — onvoldoende" },
+        { k: "Interne opvang", mogelijk: true,
+          reden: "altijd mogelijk, maar het gat verschuift naar een collega — leg vast wat het kost" },
+      ];
+      const volgorde = bereikt ? [0, 1, 2, 3] : [0, 2, 1, 3];
+      const aanbevolenIdx = volgorde.find((i) => opties[i].mogelijk);
+
+      document.getElementById("vv-reeks").textContent =
+        s.wie + " · " + s.periodes.map(([a,b]) => a.slice(5) + " – " + b.slice(5)).join(" + ") +
+        " · " + wd + " werkdagen" + (s.periodes.length > 1 ? " (samengeteld: de vakantie is geen onderbreking)" : "");
+
+      vvEl.innerHTML = opties.map((o, i) =>
+        "<div style='display:flex;gap:.6rem;align-items:baseline'>" +
+        "<span class='chip " + (i === aanbevolenIdx ? "ok" : o.mogelijk ? "stil" : "uit") + "'>" +
+        (i === aanbevolenIdx ? "★ " : "") + o.k + "</span>" +
+        "<span class='gedempt' style='font-size:.85rem'>" + o.reden + "</span></div>").join("");
+
+      let checks = [];
+      if (aanbevolenIdx === 1) checks.push("<b>Reaffectatiecheck verplicht:</b> vanaf " + drempel + " werkdagen eerst nagaan of er een te reaffecteren personeelslid is — het platform weigert een aanstelling zonder die bevestiging (⚠ te valideren).");
+      if (aanbevolenIdx === 2) checks.push("<b>Contingent:</b> deze inzet verbruikt " + eenhedenNodig + " eenheden; er blijven er " + (contingent - eenhedenNodig) + " over.");
+      if (aanbevolenIdx === 3) checks.push("<b>Noodmaatregel-log verplicht:</b> kies een scenario rechts en het verlies gaat mee tot in de audittrail.");
+      document.getElementById("vv-checks").innerHTML = checks.length
+        ? "<p style='font-size:.87rem;margin:.4rem 0 0'>" + checks.join("<br>") + "</p>" : "";
+
+      /* kandidaten: port van stelVervangersVoor */
+      const kandidaten = [
+        { id: "Karim Benali", platformlid: platformVrij, beschikbaar: platformVrij, bevoegd: true, teller: 2 },
+        { id: "Nora El Amrani", beschikbaar: true, bevoegd: true, teller: 1 },
+        { id: "Lien Maes", beschikbaar: vvKeuze !== "brug", bevoegd: true, teller: 4 },
+        { id: "Jan De Wit (zorg)", beschikbaar: true, bevoegd: true, teller: 0, zorg: 4 },
+      ];
+      const gem = kandidaten.reduce((s2, k) => s2 + k.teller, 0) / kandidaten.length;
+      const voorstellen = kandidaten.map((k) => {
+        let score = 0; const waarom = [], bezwaren = [];
+        if (k.beschikbaar) { score += 40; waarom.push("vrij"); } else bezwaren.push("zelf afwezig");
+        if (k.platformlid) { score += 100; waarom.push("platformlid"); }
+        score -= k.teller * 3;
+        if (k.teller < gem) waarom.push(k.teller + " vervangingen, onder het gemiddelde");
+        else if (k.teller > gem) bezwaren.push("al " + k.teller + " vervangingen, boven het gemiddelde");
+        if (k.zorg) { score -= k.zorg * 2; bezwaren.push(k.zorg + " zorguren vallen weg"); }
+        return { ...k, score, inzetbaar: k.beschikbaar && k.bevoegd, waarom, bezwaren };
+      }).sort((a, b) => (b.inzetbaar - a.inzetbaar) || (b.score - a.score) || a.id.localeCompare(b.id));
+      document.getElementById("vv-kandidaten").innerHTML = voorstellen.map((v, i) =>
+        "<tr><td>" + (i === 0 && v.inzetbaar ? "★ " : "") + v.id + "</td><td style='font-size:.82rem'>" +
+        "<span style='color:var(--ok)'>" + v.waarom.join(" · ") + "</span>" +
+        (v.bezwaren.length ? "<br><span class='gedempt'>maar: " + v.bezwaren.join(" · ") + "</span>" : "") +
+        "</td></tr>").join("");
+
+      /* noodscenario's: port van noodscenarios() */
+      const nood = [
+        { naam: "Klas verdelen", gevolg: "20 leerlingen over 3 klassen: +7 per klas, grootste groep 27", verlies: "3 collega's geven les aan een grotere groep; wat gepland stond schuift op" },
+        { naam: "Zorg inzetten", gevolg: "de zorgleerkracht neemt de klas over", verlies: "4 zorguren vallen weg — precies bij wie ze het hardst nodig heeft" },
+        { naam: "Klassen samenvoegen", gevolg: "samen met 2A: één groep van 38 — boven de grens van 30", verlies: "niet mogelijk binnen de eigen grens", kan: false },
+      ];
+      document.getElementById("vv-nood").innerHTML = nood.map((n) =>
+        "<div style='border:1px solid var(--lijn);border-radius:8px;padding:.55rem .7rem" + (n.kan === false ? ";opacity:.55" : "") + "'>" +
+        "<b style='font-size:.9rem'>" + n.naam + "</b><br><span style='font-size:.83rem'>" + n.gevolg + "</span><br>" +
+        "<span class='gedempt' style='font-size:.8rem'>verlies: " + n.verlies + "</span>" +
+        (n.kan === false ? "" : "<br><button class='knop spook klein' style='margin-top:.35rem' data-toast='Vastgelegd mét het benoemde verlies — in het platform gaat dit tot in de auditregel: wie besliste wat, en wat het kostte.'>Leg vast (met verlies-log)</button>") +
+        "</div>").join("");
+    }
+    document.querySelectorAll("[data-vvscen]").forEach((b) => b.addEventListener("click", () => {
+      vvKeuze = b.dataset.vvscen;
+      document.querySelectorAll("[data-vvscen]").forEach((x) => {
+        x.classList.toggle("spook", x !== b);
+        x.setAttribute("aria-pressed", String(x === b));
+      });
+      vvReken();
+    }));
+    document.getElementById("vv-platform").addEventListener("input", vvReken);
+    document.getElementById("vv-contingent").addEventListener("input", () => {
+      document.getElementById("vv-contingent-w").textContent = document.getElementById("vv-contingent").value;
+      vvReken();
+    });
+    vvReken();
+  }
+
 </script>
 
 </body>
