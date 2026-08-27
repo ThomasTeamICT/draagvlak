@@ -315,6 +315,7 @@ export function welzijnModule(db: Db, opties: WelzijnOpties): FastifyPluginAsync
           if (bevraging.type === 'op_naam') {
             const genodigden = (await trx`
               select u.persoon_id, p.naam,
+                     u.afgeleverd_op is not null as afgeleverd,
                      u.gezien_op is not null as gezien,
                      u.beantwoord_op is not null as beantwoord
               from core.bevraging_uitnodiging u
@@ -523,6 +524,39 @@ export function welzijnModule(db: Db, opties: WelzijnOpties): FastifyPluginAsync
         })
         if ('fout' in uitkomst) return antwoord.code(uitkomst.status ?? 422).send({ fout: uitkomst.fout })
         return uitkomst
+      },
+    )
+
+    // ── afleverbevestiging: het toestel meldt welke items het ophaalde ──
+    app.post(
+      '/api/v1/inbox/afgeleverd',
+      {
+        schema: {
+          body: {
+            type: 'object',
+            required: ['uitnodigingIds'],
+            properties: {
+              uitnodigingIds: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 200,
+                items: { type: 'string', pattern: UUID_PATROON },
+              },
+            },
+            additionalProperties: false,
+          },
+        },
+      },
+      async (verzoek, antwoord) => {
+        const auth = verzoek.auth as AuthContext
+        const { uitnodigingIds } = verzoek.body as { uitnodigingIds: string[] }
+        await metTenantContext(db, auth.tenantId, async (trx) => {
+          await trx`
+            update core.bevraging_uitnodiging
+            set afgeleverd_op = coalesce(afgeleverd_op, now())
+            where id = any(${uitnodigingIds}::uuid[]) and persoon_id = ${auth.persoonId}`
+        })
+        return antwoord.code(204).send()
       },
     )
 

@@ -8,6 +8,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "demo": "node apps/api/demo/demo.mjs"
   }
 }

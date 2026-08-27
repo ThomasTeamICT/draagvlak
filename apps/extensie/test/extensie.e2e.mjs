@@ -55,7 +55,7 @@ await admin.unsafe('drop schema if exists core cascade')
 await admin.file(join(repo, 'db', 'bootstrap', 'rollen.sql'), { cache: false })
 for (const m of ['0001_init.sql','0002_personeel.sql','0003_deadlines.sql','0004_idp.sql',
   '0005_beoordeling.sql','0006_regelparameters.sql','0007_scheduler.sql','0008_kalender.sql',
-  '0009_toezichten.sql','0010_vervangingen.sql','0011_bevragingen.sql']) {
+  '0009_toezichten.sql','0010_vervangingen.sql','0011_bevragingen.sql','0012_afgeleverd.sql']) {
   await admin.file(join(repo, 'db', 'migrations', m), { cache: false })
 }
 
@@ -202,6 +202,9 @@ const lid1 = detail.antwoorden?.find((a) => a.naam === 'Teamlid 1')
 check('vraagsteller ziet het op-naam-antwoord van Teamlid 1', lid1?.waarde === true)
 const status = detail.genodigden?.find((g) => g.naam === 'Teamlid 1')
 check('leesbevestiging op naam zichtbaar', status?.gezien === true && status?.beantwoord === true)
+check('afleverbevestiging op naam zichtbaar', status?.afgeleverd === true)
+const nietOpgehaald = detail.genodigden?.find((g) => g.naam === 'Teamlid 3')
+check('wie de extensie niet opende, staat op niet-afgeleverd', nietOpgehaald?.afgeleverd === false)
 
 const losseAntwoorden = await admin`
   select count(*)::int as aantal from core.bevraging_antwoord

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draagvlak — testcockpit</title>
+<style>
+  :root{
+    --grond:#f6f8f7; --kaart:#ffffff; --lijn:#dbe4e0; --inkt:#1c2a25;
+    --gedempt:#5f7169; --merk:#1f6f5c; --merk-zacht:#e3f2ec;
+    --amber:#8a5a2f; --amber-zacht:#f6ecdf; --fout:#a33a3a; --fout-zacht:#f8e8e8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--grond);color:var(--inkt);
+    font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:var(--kaart);border-bottom:1px solid var(--lijn);
+    padding:.7rem 1.1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+    position:sticky;top:0;z-index:5}
+  .merk{font-weight:700;color:var(--merk);font-size:1.05rem}
+  .merk small{display:block;font-weight:400;font-size:.6rem;color:var(--gedempt);
+    letter-spacing:.1em;text-transform:uppercase}
+  .persona{margin-left:auto;display:flex;align-items:center;gap:.5rem;font-size:.8rem}
+  select,input[type=text],input[type=date],textarea{background:var(--grond);
+    border:1px solid var(--lijn);border-radius:8px;color:inherit;font:inherit;padding:.4rem .6rem}
+  main{max-width:900px;margin:0 auto;padding:1rem 1.1rem 3rem}
+  h2{font-size:1rem;margin:1.3rem 0 .6rem}
+  .kaart{background:var(--kaart);border:1px solid var(--lijn);border-radius:12px;
+    padding:.9rem 1rem;margin-bottom:.7rem}
+  button{font:inherit;color:inherit;cursor:pointer;border:1px solid var(--lijn);
+    background:var(--kaart);border-radius:9px;padding:.45rem .8rem}
+  button.primair{background:var(--merk);color:#fff;border-color:var(--merk);font-weight:600}
+  button:hover{border-color:var(--merk)}
+  .tabs{display:flex;gap:.4rem;margin:.9rem 0}
+  .tabs button[aria-pressed="true"]{background:var(--merk-zacht);border-color:var(--merk);color:var(--merk);font-weight:600}
+  label{display:block;font-size:.76rem;color:var(--gedempt);margin:.55rem 0 .15rem}
+  .rij{display:flex;gap:.6rem;flex-wrap:wrap;align-items:flex-end}
+  .rij>*{flex:1;min-width:140px}
+  .typekeuze{display:flex;gap:.6rem;margin:.4rem 0}
+  .typekeuze label{flex:1;border:2px solid var(--lijn);border-radius:11px;padding:.7rem .8rem;
+    cursor:pointer;font-size:.85rem;color:var(--inkt);margin:0}
+  .typekeuze label b{display:block;margin-bottom:.15rem}
+  .typekeuze label small{color:var(--gedempt);font-size:.72rem;line-height:1.45;display:block}
+  .typekeuze label:has(:checked){border-color:var(--merk);background:var(--merk-zacht)}
+  .typekeuze input{display:none}
+  .wiepreview{font-size:.78rem;background:var(--amber-zacht);border-radius:9px;
+    padding:.55rem .75rem;margin:.5rem 0}
+  .wiepreview.naam{background:var(--merk-zacht)}
+  .vraagregel{display:grid;grid-template-columns:100px 130px 1fr 32px;gap:.45rem;margin-bottom:.4rem}
+  .genodigden{display:flex;gap:.35rem;flex-wrap:wrap;margin:.3rem 0}
+  .genodigden label{border:1px solid var(--lijn);border-radius:99px;padding:.25rem .7rem;
+    cursor:pointer;font-size:.78rem;color:var(--inkt);margin:0}
+  .genodigden label:has(:checked){background:var(--merk-zacht);border-color:var(--merk)}
+  .genodigden input{display:none}
+  .melding{border-radius:9px;padding:.6rem .8rem;font-size:.82rem;margin:.6rem 0;background:var(--fout-zacht)}
+  .melding.ok{background:var(--merk-zacht)}
+  table{width:100%;border-collapse:collapse;font-size:.84rem}
+  th{text-align:left;font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--gedempt);padding:.35rem .5rem;border-bottom:1px solid var(--lijn)}
+  td{padding:.42rem .5rem;border-bottom:1px solid var(--lijn)}
+  tr.klik{cursor:pointer} tr.klik:hover{background:var(--merk-zacht)}
+  .soort{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;
+    padding:.1rem .5rem;border-radius:99px;white-space:nowrap}
+  .soort.op_naam{background:var(--merk-zacht);color:var(--merk)}
+  .soort.team{background:var(--amber-zacht);color:var(--amber)}
+  .vinkjes{font-variant-numeric:tabular-nums;letter-spacing:.05em;white-space:nowrap}
+  .vink{color:var(--gedempt);opacity:.25} .vink.aan{color:var(--merk);opacity:1;font-weight:700}
+  .stil{color:var(--gedempt)}
+  .balkje{height:7px;background:var(--lijn);border-radius:99px;overflow:hidden;margin:.2rem 0}
+  .balkje i{display:block;height:100%;background:var(--merk)}
+  .uitleg{font-size:.74rem;color:var(--gedempt);line-height:1.55}
+</style>
+</head>
+<body>
+<header>
+  <div class="merk">Draagvlak<small>testcockpit — demo-omgeving, geen product-UI</small></div>
+  <div class="persona">
+    <span>Je kijkt als</span>
+    <select id="persona"></select>
+  </div>
+</header>
+<main>
+  <div class="tabs" role="tablist">
+    <button data-tab="nieuw" aria-pressed="true">➕ Nieuwe bevraging</button>
+    <button data-tab="overzicht">📋 Overzicht</button>
+    <button data-tab="inbox">📥 Inbox van deze persona</button>
+  </div>
+  <div id="paneel"></div>
+</main>
+<script>
+const $=(s,w=document)=>w.querySelector(s), $$=(s,w=document)=>[...w.querySelectorAll(s)]
+let PERSONAS=[], GENODIGDEN=[], huidige=null, tab='nieuw'
+
+const api=async(pad,opties={})=>{
+  const r=await fetch(pad,{...opties,headers:{authorization:'Bearer '+huidige.token,
+    ...(opties.body?{'content-type':'application/json'}:{}),}})
+  const data=r.status===204?null:await r.json().catch(()=>null)
+  if(!r.ok) throw new Error(data?.fout??('fout '+r.status))
+  return data
+}
+const el=(tag,attrs={},...kids)=>{const e=document.createElement(tag)
+  for(const[k,v]of Object.entries(attrs)){
+    if(k==='class'){e.className=v}
+    else if(k.startsWith('on')){e.addEventListener(k.slice(2),v)}
+    else if(k==='html'){e.innerHTML=v}
+    else{e.setAttribute(k,v)}
+  }
+  e.append(...kids);return e}
+const melding=(tekst,ok=false)=>el('div',{class:'melding'+(ok?' ok':'')},tekst)
+
+async function start(){
+  const d=await(await fetch('/demo-personas.json')).json()
+  PERSONAS=d.personas; GENODIGDEN=d.genodigdenIds
+  const kies=$('#persona')
+  PERSONAS.forEach((p,i)=>kies.append(el('option',{value:i},`${p.naam} — ${p.rol==='DIR'?'directeur':p.ambt}`)))
+  kies.addEventListener('change',()=>{huidige=PERSONAS[+kies.value];toon()})
+  huidige=PERSONAS[0]
+  $$('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+    tab=b.dataset.tab;$$('.tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));toon()}))
+  toon()
+}
+
+function toon(){({nieuw:toonNieuw,overzicht:toonOverzicht,inbox:toonInbox})[tab]()}
+
+/* ── nieuwe bevraging: de onomkeerbare typekeuze eerst (W1), preview "wie ziet wat" (W6) ── */
+function toonNieuw(){
+  const p=$('#paneel'); p.replaceChildren()
+  if(huidige.rol!=='DIR'){p.append(melding('Bevragingen aanmaken kan alleen als directeur — wissel rechtsboven van persona.'));return}
+  const vragen=[]
+  const kaart=el('div',{class:'kaart'})
+  kaart.append(el('div',{class:'typekeuze'},
+    el('label',{},el('input',{type:'radio',name:'type',value:'op_naam',checked:''}),
+      el('b',{},'Vraag aan personen'),el('small',{},'Op naam. Voor een feit, een beschikbaarheid of een keuze: "kan je invallen?", datumkeuzes. Je ziet wie wat antwoordde, mét afgeleverd/gezien/beantwoord.')),
+    el('label',{},el('input',{type:'radio',name:'type',value:'team'}),
+      el('b',{},'Teambevraging'),el('small',{},'Vertrouwelijk. Voor een beleving of een oordeel: werkdruk, klimaat. Je ziet nooit wie deelnam — alleen het groepsbeeld, pas na sluiting en boven de drempel.'))))
+  const preview=el('div',{class:'wiepreview naam'})
+  kaart.append(preview)
+  const titel=el('input',{type:'text',placeholder:'Titel, bv. "Wie kan morgen invallen?"'})
+  const toel=el('input',{type:'text',placeholder:'Toelichting (niet verplicht)'})
+  kaart.append(el('label',{},'Titel'),titel,el('label',{},'Toelichting'),toel)
+
+  const opvolg=el('div',{class:'rij'},
+    el('div',{},el('label',{},'Wie bespreekt het resultaat? (verplicht bij teambevraging)'),el('input',{type:'text',id:'opvolgWie',placeholder:'bv. personeelsvergadering'})),
+    el('div',{},el('label',{},'Tegen wanneer?'),el('input',{type:'date',id:'opvolgTegen'})))
+  kaart.append(opvolg)
+
+  kaart.append(el('label',{},'Vragen'))
+  const vraagLijst=el('div',{})
+  kaart.append(vraagLijst)
+  const voegVraagToe=()=>{
+    const regel=el('div',{class:'vraagregel'},
+      el('select',{class:'klasse'},el('option',{value:'A'},'A — feit/keuze'),el('option',{value:'B'},'B — beleving')),
+      el('select',{class:'vorm'},...['ja_nee','keuze','meerkeuze','schaal','datumkeuze','tekst'].map(v=>el('option',{value:v},v))),
+      el('input',{type:'text',class:'tekst',placeholder:'Vraagtekst — opties bij keuze/datum: erachter tussen [a|b|c]'}),
+      el('button',{onclick:()=>regel.remove()},'✕'))
+    vraagLijst.append(regel)
+  }
+  voegVraagToe()
+  kaart.append(el('button',{onclick:voegVraagToe},'+ vraag'),el('label',{},'Genodigden'))
+  const genodigden=el('div',{class:'genodigden'},
+    ...GENODIGDEN.filter(g=>g.naam!==huidige.naam).map(g=>
+      el('label',{},el('input',{type:'checkbox',value:g.id}),`${g.naam}`)))
+  kaart.append(genodigden)
+  const uit=el('div',{})
+  kaart.append(el('div',{style:'margin-top:.8rem'},
+    el('button',{class:'primair',onclick:async()=>{
+      uit.replaceChildren()
+      const type=kaart.querySelector('input[name=type]:checked').value
+      const vragenData=$$('.vraagregel',vraagLijst).map(r=>{
+        let tekst=$('.tekst',r).value.trim(), opties
+        const m=tekst.match(/\[(.+)\]\s*$/)
+        if(m){opties=m[1].split('|').map(x=>x.trim());tekst=tekst.slice(0,m.index).trim()}
+        const vorm=$('.vorm',r).value
+        if(vorm==='schaal')opties={min:1,max:5}
+        return{klasse:$('.klasse',r).value,vorm,tekst,...(opties?{opties}:{})}
+      }).filter(v=>v.tekst)
+      const gekozen=$$('input:checked',genodigden).map(i=>i.value)
+      try{
+        await api('/api/v1/bevragingen',{method:'POST',body:JSON.stringify({
+          type,titel:titel.value.trim(),
+          ...(toel.value.trim()?{toelichting:toel.value.trim()}:{}),
+          ...($('#opvolgWie').value.trim()?{opvolgWie:$('#opvolgWie').value.trim()}:{}),
+          ...($('#opvolgTegen').value?{opvolgTegen:$('#opvolgTegen').value}:{}),
+          vragen:vragenData,genodigden:gekozen})})
+        uit.append(melding('Uitgestuurd. De genodigden zien dit meteen in hun inbox en in de extensie.',true))
+      }catch(f){uit.append(melding(f.message))}
+    }},'Uitsturen'),uit))
+
+  const zetPreview=()=>{
+    const type=kaart.querySelector('input[name=type]:checked').value
+    preview.className='wiepreview'+(type==='op_naam'?' naam':'')
+    preview.textContent=type==='op_naam'
+      ?'👁 Wie ziet wat: elk antwoord komt op naam bij jou terecht; genodigden zien vooraf dat jij de ontvanger bent. Afgeleverd/gezien/beantwoord is zichtbaar.'
+      :'👁 Wie ziet wat: jij ziet nooit wie deelnam — alleen het groepsbeeld, na sluiting, vanaf 5 respondenten (vrije tekst vanaf 10). Genodigden krijgen die uitleg ook te zien. Lanceren vereist een opvolgpad en het geconfigureerde overlegorgaan.'
+  }
+  kaart.querySelectorAll('input[name=type]').forEach(r=>r.addEventListener('change',zetPreview))
+  zetPreview()
+  p.append(kaart,el('p',{class:'uitleg'},'Probeer gerust een klasse B-vraag ("beleving") in een op-naam-bevraging: de blokkade die je dan ziet, ís het ontwerp — een beleving mag nooit op naam bevraagd worden.'))
+}
+
+/* ── overzicht + detail ── */
+async function toonOverzicht(){
+  const p=$('#paneel'); p.replaceChildren(el('p',{class:'stil'},'Laden…'))
+  if(huidige.rol!=='DIR'){p.replaceChildren(melding('Het overzicht is er voor de directeur — wissel rechtsboven van persona.'));return}
+  try{
+    const {bevragingen}=await api('/api/v1/bevragingen')
+    const tabel=el('table',{},el('thead',{},el('tr',{},
+      el('th',{},'Soort'),el('th',{},'Titel'),el('th',{},'Status'),el('th',{},'Respons'))),
+      el('tbody',{},...bevragingen.map(b=>el('tr',{class:'klik',onclick:()=>toonDetail(b.id)},
+        el('td',{},el('span',{class:'soort '+b.type},b.type==='op_naam'?'op naam':'vertrouwelijk')),
+        el('td',{},b.titel),el('td',{},b.status),
+        el('td',{},b.type==='op_naam'?`${b.beantwoord}/${b.genodigden}`:(b.responsgraad??''))))))
+    p.replaceChildren(el('div',{class:'kaart'},tabel))
+  }catch(f){p.replaceChildren(melding(f.message))}
+}
+
+async function toonDetail(id){
+  const p=$('#paneel'); p.replaceChildren(el('p',{class:'stil'},'Laden…'))
+  try{
+    const d=await api('/api/v1/bevragingen/'+id)
+    const b=d.bevraging
+    const kop=el('div',{class:'kaart'},
+      el('button',{onclick:toonOverzicht},'← overzicht'),
+      el('h2',{},b.titel),
+      el('p',{class:'uitleg'},`${b.type==='op_naam'?'Op naam':'Vertrouwelijk'} · ${b.status}`+
+        (b.opvolg_wie?` · opvolging: ${b.opvolg_wie} tegen ${b.opvolg_tegen}`:'')))
+    p.replaceChildren(kop)
+
+    if(b.type==='op_naam'){
+      const perPersoon=new Map()
+      for(const a of d.antwoorden??[]) perPersoon.set(a.persoon_id,a)
+      const vink=(aan,sym)=>el('span',{class:'vink'+(aan?' aan':'')},sym)
+      p.append(el('div',{class:'kaart'},el('table',{},
+        el('thead',{},el('tr',{},el('th',{},'Genodigde'),el('th',{},'Afgeleverd · gezien · beantwoord'),el('th',{},'Antwoord'))),
+        el('tbody',{},...d.genodigden.map(g=>{
+          const a=perPersoon.get(g.persoon_id)
+          return el('tr',{},el('td',{},g.naam),
+            el('td',{class:'vinkjes'},vink(g.afgeleverd,'✓'),' ',vink(g.gezien,'✓✓'),' ',vink(g.beantwoord,'✓✓✓')),
+            el('td',{},a?(a.liever_niet?'liever niet gezegd':JSON.stringify(a.waarde)):'—'))})))),
+        el('p',{class:'uitleg'},'✓ afgeleverd op een toestel · ✓✓ geopend · ✓✓✓ beantwoord. Dit bestaat alléén bij op-naam-vragen; bij teambevragingen registreert het systeem dit wel (voor herinneringen) maar toont het het nooit.'))
+    } else {
+      p.append(el('div',{class:'kaart'},
+        el('p',{},`Responsgraad: ${d.responsgraad}`),
+        el('p',{class:'uitleg'},'Geen deelnemerslijst — dat is het ontwerp (W12).'),
+        b.status==='open'
+          ?el('button',{class:'primair',onclick:async()=>{await api(`/api/v1/bevragingen/${id}/sluit`,{method:'POST',body:JSON.stringify({})});toonDetail(id)}},'Sluiten en rapport opmaken')
+          :el('button',{onclick:()=>toonRapport(id)},'Rapport bekijken')))
+      if(b.status==='open'){
+        const knop=el('button',{onclick:async()=>{
+          try{await api(`/api/v1/bevragingen/${id}/rapport`)}catch(f){p.append(melding(f.message))}
+        }},'Probeer het rapport nu al op te vragen (moet weigeren)')
+        p.append(el('div',{class:'kaart'},knop))
+      }
+    }
+  }catch(f){p.replaceChildren(melding(f.message))}
+}
+
+async function toonRapport(id){
+  const p=$('#paneel')
+  try{
+    const {rapport}=await api(`/api/v1/bevragingen/${id}/rapport`)
+    const kaart=el('div',{class:'kaart'},el('button',{onclick:()=>toonDetail(id)},'← terug'),
+      el('h2',{},'Rapport — '+rapport.titel))
+    if(!rapport.toonbaar){
+      kaart.append(melding('Niet toonbaar: '+rapport.advies))
+    } else {
+      kaart.append(el('p',{},`${rapport.respondenten} respondenten`))
+      for(const v of rapport.vragen){
+        const blok=el('div',{style:'margin:.7rem 0'},el('b',{},`${v.volgnr}. ${v.tekst}`))
+        if(v.verdeling){
+          const max=Math.max(...v.verdeling.map(x=>x.aantal))
+          for(const x of v.verdeling){
+            blok.append(el('div',{},`${JSON.stringify(x.waarde)} — ${x.aantal}`),
+              el('div',{class:'balkje'},el('i',{style:`width:${x.aantal/max*100}%`})))
+          }
+        } else if(v.teksten){ v.teksten.forEach(t=>blok.append(el('p',{class:'uitleg'},'"'+t+'"')))
+        } else if(v.reden){ blok.append(el('p',{class:'uitleg'},'🔒 '+v.reden)) }
+        if(v.lieverNiet>0) blok.append(el('p',{class:'uitleg'},`${v.lieverNiet}× "liever niet gezegd" (geteld)`))
+        kaart.append(blok)
+      }
+    }
+    p.replaceChildren(kaart)
+  }catch(f){p.append(melding(f.message))}
+}
+
+/* ── inbox als persona (om de drempel te halen zonder 6 browserprofielen) ── */
+async function toonInbox(){
+  const p=$('#paneel'); p.replaceChildren(el('p',{class:'stil'},'Laden…'))
+  try{
+    const {items}=await api('/api/v1/inbox')
+    if(items.length===0){p.replaceChildren(el('p',{class:'stil'},`Niets openstaand voor ${huidige.naam}.`));return}
+    p.replaceChildren(...items.map(i=>{
+      const kaart=el('div',{class:'kaart'},
+        el('span',{class:'soort '+i.type},i.type==='op_naam'?'op naam':'vertrouwelijk'),
+        el('h2',{},i.titel),
+        el('div',{class:'wiepreview'+(i.type==='op_naam'?' naam':'')},'👁 '+i.wieZietDit),
+        el('button',{class:'primair',onclick:async()=>{
+          const d=await api('/api/v1/inbox/'+i.uitnodiging_id)
+          const formulier=el('div',{})
+          const velden=[]
+          for(const v of d.vragen){
+            const invoer=v.vorm==='tekst'?el('textarea',{placeholder:'…'})
+              :v.vorm==='schaal'?el('select',{},...[1,2,3,4,5].map(n=>el('option',{value:n},n)))
+              :v.vorm==='ja_nee'?el('select',{},el('option',{value:'ja'},'ja'),el('option',{value:'nee'},'nee'))
+              :el('select',{},...(v.opties??[]).map(o=>el('option',{value:JSON.stringify(o)},o)))
+            velden.push({v,invoer})
+            formulier.append(el('label',{},v.volgnr+'. '+v.tekst),invoer)
+          }
+          formulier.append(el('button',{class:'primair',style:'margin-top:.6rem',onclick:async()=>{
+            const antwoorden=velden.map(({v,invoer})=>({vraagId:v.id,
+              waarde:v.vorm==='tekst'?invoer.value:v.vorm==='schaal'?+invoer.value
+                :v.vorm==='ja_nee'?invoer.value==='ja':JSON.parse(invoer.value)}))
+            try{await api(`/api/v1/inbox/${i.uitnodiging_id}/antwoorden`,{method:'POST',
+              body:JSON.stringify({antwoorden})});toonInbox()}
+            catch(f){kaart.append(melding(f.message))}
+          }},'Versturen'))
+          kaart.append(formulier)
+        }},'Beantwoorden'))
+      return kaart
+    }),el('p',{class:'uitleg'},'Tip: wissel rechtsboven van persona om als meerdere collega\'s te antwoorden — zo haal je de drempel van 5 voor het teamrapport. Of gebruik de extensie voor één van hen.'))
+  }catch(f){p.replaceChildren(melding(f.message))}
+}
+start()
+</script>
+</body>
+</html>

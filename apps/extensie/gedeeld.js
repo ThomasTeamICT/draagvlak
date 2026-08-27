@@ -59,6 +59,19 @@ export async function synchroniseer() {
       laatsteSync: Date.now(),
       syncFout: null,
     })
+    // afleverbevestiging: meld één keer per item dat het dit toestel bereikte
+    // (alleen zichtbaar voor de vraagsteller bij op-naam-vragen, W12)
+    const { afgeleverdGemeld = [] } = await chrome.storage.local.get('afgeleverdGemeld')
+    const nieuw = items.map((i) => i.uitnodiging_id).filter((id) => !afgeleverdGemeld.includes(id))
+    if (nieuw.length > 0) {
+      await apiVraag('/api/v1/inbox/afgeleverd', {
+        method: 'POST',
+        body: JSON.stringify({ uitnodigingIds: nieuw }),
+      }).catch(() => {})
+      await chrome.storage.local.set({
+        afgeleverdGemeld: [...afgeleverdGemeld, ...nieuw].slice(-500),
+      })
+    }
     await chrome.action.setBadgeBackgroundColor({ color: '#1f6f5c' })
     await chrome.action.setBadgeText({ text: items.length > 0 ? String(items.length) : '' })
     return { items }

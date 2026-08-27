@@ -16,6 +16,9 @@ De blauwdruk beschrijft de probleemstelling en onderbouwing (Onderwijsspiegel 20
 
 ## Documentatie
 
+- **Alles in één keer testen?** [docs/testgids.md](docs/testgids.md) — `pnpm demo` start databank, API en testcockpit; de extensie prikt erop in.
+
+
 | Document | Inhoud |
 |---|---|
 | [docs/blauwdruk.md](docs/blauwdruk.md) | De volledige blauwdruk (versie 1.0) |
