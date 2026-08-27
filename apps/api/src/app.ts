@@ -3,6 +3,7 @@ import { maakDb } from './db.js'
 import { maakAuthHandler } from './auth/plugin.js'
 import { personeelModule } from './modules/personeel/routes.js'
 import { planningModule } from './modules/planning/routes.js'
+import { vervangingenModule } from './modules/planning/vervangingen-routes.js'
 import { startPlanner, type PlannerOpties } from './scheduler.js'
 
 export interface AppOpties {
@@ -54,6 +55,7 @@ export function buildApp(opties: AppOpties = {}): FastifyInstance {
       }),
     )
     app.register(planningModule(db, { authHandler }))
+    app.register(vervangingenModule(db, { authHandler }))
     const stopPlanner = opties.planner !== undefined ? startPlanner(db, app.log, opties.planner) : undefined
     app.addHook('onClose', async () => {
       stopPlanner?.()

@@ -24,6 +24,13 @@ Modulaire monoliet (Fastify) — zie [ADR-0001](../../docs/adr/0001-stackkeuze.m
 | `GET /api/v1/toezichten?van=…&tot=…` | Toezichtrooster — leesbaar voor het hele team (transparantie) |
 | `GET /api/v1/toezichten/tellers` | Billijkheidstellers per persoon per soort — het antwoord op "waarom sta ik er weer op?" |
 | `POST /api/v1/toezichten` · `POST …/:id/ruil` · `DELETE …/:id` | Handmatige beurt (personeelslid óf externe toezichter), ruilen en annuleren — elk met auditregel |
+| `POST /api/v1/afwezigheden` | Afwezigheid handmatig melden (bron `handmatig`) — het startpunt van elke vervanging |
+| `GET /api/v1/vervangingen/advies?persoonId=…&peildatum=…` | Kanaalkeuze-assistent (module P3): telt de reeks werkdagen (vakantiebrug incl.), kent platformbeschikbaarheid en contingent, en zegt wélk kanaal openstaat, waarom, en welke checks eerst moeten |
+| `GET /api/v1/vervangingen/kandidaten?afwezigeId=…&datum=…` | Vervangersvoorstellen: platformlid eerst, dan billijkheid (laagste teller), navertelbaar met redenen én bezwaren |
+| `POST /api/v1/vervangingen/noodscenarios` | Noodscenario's doorrekenen (klas verdelen, zorg inzetten, samenvoegen, externe invaller) — elk met nieuwe groepsgroottes en het expliciet benoemde verlies |
+| `POST /api/v1/vervangingen` · `GET …?van=…&tot=…` · `POST …/:id/annuleer` | Vervanging vastleggen (reaffectatiecheck verplicht vóór een tijdelijke aanstelling; een noodmaatregel zonder benoemd verlies wordt geweigerd), overzicht, annuleren (status, nooit delete) |
+| `GET/PUT /api/v1/vervangingen/contingent?schooljaar=…` | Jaarcontingent vervangingseenheden: budget (BG), verbruik berekend uit actieve vervangingen, overschrijding geweigerd |
+| `GET/POST /api/v1/platformleden` | Wie in het lerarenplatform zit, per schooljaar — stuurt advies én kandidatenlijst |
 
 **Authenticatie (ADR-0003):** elke route onder `/api/v1` vereist een OIDC-Bearer-token; de issuer in het token bepaalt de tenant (`core.idp_config`), en de rollen komen uit `core.roltoewijzing`. Rolchecks Fase 1: tellers en beoordelingshistoriek = het personeelslid zelf of DIR; herbereken = BG/DIR; deadline-overzicht = DIR/AD/BG; beoordeling registreren = DIR; regelparameterbeheer = BG (vier-ogen, afgedwongen tot in de databank). Zonder bekrachtigde tenantversies geldt de startset PERS/2019/03 uit het domeinpakket — de bronvermelding in elke verantwoording toont welke set gold. De API blijft niet extern ontsloten tot de pentest en de echte IdP-configuratie er zijn.
 
