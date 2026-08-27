@@ -1,0 +1,23 @@
+{
+  "name": "@draagvlak/welzijnsregels",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure domeinlogica voor bevragingen en welzijn: vraagclassificatie, anonimiteitsdrempels en suppressie — regelgebaseerd en reproduceerbaar (module-familie W)",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

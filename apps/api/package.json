@@ -17,7 +17,8 @@
     "@draagvlak/telregels": "workspace:*",
     "fastify": "^5.0.0",
     "jose": "^5.9.0",
-    "postgres": "^3.4.0"
+    "postgres": "^3.4.0",
+    "@draagvlak/welzijnsregels": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

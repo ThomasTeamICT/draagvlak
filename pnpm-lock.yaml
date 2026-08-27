@@ -16,6 +16,9 @@ importers:
       '@draagvlak/telregels':
         specifier: workspace:*
         version: link:../../packages/telregels
+      '@draagvlak/welzijnsregels':
+        specifier: workspace:*
+        version: link:../../packages/welzijnsregels
       fastify:
         specifier: ^5.0.0
         version: 5.9.0
@@ -50,6 +53,15 @@ importers:
         version: 3.2.6(@types/node@22.20.0)
 
   packages/telregels:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.6(@types/node@22.20.0)
+
+  packages/welzijnsregels:
     devDependencies:
       typescript:
         specifier: ^5.7.0
