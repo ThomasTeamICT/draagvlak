@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Draagvlak — instellingen</title>
+<link rel="stylesheet" href="paneel.css">
+<style>
+  body{max-width:560px;margin:0 auto;padding:1rem}
+  h1{font-size:1.15rem;color:var(--merk);margin:.4rem 0 1rem}
+  section{background:var(--kaart);border:1px solid var(--lijn);border-radius:12px;
+    padding:.9rem 1rem;margin-bottom:.8rem}
+  section h2{margin:0 0 .5rem;font-size:.92rem}
+  label{display:block;font-size:.78rem;color:var(--gedempt);margin:.6rem 0 .2rem}
+  input[type=text],input[type=password],input[type=number]{width:100%;background:var(--grond);
+    border:1px solid var(--lijn);border-radius:8px;color:inherit;font:inherit;padding:.45rem .6rem}
+  .hint{font-size:.74rem;color:var(--gedempt);line-height:1.5;margin:.5rem 0 0}
+  .beheerd{background:var(--merk-zacht);border-radius:8px;padding:.5rem .7rem;
+    font-size:.78rem;margin-bottom:.6rem}
+  .rijknoppen{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
+  .status{font-size:.8rem;margin-top:.5rem}
+  .privacy{font-size:.78rem;line-height:1.6;color:var(--gedempt)}
+  .privacy b{color:var(--inkt)}
+</style>
+</head>
+<body>
+<h1>Draagvlak — instellingen</h1>
+
+<section id="beheerdblok" hidden>
+  <div class="beheerd">🏫 Deze extensie is (deels) geconfigureerd door de beheerder van je school.
+  Beheerde instellingen kan je hier niet wijzigen.</div>
+</section>
+
+<section>
+  <h2>Verbinding</h2>
+  <label for="apiBaseUrl">API-endpoint</label>
+  <input type="text" id="apiBaseUrl" placeholder="https://api.draagvlak.be">
+  <label for="syncMinuten">Synchronisatie-interval (minuten)</label>
+  <input type="number" id="syncMinuten" min="1" max="120" value="10">
+</section>
+
+<section>
+  <h2>Aanmelden</h2>
+  <div id="oidcblok">
+    <p class="hint">Aanmelden met je schoolaccount (via de identiteitsprovider die je school
+    gebruikt). Werkt zodra de beheerder de issuer en client-id heeft ingesteld.</p>
+    <div class="rijknoppen"><button class="verstuur" id="aanmelden">Aanmelden met je schoolaccount</button></div>
+  </div>
+  <details style="margin-top:.7rem">
+    <summary style="font-size:.78rem;color:var(--gedempt);cursor:pointer">Voor testomgevingen: token plakken</summary>
+    <label for="ontwikkelToken">Toegangstoken (alleen voor testen)</label>
+    <input type="password" id="ontwikkelToken" placeholder="eyJ…">
+  </details>
+</section>
+
+<section>
+  <h2>Diagnose</h2>
+  <div class="rijknoppen">
+    <button class="verstuur" id="opslaan">Opslaan en verbinden</button>
+    <button id="testknop" style="border:1px solid var(--lijn);background:transparent;border-radius:10px;padding:.6rem 1rem">Verbinding testen</button>
+  </div>
+  <p class="status" id="status"></p>
+</section>
+
+<section>
+  <h2>Wat deze extensie wél en niet doet</h2>
+  <p class="privacy">
+    <b>Wel:</b> je inbox ophalen bij je eigen school (één adres), een teller op het
+    pictogram tonen en je antwoorden versturen wanneer jij op versturen klikt.<br>
+    <b>Niet:</b> deze extensie heeft <b>geen toegang tot de pagina's die je bezoekt</b>
+    (er zijn geen content scripts), verzamelt <b>geen statistieken of telemetrie</b>,
+    en meet niets over hoe snel of wanneer je typt. Bij vertrouwelijke bevragingen
+    wordt je antwoord zonder je naam opgeslagen en ziet niemand wie deelnam.
+  </p>
+</section>
+
+<script src="opties.js" type="module"></script>
+</body>
+</html>

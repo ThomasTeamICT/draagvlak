@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Draagvlak",
+  "description": "De inbox van je school: gerichte vragen meteen beantwoorden, naast je gewone werk. Deze extensie kan niet zien welke websites je bezoekt — er zijn geen content scripts.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "120",
+  "background": {
+    "service_worker": "achtergrond.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "paneel.html"
+  },
+  "action": {
+    "default_title": "Draagvlak — open je inbox"
+  },
+  "options_page": "opties.html",
+  "icons": {
+    "16": "pictogrammen/16.png",
+    "32": "pictogrammen/32.png",
+    "48": "pictogrammen/48.png",
+    "128": "pictogrammen/128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "sidePanel",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://api.draagvlak.be/*",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "storage": {
+    "managed_schema": "schema.json"
+  }
+}

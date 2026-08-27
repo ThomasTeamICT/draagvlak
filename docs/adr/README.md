@@ -10,3 +10,4 @@ Statussen: **voorgesteld** (wacht op bekrachtiging door de stuurgroep) → **aan
 | [0002](0002-datatoegang.md) | Datatoegang: postgres.js met RLS-transactiehelper | voorgesteld |
 | [0003](0003-authenticatie.md) | Authenticatie via OIDC-tokens; autorisatie uit de databankrollen | voorgesteld |
 | [0004](0004-scheduler.md) | Nachtelijke herberekening: in-proces planner, geen extra infrastructuur | voorgesteld |
+| [0005](0005-kanaal.md) | Kanaal: Chrome-extensie eerst, op een kanaalneutrale inbox-API | aanvaard |

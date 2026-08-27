@@ -197,9 +197,9 @@ leerlingenluik · "anoniem" als etiket op iets dat pseudoniem is.
 | Fase | Wat | Voorwaarde |
 |---|---|---|
 | **W0** | Vragenbank + bindende classificatie, overlegorgaan-object, DPIA-bouwpakket; extern juridisch advies op de vier ⚠-pijlers; architectuurspike één-antwoord-zonder-herleidbaarheid; kanaalrealiteit valideren bij de eerste prospects (leeft het lager onderwijs überhaupt in een beheerde browser?) | — |
-| **W1** | **Klasse A via PWA/API**: op-naam praktische vragen, gekoppeld aan wat er al is — de invalvraag uit P3, beschikbaarheidsvragen, leesbevestiging van roosterpublicaties, datumkeuzes. Nul art. 9-risico, directe dagelijkse waarde; bewijst kanaal, inbox en push vóór er iets gevoeligs doorheen gaat | W0-fundament |
+| **W1** | **Klasse A via de inbox-API**: op-naam praktische vragen, gekoppeld aan wat er al is — de invalvraag uit P3, beschikbaarheidsvragen, leesbevestiging van roosterpublicaties, datumkeuzes. Nul art. 9-risico, directe dagelijkse waarde; bewijst kanaal en inbox vóór er iets gevoeligs doorheen gaat | W0-fundament |
 | **W2** | **Teambevraging personeel (klasse B)**: drempels + suppressie als testcontract, rapport-na-sluiting, Comité-pakket + JAP-export, terugkoppellus als lanceervoorwaarde. Piloot in een school of scholengemeenschap comfortabel boven de drempels | juridisch advies W0 |
-| **W3** | **De extensie**: dunne schil op de bewezen PWA (side panel, badge, stille push), eerst alleen personeel, uitrol volgens het overlegtraject | W1 bewezen |
+| **W3** | **Het kanaal**: de Chrome-extensie als dunne schil op de inbox-API (zijpaneel, badge; stille push zodra de API VAPID-sleutels heeft), eerst alleen personeel, uitrol volgens het overlegtraject. *Beslist (ADR-0005): de extensie is de eerste testscope — de doelscholen zitten overwegend in een beheerde Google-omgeving; de PWA volgt als bredere schil op dezelfde API* | W1 bewezen |
 | **W4** | **Leerlingen, anonieme klasfoto** via link/PWA, praatknop naar het zorgteam, toestemmings-/opt-out-beheer als datamodel-object | extern advies + bijgestelde blauwdruk-module I |
 | Later | Scholengemeenschaps-benchmark tegen SERV/TALIS; partnerschap met een externe preventiedienst als route naar klasse C; directeursmeting op scholengemeenschapsniveau; ouderbevragingen (eerst rechtsgrondanalyse) | per geval |
 

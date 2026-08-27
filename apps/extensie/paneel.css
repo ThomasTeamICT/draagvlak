@@ -1,0 +1,75 @@
+/* Draagvlak zijpaneel — licht met donkere variant, merkkleuren van het platform */
+:root{
+  --grond:#f6f8f7; --kaart:#ffffff; --lijn:#dbe4e0; --inkt:#1c2a25;
+  --gedempt:#5f7169; --merk:#1f6f5c; --merk-zacht:#e3f2ec;
+  --amber:#8a5a2f; --amber-zacht:#f6ecdf; --fout:#a33a3a; --fout-zacht:#f8e8e8;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --grond:#0f1917; --kaart:#16231f; --lijn:#2e3f39; --inkt:#eaf2ee;
+    --gedempt:#9db0a9; --merk:#5fd3ad; --merk-zacht:#173229;
+    --amber:#f0c04a; --amber-zacht:#2e2618; --fout:#f0709c; --fout-zacht:#301c22;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--grond);color:var(--inkt);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;flex-direction:column;min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--merk);outline-offset:2px}
+
+.kop{display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:.65rem .8rem;border-bottom:1px solid var(--lijn);background:var(--kaart);
+  position:sticky;top:0;z-index:2}
+.merk{font-weight:700;color:var(--merk);font-size:1rem}
+.merk small{display:block;font-weight:400;font-size:.62rem;color:var(--gedempt);
+  letter-spacing:.08em;text-transform:uppercase}
+.knoppen{display:flex;gap:.3rem}
+.knoppen button{border:1px solid var(--lijn);background:transparent;border-radius:8px;
+  width:30px;height:30px;font-size:.95rem;line-height:1}
+.knoppen button:hover{border-color:var(--merk)}
+
+main{flex:1;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.6rem}
+.stil{color:var(--gedempt);text-align:center;margin:1.4rem 0}
+.melding{border:1px solid var(--lijn);border-radius:10px;padding:.7rem .8rem;
+  background:var(--amber-zacht);color:var(--inkt);font-size:.82rem;line-height:1.55}
+.melding.fout{background:var(--fout-zacht)}
+.melding a{color:var(--merk)}
+
+.item{background:var(--kaart);border:1px solid var(--lijn);border-radius:12px;
+  padding:.7rem .8rem;cursor:pointer;transition:border-color .12s}
+.item:hover{border-color:var(--merk)}
+.itemkop{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+.item .titel{margin:0;font-size:.92rem}
+.item .toelichting{margin:.25rem 0 0;font-size:.8rem;color:var(--gedempt)}
+.soort{font-size:.6rem;letter-spacing:.07em;text-transform:uppercase;
+  padding:.12rem .5rem;border-radius:99px;white-space:nowrap}
+.soort.op_naam{background:var(--merk-zacht);color:var(--merk)}
+.soort.team{background:var(--amber-zacht);color:var(--amber)}
+.wieziet{margin:.45rem 0 0;font-size:.74rem;color:var(--gedempt);
+  border-top:1px dashed var(--lijn);padding-top:.45rem}
+.wieziet::before{content:"👁 ";opacity:.8}
+
+/* formulier */
+.terug{border:0;background:transparent;color:var(--merk);padding:0;font-size:.8rem}
+.vraagblok{background:var(--kaart);border:1px solid var(--lijn);border-radius:12px;
+  padding:.75rem .85rem;display:flex;flex-direction:column;gap:.5rem}
+.vraagblok h3{margin:0;font-size:.9rem;font-weight:600}
+.keuzes{display:flex;flex-direction:column;gap:.3rem}
+.keuzes.rij{flex-direction:row;flex-wrap:wrap}
+.keuzes label{display:flex;align-items:center;gap:.45rem;padding:.4rem .55rem;
+  border:1px solid var(--lijn);border-radius:8px;cursor:pointer;font-size:.85rem}
+.keuzes label:has(:checked){border-color:var(--merk);background:var(--merk-zacht)}
+.keuzes input{accent-color:var(--merk)}
+textarea{background:var(--grond);border:1px solid var(--lijn);border-radius:8px;
+  color:inherit;font:inherit;padding:.5rem .6rem;min-height:70px;resize:vertical}
+.schaal{display:flex;gap:.3rem}
+.schaal label{flex:1;justify-content:center;padding:.4rem 0}
+.lievernietrij{display:flex;align-items:center;gap:.4rem;font-size:.76rem;color:var(--gedempt)}
+.lievernietrij input{accent-color:var(--merk)}
+.verstuur{background:var(--merk);color:#fff;border:0;border-radius:10px;
+  padding:.6rem 1rem;font-weight:600}
+@media (prefers-color-scheme: dark){ .verstuur{color:#08221a} }
+.verstuur:disabled{opacity:.5;cursor:default}
+.voet{padding:.4rem .8rem;font-size:.68rem;color:var(--gedempt);
+  border-top:1px solid var(--lijn);background:var(--kaart)}

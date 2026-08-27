@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "apiBaseUrl": {
+      "type": "string",
+      "title": "API-endpoint",
+      "description": "Basis-URL van de Draagvlak-API, bv. https://api.draagvlak.be"
+    },
+    "oidcIssuer": {
+      "type": "string",
+      "title": "OIDC-issuer",
+      "description": "Issuer-URL van de identiteitsprovider van de school"
+    },
+    "oidcClientId": {
+      "type": "string",
+      "title": "OIDC client-id",
+      "description": "Client-id van Draagvlak bij de identiteitsprovider"
+    },
+    "syncMinuten": {
+      "type": "integer",
+      "title": "Synchronisatie-interval (minuten)",
+      "description": "Hoe vaak de inbox ververst wordt (standaard 10)"
+    }
+  }
+}

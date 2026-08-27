@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Draagvlak</title>
+<link rel="stylesheet" href="paneel.css">
+</head>
+<body>
+<header class="kop">
+  <div class="merk">Draagvlak<small>de inbox van je school</small></div>
+  <div class="knoppen">
+    <button id="ververs" title="Vernieuwen">⟳</button>
+    <button id="instellingen" title="Instellingen">⚙</button>
+  </div>
+</header>
+
+<main id="inhoud" aria-live="polite">
+  <p class="stil" id="laadtekst">Inbox laden…</p>
+</main>
+
+<footer class="voet">
+  <span id="synctijd"></span>
+</footer>
+
+<template id="sjabloon-item">
+  <article class="item" tabindex="0" role="button">
+    <div class="itemkop">
+      <span class="soort"></span>
+      <h2 class="titel"></h2>
+    </div>
+    <p class="toelichting"></p>
+    <p class="wieziet"></p>
+  </article>
+</template>
+
+<script src="paneel.js" type="module"></script>
+</body>
+</html>
