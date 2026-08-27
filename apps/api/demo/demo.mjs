@@ -39,6 +39,15 @@ const { default: postgres } = await import(pathToFileURL(join(apiWortel, 'node_m
 const jose = await import(pathToFileURL(join(apiWortel, 'node_modules', 'jose', 'dist', 'node', 'esm', 'index.js')).href)
 const { buildApp } = await import(pathToFileURL(join(apiWortel, 'dist', 'app.js')).href)
 
+// .env in de repowortel (KEY=WAARDE per regel) vult ontbrekende variabelen aan,
+// zodat een afwijkende poort of wachtwoord één keer ingesteld hoeft te worden
+if (existsSync(join(repo, '.env'))) {
+  for (const regel of readFileSync(join(repo, '.env'), 'utf8').split(/\r?\n/)) {
+    const m = regel.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*"?([^"#]*)"?\s*(#.*)?$/)
+    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].trim()
+  }
+}
+
 const ADMIN_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@localhost:5432/draagvlak'
 const APP_URL = process.env.DATABASE_URL ?? 'postgres://draagvlak_app:draagvlak@localhost:5432/draagvlak'
 const API_POORT = 4599

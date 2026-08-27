@@ -48,13 +48,24 @@ oorzaken:
 3. **Poort 4599/4600 bezet** — er draait al een demo in een ander venster;
    stop die eerst met Ctrl+C.
 
-Draait je PostgreSQL met andere gegevens, zet dan beide URL's:
+**Poort 5432 al bezet** (een bestaande PostgreSQL-installatie)? Draai de
+container dan op 5433 en leg dat één keer vast in een `.env`-bestand in de
+repowortel — de demo leest het voortaan zelf:
 
-```bash
-DATABASE_ADMIN_URL=postgres://<beheerder>:<ww>@localhost:5432/draagvlak \
-DATABASE_URL=postgres://draagvlak_app:<appww>@localhost:5432/draagvlak \
-pnpm demo
+```powershell
+docker rm -f draagvlak-pg
+docker run --name draagvlak-pg -e POSTGRES_PASSWORD=postgres -p 5433:5432 -d postgres:16
 ```
+
+`.env` (naast package.json; staat in .gitignore):
+
+```
+DATABASE_ADMIN_URL=postgres://postgres:postgres@localhost:5433/draagvlak
+DATABASE_URL=postgres://draagvlak_app:draagvlak@localhost:5433/draagvlak
+```
+
+Draait je PostgreSQL met andere gegevens, zet dan diezelfde twee regels in
+`.env` met jouw waarden (of als omgevingsvariabelen vóór `pnpm demo`).
 
 ## Stap 1 — de cockpit (directeurskant)
 
