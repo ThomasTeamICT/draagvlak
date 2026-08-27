@@ -103,6 +103,29 @@ registratie achteraf kan — geen slimme planning.
 | P6 | **Roosters rond het rooster** | secundair (+ lager licht) | Examenroosters (opsteller ≠ toezichter; Vlaamse toetsen-halve dagen), klassenraadplanning (voltalligheid; leraren op meerdere scholen), oudercontact-tijdsloten (of Smartschool Contactmomenten-integratie). |
 | P∫ | **Integraties** | doorlopend | Smartschool Planner XML-export (P4/P5-voorwaarde), Untis-import (adoptiepad voor secundair), Informat/WISA-sync voor personen/afwezigheden, iCal-feeds. |
 
+### Testcontract P3 (vervangingen) — casussen V1 t/m V8
+
+Vastgelegd in `packages/planregels/test/vervangingsregels.test.ts` en
+`vervanger.test.ts`, zelfde regime als de telregel-testcases (⚠ alle drempels
+te valideren met een personeelsdienst tegen de primaire teksten):
+
+| # | Casus | Verwacht |
+|---|---|---|
+| V1 | Eén aaneengesloten ziekte van 10 werkdagen | één reeks, drempel bereikt |
+| V2 | Ziek ma–wo, donderdag aanwezig, weer ziek | één dag aanwezigheid knipt de reeks níét (venster 1 werkdag); effectieve werkdagen tellen, de aanwezige dag niet |
+| V3 | Een week aanwezig tussen twee ziekteperiodes | twee aparte reeksen |
+| V4 | Ziek de week vóór én na de herfstvakantie | vakantiedagen zijn geen werkdagen → één reeks van 10; de "vakantiebrug" haalt de drempel (V7) |
+| V5 | Korte ziekte (3 dagen), contingent beschikbaar | vervangingseenheden aanbevolen, verbruik expliciet; contingent op → intern mét verplichte noodmaatregel-log (V5b) |
+| V6 | Drempel bereikt | tijdelijke aanstelling mogelijk, reaffectatiecheck verplicht vóór aanstelling; platformlid vrij → platform gaat voor en de check vervalt (V6b) |
+| V8 | Secundair 2025-2026 | geen platform, geen eenheden — het regelboek verschilt per niveau én per schooljaar |
+
+Vervangersvoorstellen: platformlid > billijkheid (laagste teller) > vrije
+ruimte; onbevoegd of onbeschikbaar zakt onder de streep mét reden; een
+zorgleerkracht draagt haar prijs ("N zorguren vallen weg") als bezwaar mee.
+Noodscenario's (klas verdelen, zorg inzetten, samenvoegen, externe invaller)
+berekenen de nieuwe groepsgroottes tegen de eigen maximumgrens en benoemen
+elk hun verlies — dat verlies hoort in de audittrail, anders bestaat het niet.
+
 **Volgorde**: P1 → P2 → P3 vormen samen het "lager eerst"-product (onbediende markt, sluit
 naadloos aan op wat Draagvlak al heeft: personen, aanstellingen, afwezigheden, RLS, audit).
 P4 verdiept het lager; P5/P6 openen het secundair. Elke module krijgt een testcontract met
