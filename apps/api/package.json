@@ -8,7 +8,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "migreer": "node scripts/migreer.mjs",
+    "migreer:status": "node scripts/migreer.mjs --status"
   },
   "dependencies": {
     "@draagvlak/planregels": "workspace:*",

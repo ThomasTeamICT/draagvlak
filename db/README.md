@@ -1,17 +1,23 @@
 # Databank
 
-PostgreSQL 16 met row-level security als afdwinging van de toegangsmatrix (ADR-0001). Migraties zijn platte, genummerde SQL-bestanden in `migrations/`; migratietooling wordt gekozen in een latere ADR — tot dan volstaat `psql` in volgorde.
+PostgreSQL 16 met row-level security als afdwinging van de toegangsmatrix (ADR-0001). Migraties zijn platte, genummerde SQL-bestanden in `migrations/`, gedraaid door een kleine runner met versietabel (`apps/api/scripts/migreer.mjs`).
 
 ## Lokaal starten
 
 ```bash
 docker compose up -d db
-# rollen (eenmalig), daarna alle migraties in volgorde
+# rollen (eenmalig)
 docker compose exec -T db psql -U draagvlak -d draagvlak < db/bootstrap/rollen.sql
-for migratie in db/migrations/*.sql; do
-  docker compose exec -T db psql -v ON_ERROR_STOP=1 -U draagvlak -d draagvlak < "$migratie"
-done
+# daarna: de runner houdt in public.schema_migratie bij wat al toegepast is
+DATABASE_ADMIN_URL=postgres://draagvlak@localhost:5432/draagvlak pnpm --filter @draagvlak/api migreer
+pnpm --filter @draagvlak/api migreer:status   # alleen kijken
 ```
+
+De runner is idempotent en replica-veilig (advisory lock). Drie regels die hij afdwingt:
+
+1. **Migraties zijn onveranderlijk.** Een toegepast bestand dat naderhand gewijzigd is (controlesom klopt niet meer) is een fout, geen stille no-op — verbeteren doe je met een nieuwe migratie.
+2. **De versietabel staat in `public`, niet in `core`.** Een testomgeving die `drop schema core cascade` doet, neemt de historiek niet mee; de runner ziet "historiek zonder core-schema", wist de historiek en bouwt opnieuw op.
+3. **Elke migratie beheert haar eigen transactie** (`begin`/`commit` staat in het bestand); de runner wikkelt er niets omheen.
 
 ## Het RLS-patroon (geldt voor elke latere tabel)
 
