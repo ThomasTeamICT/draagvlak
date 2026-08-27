@@ -27,6 +27,35 @@ overlegorgaan klaar en stuurt alvast één invalvraag uit. Daarna draait op
 **http://127.0.0.1:4600** de testcockpit, en print de terminal een token om
 in de extensie te plakken.
 
+## Als http://127.0.0.1:4600 niet bereikbaar is
+
+Dan draait `pnpm demo` niet (meer) — kijk in de terminal waar je hem
+startte; het script zegt sinds v0.2 precies wat er schort en blijft anders
+gewoon op de voorgrond draaien (sluit het venster niet). De drie gewone
+oorzaken:
+
+1. **PostgreSQL draait niet of is niet geïnstalleerd.** Snelste weg,
+   ook op Windows (Docker Desktop):
+
+   ```bash
+   docker run --name draagvlak-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:16
+   ```
+
+   De demo maakt de databank en de applicatierol daarna zelf aan, en zet
+   het wachtwoord van de rol gelijk met wat in `DATABASE_URL` staat.
+2. **Nog niet gebouwd** — de demo bouwt tegenwoordig zelf als
+   `apps/api/dist` ontbreekt; `pnpm install` blijft wel nodig.
+3. **Poort 4599/4600 bezet** — er draait al een demo in een ander venster;
+   stop die eerst met Ctrl+C.
+
+Draait je PostgreSQL met andere gegevens, zet dan beide URL's:
+
+```bash
+DATABASE_ADMIN_URL=postgres://<beheerder>:<ww>@localhost:5432/draagvlak \
+DATABASE_URL=postgres://draagvlak_app:<appww>@localhost:5432/draagvlak \
+pnpm demo
+```
+
 ## Stap 1 — de cockpit (directeurskant)
 
 Open http://127.0.0.1:4600. Rechtsboven kies je wie je bent; je start als

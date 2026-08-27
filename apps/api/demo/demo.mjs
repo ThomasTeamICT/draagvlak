@@ -11,22 +11,81 @@
  * testdatabanken — nooit tegen echte gegevens draaien.
  */
 import { createServer } from 'node:http'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { readFileSync, existsSync } from 'node:fs'
+import { execSync } from 'node:child_process'
+import { pathToFileURL, fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const hier = dirname(fileURLToPath(import.meta.url))
 const repo = join(hier, '..', '..', '..')
 const apiWortel = join(repo, 'apps', 'api')
 
-const { default: postgres } = await import(join(apiWortel, 'node_modules', 'postgres', 'src', 'index.js'))
-const jose = await import(join(apiWortel, 'node_modules', 'jose', 'dist', 'node', 'esm', 'index.js'))
-const { buildApp } = await import(join(apiWortel, 'dist', 'app.js'))
+const stop = (...regels) => {
+  console.error('\n❌ ' + regels.join('\n   '))
+  process.exit(1)
+}
+
+// ── voorcontrole 1: is er gebouwd? zo niet, bouw zelf ──
+if (!existsSync(join(apiWortel, 'dist', 'app.js'))) {
+  console.log('▸ nog geen build gevonden — pnpm -r build draait nu éénmalig…')
+  try {
+    execSync('pnpm -r build', { cwd: repo, stdio: 'inherit', shell: true })
+  } catch {
+    stop('bouwen mislukte — draai zelf even `pnpm install && pnpm -r build` en probeer opnieuw')
+  }
+}
+
+const { default: postgres } = await import(pathToFileURL(join(apiWortel, 'node_modules', 'postgres', 'src', 'index.js')).href)
+const jose = await import(pathToFileURL(join(apiWortel, 'node_modules', 'jose', 'dist', 'node', 'esm', 'index.js')).href)
+const { buildApp } = await import(pathToFileURL(join(apiWortel, 'dist', 'app.js')).href)
 
 const ADMIN_URL = process.env.DATABASE_ADMIN_URL ?? 'postgres://postgres:postgres@localhost:5432/draagvlak'
 const APP_URL = process.env.DATABASE_URL ?? 'postgres://draagvlak_app:draagvlak@localhost:5432/draagvlak'
 const API_POORT = 4599
 const COCKPIT_POORT = 4600
+
+// ── voorcontrole 2: is PostgreSQL bereikbaar, en bestaat de databank? ──
+async function verbindAdmin() {
+  const url = new URL(ADMIN_URL)
+  const dbNaam = url.pathname.replace(/^\//, '') || 'draagvlak'
+  const probeer = postgres(ADMIN_URL, { max: 1, onnotice: () => {}, connect_timeout: 5 })
+  try {
+    await probeer`select 1`
+    return probeer
+  } catch (fout) {
+    await probeer.end({ timeout: 1 }).catch(() => {})
+    if (fout.code === 'ECONNREFUSED' || fout.code === 'ENOTFOUND' || fout.errno === -111) {
+      stop(
+        `PostgreSQL is niet bereikbaar op ${url.hostname}:${url.port || 5432}.`,
+        'Start je lokale PostgreSQL, of draai er zo één met Docker:',
+        '  docker run --name draagvlak-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres:16',
+        'Andere gegevens? Zet DATABASE_ADMIN_URL en DATABASE_URL (zie docs/testgids.md).',
+      )
+    }
+    if (fout.code === '3D000') {
+      // databank bestaat nog niet: maak ze aan via de onderhoudsdatabank
+      console.log(`▸ databank "${dbNaam}" bestaat nog niet — wordt aangemaakt…`)
+      url.pathname = '/postgres'
+      const onderhoud = postgres(url.href, { max: 1, onnotice: () => {} })
+      try {
+        await onderhoud.unsafe(`create database "${dbNaam}"`)
+      } catch (aanmaak) {
+        stop(`databank "${dbNaam}" aanmaken lukte niet: ${aanmaak.message}`)
+      } finally {
+        await onderhoud.end()
+      }
+      return postgres(ADMIN_URL, { max: 1, onnotice: () => {} })
+    }
+    if (fout.code === '28P01' || fout.code === '28000') {
+      stop(
+        'aanmelden als beheerder lukte niet (verkeerd wachtwoord?).',
+        `gebruikt: ${ADMIN_URL.replace(/:[^:@/]+@/, ':•••@')}`,
+        'Zet DATABASE_ADMIN_URL naar jouw beheerdersaccount.',
+      )
+    }
+    stop(`onverwachte databankfout: ${fout.message}`)
+  }
+}
 
 const TENANT = 'de300000-1111-1111-1111-111111111111'
 const SCHOOL = 'de300000-2222-2222-2222-222222222222'
@@ -46,9 +105,13 @@ const PERSONEEL = [
 ]
 
 console.log('▸ schema opbouwen…')
-const admin = postgres(ADMIN_URL, { max: 1, onnotice: () => {} })
+const admin = await verbindAdmin()
 await admin.unsafe('drop schema if exists core cascade')
 await admin.file(join(repo, 'db', 'bootstrap', 'rollen.sql'), { cache: false })
+// het wachtwoord van de applicatierol gelijkzetten met DATABASE_URL, zodat
+// de demo werkt ongeacht wat er lokaal ooit is aangemaakt
+const appUrl = new URL(APP_URL)
+await admin.unsafe(`alter role draagvlak_app login password '${appUrl.password || 'draagvlak'}'`)
 for (const m of ['0001_init.sql','0002_personeel.sql','0003_deadlines.sql','0004_idp.sql',
   '0005_beoordeling.sql','0006_regelparameters.sql','0007_scheduler.sql','0008_kalender.sql',
   '0009_toezichten.sql','0010_vervangingen.sql','0011_bevragingen.sql','0012_afgeleverd.sql']) {
@@ -85,7 +148,12 @@ await admin.end()
 
 console.log('▸ API starten…')
 const app = buildApp({ databaseUrl: APP_URL })
-await app.listen({ port: API_POORT, host: '127.0.0.1' })
+try {
+  await app.listen({ port: API_POORT, host: '127.0.0.1' })
+} catch (fout) {
+  if (fout.code === 'EADDRINUSE') stop(`poort ${API_POORT} is bezet — er draait al een demo. Stop die eerst (Ctrl+C in dat venster).`)
+  throw fout
+}
 
 const personas = []
 for (const p of PERSONEEL) {
@@ -137,7 +205,12 @@ const proxy = createServer(async (verzoek, antwoord) => {
   antwoord.setHeader('content-type', door.headers.get('content-type') ?? 'application/json')
   antwoord.end(Buffer.from(await door.arrayBuffer()))
 })
-await new Promise((k) => proxy.listen(COCKPIT_POORT, '127.0.0.1', k))
+await new Promise((k, slecht) => {
+  proxy.once('error', (fout) => fout.code === 'EADDRINUSE'
+    ? stop(`poort ${COCKPIT_POORT} is bezet — er draait al een demo. Stop die eerst.`)
+    : slecht(fout))
+  proxy.listen(COCKPIT_POORT, '127.0.0.1', k)
+})
 
 console.log(`
 ──────────────────────────────────────────────────────────────
